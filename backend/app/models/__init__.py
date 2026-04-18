@@ -9,12 +9,30 @@ from app.models.auth import (
     WorkspaceMember,
 )
 from app.models.base import Base
+from app.models.project import (
+    ActiveProject,
+    Project,
+    ProjectCommand,
+    ProjectContext,
+    ProjectEnvironment,
+    ProjectInfra,
+    ProjectLink,
+    ProjectRepo,
+)
 
 __all__ = [
+    "ActiveProject",
     "AuditLog",
     "Base",
     "CliDevice",
     "MagicLinkToken",
+    "Project",
+    "ProjectCommand",
+    "ProjectContext",
+    "ProjectEnvironment",
+    "ProjectInfra",
+    "ProjectLink",
+    "ProjectRepo",
     "User",
     "Workspace",
     "WorkspaceMember",
