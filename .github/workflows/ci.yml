@@ -31,6 +31,7 @@ jobs:
         options: --health-cmd="redis-cli ping" --health-interval=5s --health-retries=10
     env:
       HANGAR_DATABASE_URL: postgresql+asyncpg://hangar:hangar_ci@localhost:5432/hangar_ci
+      HANGAR_TEST_DATABASE_URL: postgresql+asyncpg://hangar:hangar_ci@localhost:5432/hangar_ci
       HANGAR_REDIS_URL: redis://localhost:6379/0
       HANGAR_MASTER_KEY: test_master_key_32bytes_base64url_AAAAAAAAAAAAAAAAAAAAAAAA
       HANGAR_RESEND_API_KEY: test_fake
