@@ -61,9 +61,32 @@ async def engine(database_url: str) -> AsyncIterator[AsyncEngine]:
     from app.models.base import Base
 
     eng = create_async_engine(database_url, echo=False, pool_pre_ping=True)
+
+    # Apply all Alembic migrations to establish schema (incl. raw-SQL GIN index).
+    import os
+    from pathlib import Path
+
+    from alembic.config import Config
+
+    from alembic import command
+
+    os.environ["HANGAR_DATABASE_URL"] = database_url
+    os.environ.setdefault("HANGAR_MASTER_KEY", "x" * 43)
+    os.environ.setdefault("HANGAR_REDIS_URL", "redis://localhost:6379/0")
+    os.environ.setdefault("HANGAR_RESEND_API_KEY", "test")
+    os.environ.setdefault("HANGAR_GITHUB_CLIENT_ID", "test")
+    os.environ.setdefault("HANGAR_GITHUB_CLIENT_SECRET", "test")
+    os.environ.setdefault("HANGAR_BASE_URL", "http://localhost:3000")
+
+    # Drop everything first (in case of rerun)
     async with eng.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
-        await conn.run_sync(Base.metadata.create_all)
+
+    cfg = Config(str(Path(__file__).parent.parent / "alembic.ini"))
+    cfg.set_main_option("script_location", str(Path(__file__).parent.parent / "alembic"))
+    # Ensure the env loads fresh with the right DB URL:
+    command.upgrade(cfg, "head")
+
     yield eng
     await eng.dispose()
     if _pg_container is not None:
