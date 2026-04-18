@@ -1,0 +1,54 @@
+# backend/pyproject.toml
+[project]
+name = "hangar-backend"
+version = "0.1.0"
+description = "Hangar backend API"
+requires-python = ">=3.12"
+dependencies = [
+  "fastapi>=0.115",
+  "uvicorn[standard]>=0.32",
+  "sqlalchemy[asyncio]>=2.0.36",
+  "asyncpg>=0.30",
+  "alembic>=1.14",
+  "pydantic>=2.9",
+  "pydantic-settings>=2.6",
+  "python-ulid>=3.0",
+  "redis[hiredis]>=5.2",
+  "httpx>=0.28",
+  "cryptography>=44.0",
+  "itsdangerous>=2.2",
+  "python-multipart>=0.0.17",
+  "resend>=2.4",
+  "email-validator>=2.2",
+]
+
+[dependency-groups]
+dev = [
+  "pytest>=8.3",
+  "pytest-asyncio>=0.24",
+  "pytest-cov>=6.0",
+  "httpx>=0.28",
+  "ruff>=0.8",
+  "mypy>=1.13",
+  "sqlalchemy[mypy]>=2.0.36",
+  "types-redis",
+  "testcontainers[postgres,redis]>=4.8",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "RUF"]
+ignore = ["E501"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+plugins = ["sqlalchemy.ext.mypy.plugin"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+addopts = "-v --strict-markers"
