@@ -6,6 +6,8 @@ from typing import Any
 class HangarError(Exception):
     """Base exception mapped to RFC 7807 Problem+JSON by FastAPI handler."""
 
+    _RESERVED: frozenset[str] = frozenset({"type", "title", "status", "detail"})
+
     def __init__(
         self,
         *,
@@ -16,6 +18,11 @@ class HangarError(Exception):
         extras: dict[str, Any] | None = None,
     ) -> None:
         super().__init__(detail or title)
+        if extras and (extras.keys() & self._RESERVED):
+            collisions = extras.keys() & self._RESERVED
+            raise ValueError(
+                f"extras cannot override canonical Problem+JSON fields: {sorted(collisions)}"
+            )
         self.title = title
         self.status = status
         self.type = type_

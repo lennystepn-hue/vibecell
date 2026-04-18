@@ -85,3 +85,6 @@ async def test_workspace_creation_full_stack(session: AsyncSession) -> None:
     entities = {row.entity for row in audit_rows}
     assert "integrations" in entities
     assert "workspace_keys" in entities
+    wk_audit = [r for r in audit_rows if r.entity == "workspace_keys"]
+    assert len(wk_audit) == 1
+    assert wk_audit[0].entity_id == workspace.id

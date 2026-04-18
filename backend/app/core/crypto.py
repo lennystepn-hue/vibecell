@@ -10,6 +10,14 @@ Every ciphertext payload is base64-urlsafe-encoded:
     | nonce 12 | ciphertext n | tag 16     |
     +----------+--------------+------------+
 
+Note on AAD (associated data): v1 does not bind ciphertext to
+(workspace_id, entity, entity_id) via AAD. This is acceptable because
+DEKs are per-workspace, so cross-workspace swap is already prevented by
+key isolation. However, *intra-workspace* swap (e.g., copying
+integrations.token_ciphertext from row A to row B in the same workspace)
+is undetectable. AAD binding is a forward-compatible add — flip it on
+after re-encrypting all stored payloads in a Phase 4+ migration.
+
 `cryptography.hazmat.primitives.ciphers.aead.AESGCM` embeds the auth tag
 into the ciphertext, so our encoded layout is nonce + AESGCM.encrypt_output.
 """

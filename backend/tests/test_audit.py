@@ -76,6 +76,9 @@ async def test_update_emits_audit_row_with_diff(session: AsyncSession) -> None:
     diff = updates[0].diff
     assert diff is not None
     assert diff.get("name") == ["Original", "Updated"]
+    # Auto-managed timestamp noise must not pollute the diff.
+    assert "updated_at" not in diff
+    assert "created_at" not in diff
 
 
 async def test_delete_emits_audit_row(session: AsyncSession) -> None:

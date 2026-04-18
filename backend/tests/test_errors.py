@@ -1,3 +1,5 @@
+import pytest
+
 from app.core.errors import (
     ConflictError,
     ForbiddenError,
@@ -53,3 +55,11 @@ def test_validation_defaults() -> None:
     err = ValidationError(detail="slug too short")
     assert err.status == 400
     assert err.type == "/errors/validation"
+
+
+def test_hangar_error_rejects_reserved_extras() -> None:
+    with pytest.raises(ValueError, match="canonical Problem\\+JSON"):
+        HangarError(
+            title="x", status=500, type_="/errors/x",
+            extras={"type": "sneaky"},
+        )

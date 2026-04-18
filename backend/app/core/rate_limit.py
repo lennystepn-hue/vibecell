@@ -7,6 +7,7 @@ capped at capacity, deduct 1 if any remain, otherwise return (0, wait).
 from __future__ import annotations
 
 import math
+import time
 
 from app.core.redis import get_redis
 
@@ -46,7 +47,7 @@ else
   retry_after_ms = math.ceil((1 - tokens) / refill * 1000)
 end
 
-redis.call("HMSET", key, "tokens", tostring(tokens), "last_ms", tostring(now_ms))
+redis.call("HSET", key, "tokens", tostring(tokens), "last_ms", tostring(now_ms))
 redis.call("PEXPIRE", key, ttl_ms)
 return {allowed, retry_after_ms}
 """
@@ -68,8 +69,6 @@ async def check_and_consume(
     Returns:
       (allowed, retry_after_seconds). retry_after is 0 when allowed, else >= 1.
     """
-    import time
-
     redis = await get_redis()
     now_ms = int(time.time() * 1000)
     # Key expires 2x the time to fully refill, so stale buckets don't linger.
