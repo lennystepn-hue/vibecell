@@ -19,6 +19,7 @@ _KEY_PREFIX = "session:"
 class SessionPayload:
     user_id: str
     workspace_id: str
+    version: int = 1
 
 
 def _key(session_id: str) -> str:
@@ -40,7 +41,11 @@ async def get_session(session_id: str) -> SessionPayload | None:
     if raw is None:
         return None
     data = json.loads(raw)
-    return SessionPayload(user_id=data["user_id"], workspace_id=data["workspace_id"])
+    return SessionPayload(
+        user_id=data["user_id"],
+        workspace_id=data["workspace_id"],
+        version=data.get("version", 1),
+    )
 
 
 async def delete_session(session_id: str) -> None:

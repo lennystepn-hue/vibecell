@@ -8,7 +8,19 @@ from app.core.errors import HangarError, RateLimitedError
 
 
 async def _hangar_error_handler(request: Request, exc: Exception) -> JSONResponse:
-    assert isinstance(exc, HangarError)
+    if not isinstance(exc, HangarError):
+        # Defensive: the handler is only registered for HangarError, but if
+        # a subclass chain breaks or someone mis-registers it, surface 500
+        # with a safe generic Problem rather than returning an empty 200.
+        return JSONResponse(
+            status_code=500,
+            content={
+                "type": "/errors/internal",
+                "title": "Internal Server Error",
+                "status": 500,
+            },
+            media_type="application/problem+json",
+        )
     headers: dict[str, str] = {}
     if isinstance(exc, RateLimitedError):
         headers["Retry-After"] = str(exc.extras.get("retry_after_s", 0))

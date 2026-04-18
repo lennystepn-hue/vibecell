@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from collections.abc import Awaitable, Callable
+from typing import TYPE_CHECKING
 
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
@@ -10,6 +11,9 @@ from starlette.responses import Response
 from app.core.audit import current_actor, current_workspace_id
 from app.core.config import get_settings
 from app.core.session import get_session
+
+if TYPE_CHECKING:
+    from fastapi import FastAPI
 
 SESSION_COOKIE_NAME = "hangar_session"
 
@@ -41,8 +45,7 @@ class SessionMiddleware(BaseHTTPMiddleware):
                 current_workspace_id.reset(workspace_token)
 
 
-def install_session_middleware(app) -> None:  # type: ignore[no-untyped-def]
-    from fastapi import FastAPI  # noqa: F401 — for type context
+def install_session_middleware(app: FastAPI) -> None:
     app.add_middleware(SessionMiddleware)
 
 
