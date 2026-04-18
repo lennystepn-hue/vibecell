@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import TIMESTAMP, ForeignKey, String
+from sqlalchemy import TIMESTAMP, ForeignKey, String, func
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -50,7 +50,9 @@ class CliDevice(Base):
         String(26), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
     )
     name: Mapped[str | None] = mapped_column(String(100))
-    paired_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), nullable=False)
+    paired_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True), nullable=False, server_default=func.now()
+    )
     last_seen_at: Mapped[datetime | None] = mapped_column(TIMESTAMP(timezone=True))
     token_hash: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
 
@@ -63,7 +65,7 @@ class AuditLog(Base):
         String(26), ForeignKey("workspaces.id", ondelete="CASCADE"), nullable=False, index=True
     )
     at: Mapped[datetime] = mapped_column(
-        TIMESTAMP(timezone=True), nullable=False, server_default="NOW()"
+        TIMESTAMP(timezone=True), nullable=False, server_default=func.now()
     )
     actor: Mapped[str] = mapped_column(String(100), nullable=False)
     op: Mapped[str] = mapped_column(String(20), nullable=False)
@@ -79,7 +81,7 @@ class MagicLinkToken(Base):
     email: Mapped[str] = mapped_column(String(320), nullable=False, index=True)
     token_hash: Mapped[str] = mapped_column(String(64), nullable=False, unique=True, index=True)
     created_at: Mapped[datetime] = mapped_column(
-        TIMESTAMP(timezone=True), nullable=False, server_default="NOW()"
+        TIMESTAMP(timezone=True), nullable=False, server_default=func.now()
     )
     expires_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), nullable=False, index=True)
     consumed_at: Mapped[datetime | None] = mapped_column(TIMESTAMP(timezone=True))

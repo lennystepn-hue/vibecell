@@ -57,7 +57,7 @@ def upgrade() -> None:
         sa.Column("id", sa.String(26), primary_key=True),
         sa.Column("user_id", sa.String(26), sa.ForeignKey("users.id", ondelete="CASCADE"), nullable=False),
         sa.Column("name", sa.String(100)),
-        sa.Column("paired_at", sa.TIMESTAMP(timezone=True), nullable=False),
+        sa.Column("paired_at", sa.TIMESTAMP(timezone=True), nullable=False, server_default=sa.func.now()),
         sa.Column("last_seen_at", sa.TIMESTAMP(timezone=True)),
         sa.Column("token_hash", sa.String(64), nullable=False),
     )

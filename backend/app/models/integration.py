@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import TIMESTAMP, ForeignKey, String, Text
+from sqlalchemy import TIMESTAMP, ForeignKey, String, Text, func
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -22,7 +22,7 @@ class Integration(Base):
     config: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, default=dict, server_default="{}")
     token_ciphertext: Mapped[str | None] = mapped_column(Text)
     connected_at: Mapped[datetime] = mapped_column(
-        TIMESTAMP(timezone=True), nullable=False, server_default="NOW()"
+        TIMESTAMP(timezone=True), nullable=False, server_default=func.now()
     )
 
 
@@ -35,5 +35,5 @@ class WorkspaceKey(Base):
     dek_ciphertext: Mapped[str] = mapped_column(Text, nullable=False)
     algorithm: Mapped[str] = mapped_column(String(30), nullable=False, default="aes-256-gcm-v1")
     created_at: Mapped[datetime] = mapped_column(
-        TIMESTAMP(timezone=True), nullable=False, server_default="NOW()"
+        TIMESTAMP(timezone=True), nullable=False, server_default=func.now()
     )

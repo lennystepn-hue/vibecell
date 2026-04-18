@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import os
 from collections.abc import AsyncIterator, Iterator
+from pathlib import Path
 from typing import Any
 
 import pytest
@@ -14,6 +15,17 @@ from sqlalchemy.ext.asyncio import (
     create_async_engine,
 )
 
+# --- Set required env vars BEFORE any app module imports Settings. ---
+# Safe defaults so `from app.core.config import get_settings` works at import time.
+# HANGAR_DATABASE_URL is deliberately NOT set here; the `database_url` fixture
+# decides it per-session (testcontainer vs HANGAR_TEST_DATABASE_URL override).
+os.environ.setdefault("HANGAR_MASTER_KEY", "x" * 43)
+os.environ.setdefault("HANGAR_REDIS_URL", "redis://localhost:6379/0")
+os.environ.setdefault("HANGAR_RESEND_API_KEY", "test")
+os.environ.setdefault("HANGAR_GITHUB_CLIENT_ID", "test")
+os.environ.setdefault("HANGAR_GITHUB_CLIENT_SECRET", "test")
+os.environ.setdefault("HANGAR_BASE_URL", "http://localhost:3000")
+
 # Lazy-import so tests that don't need DB don't pay testcontainers startup cost.
 _pg_container: Any = None
 
@@ -23,13 +35,18 @@ def _start_testcontainer_postgres() -> str:
     from testcontainers.postgres import PostgresContainer
 
     global _pg_container
-    _pg_container = PostgresContainer("postgres:16-alpine", driver=None)
-    _pg_container.start()
-    host = _pg_container.get_container_host_ip()
-    port = _pg_container.get_exposed_port(5432)
-    user = _pg_container.username
-    password = _pg_container.password
-    dbname = _pg_container.dbname
+    container = PostgresContainer("postgres:16-alpine", driver=None)
+    try:
+        container.start()
+    except Exception:
+        _pg_container = None
+        raise
+    _pg_container = container
+    host = container.get_container_host_ip()
+    port = container.get_exposed_port(5432)
+    user = container.username
+    password = container.password
+    dbname = container.dbname
     return f"postgresql+asyncpg://{user}:{password}@{host}:{port}/{dbname}"
 
 
@@ -57,34 +74,27 @@ def database_url() -> str:
 
 @pytest_asyncio.fixture(scope="session")
 async def engine(database_url: str) -> AsyncIterator[AsyncEngine]:
-    """Session-scoped async engine. Creates schema once; tests run in wrapping transactions."""
-    from app.models.base import Base
-
-    eng = create_async_engine(database_url, echo=False, pool_pre_ping=True)
-
-    # Apply all Alembic migrations to establish schema (incl. raw-SQL GIN index).
-    import os
-    from pathlib import Path
-
+    """Session-scoped async engine. Creates schema via alembic upgrade once;
+    tests run in wrapping transactions that get rolled back at function scope."""
     from alembic.config import Config
 
     from alembic import command
+    from app.core.config import get_settings
+    from app.models.base import Base
 
+    # Surface the chosen DB URL to both Alembic env.py and the app's Settings.
     os.environ["HANGAR_DATABASE_URL"] = database_url
-    os.environ.setdefault("HANGAR_MASTER_KEY", "x" * 43)
-    os.environ.setdefault("HANGAR_REDIS_URL", "redis://localhost:6379/0")
-    os.environ.setdefault("HANGAR_RESEND_API_KEY", "test")
-    os.environ.setdefault("HANGAR_GITHUB_CLIENT_ID", "test")
-    os.environ.setdefault("HANGAR_GITHUB_CLIENT_SECRET", "test")
-    os.environ.setdefault("HANGAR_BASE_URL", "http://localhost:3000")
+    get_settings.cache_clear()
 
-    # Drop everything first (in case of rerun)
+    eng = create_async_engine(database_url, echo=False, pool_pre_ping=True)
+
+    # Drop any lingering schema (rerun safety), then apply all migrations.
     async with eng.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
 
-    cfg = Config(str(Path(__file__).parent.parent / "alembic.ini"))
-    cfg.set_main_option("script_location", str(Path(__file__).parent.parent / "alembic"))
-    # Ensure the env loads fresh with the right DB URL:
+    alembic_root = Path(__file__).parent.parent
+    cfg = Config(str(alembic_root / "alembic.ini"))
+    cfg.set_main_option("script_location", str(alembic_root / "alembic"))
     command.upgrade(cfg, "head")
 
     yield eng

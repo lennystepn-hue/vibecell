@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import TIMESTAMP, ForeignKey, Integer, String, Text, UniqueConstraint
+from sqlalchemy import TIMESTAMP, ForeignKey, Integer, String, Text, UniqueConstraint, func
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -42,7 +42,7 @@ class ActiveProject(Base):
         String(26), ForeignKey("projects.id", ondelete="CASCADE"), nullable=False
     )
     set_at: Mapped[datetime] = mapped_column(
-        TIMESTAMP(timezone=True), nullable=False, server_default="NOW()"
+        TIMESTAMP(timezone=True), nullable=False, server_default=func.now()
     )
 
 
@@ -102,15 +102,12 @@ class ProjectContext(Base):
     known_issues: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, default=list, server_default="[]")
     blocked_by: Mapped[str | None] = mapped_column(Text)
     updated_at: Mapped[datetime] = mapped_column(
-        TIMESTAMP(timezone=True), nullable=False, server_default="NOW()"
+        TIMESTAMP(timezone=True), nullable=False, server_default=func.now()
     )
 
 
 class ProjectLink(Base):
     __tablename__ = "project_links"
-    __table_args__ = (
-        # project-scoped index on kind for "all stripe links for a project"
-    )
 
     id: Mapped[str] = ulid_pk()
     project_id: Mapped[str] = mapped_column(

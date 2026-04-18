@@ -1,3 +1,6 @@
+from __future__ import annotations
+
+import asyncio
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
@@ -28,20 +31,23 @@ def make_session_factory(engine: AsyncEngine) -> async_sessionmaker[AsyncSession
 
 _engine: AsyncEngine | None = None
 _session_factory: async_sessionmaker[AsyncSession] | None = None
+_init_lock = asyncio.Lock()
 
 
-def _ensure_initialised() -> async_sessionmaker[AsyncSession]:
+async def _ensure_initialised() -> async_sessionmaker[AsyncSession]:
     global _engine, _session_factory
     if _session_factory is None:
-        _engine = make_engine()
-        _session_factory = make_session_factory(_engine)
+        async with _init_lock:
+            if _session_factory is None:
+                _engine = make_engine()
+                _session_factory = make_session_factory(_engine)
     return _session_factory
 
 
 @asynccontextmanager
 async def session_scope() -> AsyncIterator[AsyncSession]:
     """Context-managed async session; commits on clean exit, rolls back on error."""
-    factory = _ensure_initialised()
+    factory = await _ensure_initialised()
     async with factory() as session:
         try:
             yield session
@@ -53,6 +59,6 @@ async def session_scope() -> AsyncIterator[AsyncSession]:
 
 async def get_db() -> AsyncIterator[AsyncSession]:
     """FastAPI dependency-injection async generator."""
-    factory = _ensure_initialised()
+    factory = await _ensure_initialised()
     async with factory() as session:
         yield session
