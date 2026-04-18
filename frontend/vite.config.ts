@@ -15,6 +15,7 @@ export default defineConfig({
       "/api": { target: "http://localhost:8000", changeOrigin: false },
     },
   },
+  // @ts-expect-error vitest 2.x augments vite 5's UserConfig; project uses vite 6
   test: {
     environment: "jsdom",
     globals: true,
