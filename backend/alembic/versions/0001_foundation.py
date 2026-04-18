@@ -251,6 +251,100 @@ def upgrade() -> None:
         sa.Column("created_at", sa.TIMESTAMP(timezone=True), nullable=False, server_default=sa.func.now()),
     )
 
+    # --- seed stack_items ---
+    # Canonical catalog of commonly used tech, pre-populated so project_stack
+    # chips resolve against shared entities from day one.
+    stack_seed = [
+        # frontend
+        ("nextjs", "Next.js", "frontend"),
+        ("react", "React", "frontend"),
+        ("vue", "Vue", "frontend"),
+        ("svelte", "Svelte", "frontend"),
+        ("sveltekit", "SvelteKit", "frontend"),
+        ("nuxt", "Nuxt", "frontend"),
+        ("remix", "Remix", "frontend"),
+        ("astro", "Astro", "frontend"),
+        ("tailwind", "Tailwind CSS", "lib"),
+        ("shadcn", "shadcn/ui", "lib"),
+        ("shadcn-vue", "shadcn-vue", "lib"),
+        ("radix", "Radix UI", "lib"),
+        ("lucide", "Lucide Icons", "lib"),
+        # backend
+        ("fastapi", "FastAPI", "backend"),
+        ("django", "Django", "backend"),
+        ("flask", "Flask", "backend"),
+        ("rails", "Rails", "backend"),
+        ("express", "Express", "backend"),
+        ("hono", "Hono", "backend"),
+        ("elysia", "Elysia", "backend"),
+        ("nestjs", "NestJS", "backend"),
+        ("trpc", "tRPC", "lib"),
+        # db
+        ("postgres", "Postgres", "db"),
+        ("mysql", "MySQL", "db"),
+        ("sqlite", "SQLite", "db"),
+        ("supabase", "Supabase", "service"),
+        ("planetscale", "PlanetScale", "service"),
+        ("neon", "Neon", "service"),
+        ("turso", "Turso", "service"),
+        ("redis", "Redis", "db"),
+        # deploy / infra
+        ("hetzner", "Hetzner", "deploy"),
+        ("vercel", "Vercel", "deploy"),
+        ("netlify", "Netlify", "deploy"),
+        ("fly", "Fly.io", "deploy"),
+        ("railway", "Railway", "deploy"),
+        ("cloudflare", "Cloudflare", "service"),
+        ("aws", "AWS", "deploy"),
+        ("gcp", "Google Cloud", "deploy"),
+        ("docker", "Docker", "service"),
+        # services
+        ("stripe", "Stripe", "service"),
+        ("resend", "Resend", "service"),
+        ("postmark", "Postmark", "service"),
+        ("plausible", "Plausible", "service"),
+        ("posthog", "PostHog", "service"),
+        ("sentry", "Sentry", "service"),
+        ("lemon", "Lemon Squeezy", "service"),
+        ("paddle", "Paddle", "service"),
+        # AI providers
+        ("anthropic", "Anthropic", "service"),
+        ("openai", "OpenAI", "service"),
+        ("groq", "Groq", "service"),
+        ("replicate", "Replicate", "service"),
+        ("fireworks", "Fireworks", "service"),
+        ("together", "Together", "service"),
+        ("openrouter", "OpenRouter", "service"),
+        ("perplexity", "Perplexity", "service"),
+        # AI models
+        ("claude", "Claude", "model"),
+        ("claude-opus-4-7", "Claude Opus 4.7", "model"),
+        ("claude-sonnet-4-6", "Claude Sonnet 4.6", "model"),
+        ("gpt-4", "GPT-4", "model"),
+        ("gpt-4o", "GPT-4o", "model"),
+        ("o1", "o1", "model"),
+        ("gemini", "Gemini", "model"),
+        ("llama-3", "Llama 3", "model"),
+    ]
+
+    # Use the ulid module via python-side import in the migration
+    from ulid import ULID
+
+    stack_table = sa.table(
+        "stack_items",
+        sa.column("id", sa.String),
+        sa.column("slug", sa.String),
+        sa.column("name", sa.String),
+        sa.column("kind", sa.String),
+    )
+    op.bulk_insert(
+        stack_table,
+        [
+            {"id": str(ULID()), "slug": slug, "name": name, "kind": kind}
+            for slug, name, kind in stack_seed
+        ],
+    )
+
 
 def downgrade() -> None:
     op.drop_table("workspace_keys")
