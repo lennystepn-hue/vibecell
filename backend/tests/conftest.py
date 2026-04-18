@@ -3,13 +3,19 @@ from __future__ import annotations
 import asyncio
 import os
 from collections.abc import AsyncIterator, Iterator
+from typing import Any
 
 import pytest
 import pytest_asyncio
-from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.ext.asyncio import (
+    AsyncEngine,
+    AsyncSession,
+    async_sessionmaker,
+    create_async_engine,
+)
 
 # Lazy-import so tests that don't need DB don't pay testcontainers startup cost.
-_pg_container = None  # type: ignore[var-annotated]
+_pg_container: Any = None
 
 
 def _start_testcontainer_postgres() -> str:

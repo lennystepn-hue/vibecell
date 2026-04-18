@@ -1,0 +1,85 @@
+from datetime import datetime
+from typing import Any
+
+from sqlalchemy import TIMESTAMP, ForeignKey, String
+from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.orm import Mapped, mapped_column
+
+from app.models.base import Base, TimestampMixin, ulid_pk
+
+
+class User(Base, TimestampMixin):
+    __tablename__ = "users"
+
+    id: Mapped[str] = ulid_pk()
+    email: Mapped[str] = mapped_column(String(320), unique=True, nullable=False, index=True)
+    name: Mapped[str | None] = mapped_column(String(200))
+    handle: Mapped[str | None] = mapped_column(String(50), unique=True)
+    passkey_credentials: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
+
+
+class Workspace(Base, TimestampMixin):
+    __tablename__ = "workspaces"
+
+    id: Mapped[str] = ulid_pk()
+    slug: Mapped[str] = mapped_column(String(50), unique=True, nullable=False, index=True)
+    name: Mapped[str] = mapped_column(String(200), nullable=False)
+    owner_id: Mapped[str] = mapped_column(
+        String(26), ForeignKey("users.id", ondelete="RESTRICT"), nullable=False
+    )
+    plan: Mapped[str] = mapped_column(String(20), nullable=False, default="free")
+
+
+class WorkspaceMember(Base):
+    __tablename__ = "workspace_members"
+
+    workspace_id: Mapped[str] = mapped_column(
+        String(26), ForeignKey("workspaces.id", ondelete="CASCADE"), primary_key=True
+    )
+    user_id: Mapped[str] = mapped_column(
+        String(26), ForeignKey("users.id", ondelete="CASCADE"), primary_key=True
+    )
+    role: Mapped[str] = mapped_column(String(20), nullable=False, default="owner")
+
+
+class CliDevice(Base):
+    __tablename__ = "cli_devices"
+
+    id: Mapped[str] = ulid_pk()
+    user_id: Mapped[str] = mapped_column(
+        String(26), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+    name: Mapped[str | None] = mapped_column(String(100))
+    paired_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), nullable=False)
+    last_seen_at: Mapped[datetime | None] = mapped_column(TIMESTAMP(timezone=True))
+    token_hash: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+
+
+class AuditLog(Base):
+    __tablename__ = "audit_log"
+
+    id: Mapped[str] = ulid_pk()
+    workspace_id: Mapped[str] = mapped_column(
+        String(26), ForeignKey("workspaces.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True), nullable=False, server_default="NOW()"
+    )
+    actor: Mapped[str] = mapped_column(String(100), nullable=False)
+    op: Mapped[str] = mapped_column(String(20), nullable=False)
+    entity: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
+    entity_id: Mapped[str] = mapped_column(String(26), nullable=False, index=True)
+    diff: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
+
+
+class MagicLinkToken(Base):
+    __tablename__ = "magic_link_tokens"
+
+    id: Mapped[str] = ulid_pk()
+    email: Mapped[str] = mapped_column(String(320), nullable=False, index=True)
+    token_hash: Mapped[str] = mapped_column(String(64), nullable=False, unique=True, index=True)
+    created_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True), nullable=False, server_default="NOW()"
+    )
+    expires_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), nullable=False, index=True)
+    consumed_at: Mapped[datetime | None] = mapped_column(TIMESTAMP(timezone=True))

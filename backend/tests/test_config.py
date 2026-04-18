@@ -13,7 +13,7 @@ def test_settings_loads_from_env(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("HANGAR_GITHUB_CLIENT_SECRET", "gh_secret")
     monkeypatch.setenv("HANGAR_BASE_URL", "http://localhost:3000")
 
-    settings = Settings()
+    settings = Settings()  # type: ignore[call-arg]
 
     assert settings.database_url == "postgresql+asyncpg://u:p@h:5432/db"
     assert settings.redis_url == "redis://localhost:6379/0"
@@ -31,4 +31,4 @@ def test_settings_rejects_missing_required(monkeypatch: pytest.MonkeyPatch) -> N
         monkeypatch.delenv(var, raising=False)
 
     with pytest.raises(ValidationError):
-        Settings()
+        Settings()  # type: ignore[call-arg]
