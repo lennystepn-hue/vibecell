@@ -1,0 +1,133 @@
+"""Magic-link token issuance and verification + first-login workspace bootstrap."""
+from __future__ import annotations
+
+import hashlib
+import re
+import secrets
+from datetime import UTC, datetime, timedelta
+
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.core.config import get_settings
+from app.core.crypto import generate_dek, wrap_dek
+from app.core.errors import UnauthorizedError, ValidationError
+from app.core.session import SessionPayload, create_session
+from app.core.ulid import new_ulid
+from app.models import MagicLinkToken, User, Workspace, WorkspaceKey, WorkspaceMember
+
+_MAGIC_LINK_TTL_MINUTES = 15
+_SLUG_RE = re.compile(r"[^a-z0-9-]")
+
+
+def _hash_token(raw: str) -> str:
+    return hashlib.sha256(raw.encode("utf-8")).hexdigest()
+
+
+async def issue_magic_link(session: AsyncSession, *, email: str) -> str:
+    """Create a magic-link token for `email` and return the RAW token (caller sends it in URL)."""
+    raw = secrets.token_urlsafe(32)
+    token_hash = _hash_token(raw)
+    expires_at = datetime.now(UTC) + timedelta(minutes=_MAGIC_LINK_TTL_MINUTES)
+
+    session.add(MagicLinkToken(
+        id=new_ulid(),
+        email=email.strip().lower(),
+        token_hash=token_hash,
+        expires_at=expires_at,
+    ))
+    await session.flush()
+    return raw
+
+
+def _derive_workspace_slug(email: str) -> str:
+    """Deterministic default-workspace slug from email local-part."""
+    local = email.split("@", 1)[0].lower()
+    slug = _SLUG_RE.sub("-", local)[:20].strip("-")
+    if not slug:
+        slug = "ws"
+    return slug
+
+
+async def _unique_slug(session: AsyncSession, desired: str) -> str:
+    """Append -2, -3, ... if `desired` is taken."""
+    slug = desired
+    suffix = 1
+    while True:
+        result = await session.execute(select(Workspace.id).where(Workspace.slug == slug))
+        if result.first() is None:
+            return slug
+        suffix += 1
+        slug = f"{desired}-{suffix}"
+        if len(slug) > 50:
+            slug = slug[:50]
+
+
+async def verify_magic_link(session: AsyncSession, *, raw_token: str) -> str:
+    """Consume a raw magic-link token and return a session_id (creating user/workspace on first login)."""
+    if not raw_token or len(raw_token) < 20:
+        raise ValidationError(detail="invalid token")
+
+    token_hash = _hash_token(raw_token)
+    result = await session.execute(
+        select(MagicLinkToken).where(MagicLinkToken.token_hash == token_hash)
+    )
+    token = result.scalar_one_or_none()
+    if token is None:
+        raise UnauthorizedError(detail="invalid or already-used link")
+    if token.consumed_at is not None:
+        raise UnauthorizedError(detail="link already used")
+    if token.expires_at < datetime.now(UTC):
+        raise UnauthorizedError(detail="link expired")
+
+    email = token.email
+
+    # Find or create user
+    user_result = await session.execute(select(User).where(User.email == email))
+    existing_user = user_result.scalar_one_or_none()
+    if existing_user is None:
+        user = User(id=new_ulid(), email=email)
+        session.add(user)
+        await session.flush()
+
+        # Create default workspace
+        desired_slug = _derive_workspace_slug(email)
+        slug = await _unique_slug(session, desired_slug)
+        workspace: Workspace = Workspace(
+            id=new_ulid(),
+            slug=slug,
+            name=desired_slug.replace("-", " ").title() or "Default",
+            owner_id=user.id,
+        )
+        session.add(workspace)
+        await session.flush()
+
+        # Owner membership
+        session.add(WorkspaceMember(workspace_id=workspace.id, user_id=user.id, role="owner"))
+
+        # DEK + wrap
+        dek = generate_dek()
+        wrapped = wrap_dek(dek, master_key_b64=get_settings().master_key)
+        session.add(WorkspaceKey(workspace_id=workspace.id, dek_ciphertext=wrapped))
+        await session.flush()
+    else:
+        user = existing_user
+        # Find this user's first workspace (they may have more later)
+        ws_result = await session.execute(
+            select(Workspace).where(Workspace.owner_id == user.id).limit(1)
+        )
+        existing_workspace = ws_result.scalar_one_or_none()
+        if existing_workspace is None:
+            raise UnauthorizedError(detail="user has no workspace")
+        workspace = existing_workspace
+
+    # Mark token consumed
+    token.consumed_at = datetime.now(UTC)
+    await session.flush()
+
+    # Create session
+    session_id = await create_session(
+        SessionPayload(user_id=user.id, workspace_id=workspace.id),
+        ttl_seconds=get_settings().session_max_age,
+    )
+    return session_id
