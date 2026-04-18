@@ -1,11 +1,39 @@
+# Superpowers
 .superpowers/
-backend/.env
-frontend/.env
-frontend/.env.local
-node_modules/
+
+# Python
 __pycache__/
 *.pyc
+*.pyo
 .venv/
-.pnpm-store/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+*.egg-info/
 dist/
+build/
+backend/.env
+backend/.env.local
+
+# Node
+node_modules/
+.pnpm-store/
+frontend/dist/
+frontend/.env
+frontend/.env.local
+frontend/coverage/
+
+# Editor
 .DS_Store
+.idea/
+.vscode/
+*.swp
+
+# Ops / local artifacts
+ops/postgres-data/
+ops/redis-data/
+ops/.last-good-sha
+
+# E2E
+test-results/
+playwright-report/
