@@ -31,17 +31,21 @@ dev = [
   "ruff>=0.8",
   "mypy>=1.13",
   "sqlalchemy[mypy]>=2.0.36",
-  "types-redis",
+  "types-redis>=4.6",
   "testcontainers[postgres,redis]>=4.8",
 ]
 
 [tool.ruff]
+src = ["."]
 line-length = 100
 target-version = "py312"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "SIM", "RUF"]
 ignore = ["E501"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["app"]
 
 [tool.mypy]
 python_version = "3.12"
@@ -51,4 +55,8 @@ plugins = ["sqlalchemy.ext.mypy.plugin"]
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
+pythonpath = ["."]
 addopts = "-v --strict-markers"
+markers = [
+  "integration: requires external services (Postgres, Redis)",
+]

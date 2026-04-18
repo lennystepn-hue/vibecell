@@ -556,7 +556,7 @@ dev = [
     { name = "ruff", specifier = ">=0.8" },
     { name = "sqlalchemy", extras = ["mypy"], specifier = ">=2.0.36" },
     { name = "testcontainers", extras = ["postgres", "redis"], specifier = ">=4.8" },
-    { name = "types-redis" },
+    { name = "types-redis", specifier = ">=4.6" },
 ]
 
 [[package]]

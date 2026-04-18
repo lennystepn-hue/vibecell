@@ -6,6 +6,10 @@ on:
     branches: [main]
   pull_request:
 
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   backend:
     name: Backend
@@ -49,7 +53,7 @@ jobs:
         run: uv run ruff check .
       - name: Mypy
         working-directory: backend
-        run: uv run mypy app
+        run: uv run mypy app tests
       - name: Pytest
         working-directory: backend
         run: uv run pytest -v
