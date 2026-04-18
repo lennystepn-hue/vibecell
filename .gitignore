@@ -1,0 +1,11 @@
+.superpowers/
+backend/.env
+frontend/.env
+frontend/.env.local
+node_modules/
+__pycache__/
+*.pyc
+.venv/
+.pnpm-store/
+dist/
+.DS_Store
