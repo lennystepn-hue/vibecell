@@ -169,3 +169,48 @@ async def switch(
     )
     await db.commit()
     return _to_out(ctx.project)
+
+
+@router.post("/{slug}/repo/resync", response_model=ProjectOut)
+async def resync_repo(
+    ctx: Annotated[ProjectContext, Depends(require_project)],
+    db: Annotated[AsyncSession, Depends(get_db)],
+) -> ProjectOut:
+    from sqlalchemy import select
+
+    from app.models import ProjectRepo
+    from app.services import github as github_svc
+    from app.services import integration as integ_svc
+
+    # Find the first repo with a GitHub-style git_url
+    repos = list((await db.execute(
+        select(ProjectRepo)
+        .where(ProjectRepo.project_id == ctx.project.id)
+        .order_by(ProjectRepo.id.asc())
+    )).scalars())
+
+    gh_repo = next((r for r in repos if r.git_url and "github.com" in r.git_url), None)
+    if gh_repo is None:
+        return _to_out(ctx.project)
+
+    # Parse owner/name out of git_url (supports https and ssh forms)
+    import re
+    m = re.search(r"github\.com[:/]([^/]+)/([^/.]+)(?:\.git)?$", gh_repo.git_url or "")
+    if not m:
+        return _to_out(ctx.project)
+    owner, name = m.group(1), m.group(2)
+
+    token = await integ_svc.get_decrypted_token(
+        db, workspace_id=ctx.workspace.id, kind="github",
+    )
+    gh = await github_svc.get_repo(token, owner, name)
+    norm = github_svc.normalize_repo(gh)
+
+    gh_repo.default_branch = norm["default_branch"]
+    gh_repo.primary_lang = norm.get("language")
+    gh_repo.license = norm.get("license_spdx")
+    if not ctx.project.pitch and norm.get("description"):
+        ctx.project.pitch = norm["description"]
+
+    await db.commit()
+    return _to_out(ctx.project)
