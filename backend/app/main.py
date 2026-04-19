@@ -5,6 +5,7 @@ from app.api.v1.auth import router as auth_router
 from app.api.v1.me import router as me_router
 from app.api.v1.project_children import router as project_children_router
 from app.api.v1.projects import router as projects_router
+from app.api.v1.stack_items import router as stack_items_router
 from app.api.v1.workspaces import router as workspaces_router
 from app.core.audit import install_audit_listener
 from app.core.middleware import install_session_middleware
@@ -21,6 +22,7 @@ app.include_router(me_router)
 app.include_router(workspaces_router)
 app.include_router(projects_router)
 app.include_router(project_children_router)
+app.include_router(stack_items_router)
 
 
 @app.get("/api/v1/healthz")
