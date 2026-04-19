@@ -1,12 +1,11 @@
-//! MCP tool specs + dispatcher. 17 tools covering the core read/write surface
+//! MCP tool specs + dispatcher. 18 tools covering the core read/write surface
 //! Claude Code needs to drive Hangar during a coding session.
 //!
-//! Stubbed tools (log_session / decision / idea / note_append) return success
-//! but stash data into workaround fields because the sessions / decisions /
-//! ideas / notes tables aren't in Spec 1. They all carry TODO(spec-2) markers
-//! for when the real tables land.
-//!
-//! Bundle 2 adds hangar.run / hangar.claude_md / hangar.handover.
+//! Spec 2 Bundle B (this commit) replaces the previous stubs for
+//! log_session / decision / idea / note_append with real POSTs to the new
+//! backend endpoints, and adds `hangar.ship`. The pre-existing `hangar.search`
+//! is repurposed from a project-substring search to a federated FTS call
+//! against `/api/v1/search`.
 
 use anyhow::{bail, Context, Result};
 use serde_json::{json, Value};
@@ -60,10 +59,13 @@ pub fn tool_specs() -> Value {
         },
         {
             "name": "hangar.search",
-            "description": "Search projects by substring (ilike on name / pitch).",
+            "description": "Federated full-text search across the workspace: projects, sessions, decisions, ideas, notes. Returns ranked hits with snippets.",
             "inputSchema": {
                 "type": "object",
-                "properties": {"q": {"type": "string"}},
+                "properties": {
+                    "q": {"type": "string"},
+                    "limit": {"type": "integer"}
+                },
                 "required": ["q"]
             }
         },
@@ -86,7 +88,7 @@ pub fn tool_specs() -> Value {
         },
         {
             "name": "hangar.log_session",
-            "description": "Log a session summary. TODO(spec-2): will write to sessions table. For now, writes summary to context.current_focus and next_step to context.next_step.",
+            "description": "Log a coding session: summary + optional files_touched + commits + next_step. Writes to the sessions table with source='skill'.",
             "inputSchema": {
                 "type": "object",
                 "properties": {
@@ -115,7 +117,7 @@ pub fn tool_specs() -> Value {
         },
         {
             "name": "hangar.decision",
-            "description": "Record an architectural decision. TODO(spec-2): will write to decisions table. For now, appends to context.known_issues as 'DECISION [title]: decision'.",
+            "description": "Record an architectural decision (ADR-lite) on the active project: title, context, decision, consequences, reconsider_if.",
             "inputSchema": {
                 "type": "object",
                 "properties": {
@@ -130,20 +132,35 @@ pub fn tool_specs() -> Value {
         },
         {
             "name": "hangar.idea",
-            "description": "Capture an idea for the active project. TODO(spec-2): will write to ideas table. For now, appends to context.open_questions prefixed 'IDEA: '.",
+            "description": "Capture an idea. If `project` slug is supplied, files it against that project; otherwise goes to the workspace inbox.",
             "inputSchema": {
                 "type": "object",
-                "properties": {"text": {"type": "string"}},
-                "required": ["text"]
+                "properties": {
+                    "body": {"type": "string"},
+                    "project": {"type": "string"}
+                },
+                "required": ["body"]
             }
         },
         {
             "name": "hangar.note_append",
-            "description": "Append a markdown note to the active project. TODO(spec-2): will write to notes table. For now, appends to pitch (truncated to 2000 chars).",
+            "description": "Append a markdown block to the active project's notes, separated by a timestamped divider.",
             "inputSchema": {
                 "type": "object",
                 "properties": {"markdown": {"type": "string"}},
                 "required": ["markdown"]
+            }
+        },
+        {
+            "name": "hangar.ship",
+            "description": "Record a ship event for the active project: version, summary, changelog_md (markdown). Auto-creates a lifecycle_event.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "version": {"type": "string"},
+                    "summary": {"type": "string"},
+                    "changelog_md": {"type": "string"}
+                }
             }
         },
         {
@@ -205,6 +222,7 @@ pub async fn dispatch(state: &AppState, name: &str, args: &Value) -> Result<Stri
         "hangar.decision" => decision(state, args).await,
         "hangar.idea" => idea(state, args).await,
         "hangar.note_append" => note_append(state, args).await,
+        "hangar.ship" => ship(state, args).await,
         "hangar.status" => set_status(state, args).await,
         "hangar.run" => run_tool(state, args).await,
         "hangar.claude_md" => claude_md(state, args).await,
@@ -346,12 +364,9 @@ async fn brief(state: &AppState, args: &Value) -> Result<String> {
 
 async fn search(state: &AppState, args: &Value) -> Result<String> {
     let q = arg_str_required(args, "q")?;
-    let page = state
-        .cloud
-        .list_projects(None, None, Some(q), Some(200))
-        .await?;
-    let items = page.get("items").cloned().unwrap_or(json!([]));
-    Ok(items.to_string())
+    let limit = args.get("limit").and_then(|v| v.as_i64()).unwrap_or(50);
+    let hits = state.cloud.search_all(q, limit).await?;
+    Ok(json!({ "results": hits }).to_string())
 }
 
 async fn recent_projects(state: &AppState, args: &Value) -> Result<String> {
@@ -378,9 +393,6 @@ async fn switch(state: &AppState, args: &Value) -> Result<String> {
     let out = state.cloud.switch_project(slug).await?;
     // Mirror into local cache so hangar.active / hangar.ping see the change.
     if let Ok(conn) = crate::cache::open() {
-        // workspace_id is not part of the /switch response — we scope by the
-        // currently-paired workspace, read from /me on first call. Use a
-        // stable placeholder key if me() fails.
         let ws_id = state
             .cloud
             .me()
@@ -398,23 +410,21 @@ async fn switch(state: &AppState, args: &Value) -> Result<String> {
     Ok(out.to_string())
 }
 
-// TODO(spec-2): replace with POST /sessions once the sessions table exists.
 async fn log_session(state: &AppState, args: &Value) -> Result<String> {
     let summary = arg_str_required(args, "summary")?;
-    let next_step = arg_str(args, "next_step");
     let slug = resolve_slug(state, args).await?;
-    let mut patch = json!({"current_focus": summary});
-    if let Some(ns) = next_step {
-        patch["next_step"] = json!(ns);
-    }
-    let result = state.cloud.patch_context(&slug, &patch).await?;
-    Ok(json!({
-        "ok": true,
-        "stub": "spec-2",
-        "note": "session logged into context.current_focus + next_step until sessions table exists",
-        "context": result
-    })
-    .to_string())
+    let now = chrono::Utc::now().to_rfc3339();
+    let body = json!({
+        "started_at": now,
+        "ended_at": now,
+        "summary": summary,
+        "next_step": arg_str(args, "next_step"),
+        "files_touched": args.get("files_touched").cloned().unwrap_or(json!([])),
+        "commits": args.get("commits").cloned().unwrap_or(json!([])),
+        "source": "skill",
+    });
+    let out = state.cloud.create_session(&slug, &body).await?;
+    Ok(out.to_string())
 }
 
 async fn update_context(state: &AppState, args: &Value) -> Result<String> {
@@ -428,64 +438,61 @@ async fn update_context(state: &AppState, args: &Value) -> Result<String> {
     Ok(out.to_string())
 }
 
-// TODO(spec-2): replace with POST /decisions.
 async fn decision(state: &AppState, args: &Value) -> Result<String> {
     let title = arg_str_required(args, "title")?;
     let decision = arg_str_required(args, "decision")?;
     let slug = resolve_slug(state, args).await?;
-
-    let current = state.cloud.get_context(&slug).await.unwrap_or(json!({}));
-    let mut known: Vec<Value> = current
-        .get("known_issues")
-        .and_then(|v| v.as_array())
-        .cloned()
-        .unwrap_or_default();
-    known.push(json!(format!("DECISION [{title}]: {decision}")));
-
-    let patch = json!({"known_issues": known});
-    let out = state.cloud.patch_context(&slug, &patch).await?;
-    Ok(json!({"ok": true, "stub": "spec-2", "context": out}).to_string())
+    let body = json!({
+        "title": title,
+        "decision": decision,
+        "context": arg_str(args, "context"),
+        "consequences": arg_str(args, "consequences"),
+        "reconsider_if": arg_str(args, "reconsider_if"),
+    });
+    let out = state.cloud.create_decision(&slug, &body).await?;
+    Ok(out.to_string())
 }
 
-// TODO(spec-2): replace with POST /ideas.
 async fn idea(state: &AppState, args: &Value) -> Result<String> {
-    let text = arg_str_required(args, "text")?;
-    let slug = resolve_slug(state, args).await?;
-
-    let current = state.cloud.get_context(&slug).await.unwrap_or(json!({}));
-    let mut open_q: Vec<Value> = current
-        .get("open_questions")
-        .and_then(|v| v.as_array())
-        .cloned()
-        .unwrap_or_default();
-    open_q.push(json!(format!("IDEA: {text}")));
-
-    let patch = json!({"open_questions": open_q});
-    let out = state.cloud.patch_context(&slug, &patch).await?;
-    Ok(json!({"ok": true, "stub": "spec-2", "context": out}).to_string())
+    let body_text = arg_str_required(args, "body")?;
+    let project = arg_str(args, "project");
+    let payload = json!({
+        "body": body_text,
+        "source": "skill",
+    });
+    let out = if let Some(slug) = project {
+        state.cloud.create_idea_project(slug, &payload).await?
+    } else {
+        state.cloud.create_idea_workspace(&payload).await?
+    };
+    Ok(out.to_string())
 }
 
-// TODO(spec-2): replace with POST /notes.
 async fn note_append(state: &AppState, args: &Value) -> Result<String> {
     let markdown = arg_str_required(args, "markdown")?;
     let slug = resolve_slug(state, args).await?;
-
-    // Append markdown to project.pitch (clamped to 2000 chars per backend constraint).
-    let project = state.cloud.get_project(&slug).await?;
-    let existing = project
-        .get("pitch")
-        .and_then(|v| v.as_str())
-        .unwrap_or("")
-        .to_string();
-    let joined = if existing.is_empty() {
-        markdown.to_string()
+    let existing = state.cloud.get_notes(&slug).await.unwrap_or_default();
+    let stamp = chrono::Utc::now().to_rfc3339();
+    let appended = if existing.trim().is_empty() {
+        format!("{stamp}\n{markdown}")
     } else {
-        format!("{existing}\n\n{markdown}")
+        format!("{existing}\n\n---\n\n{stamp}\n{markdown}")
     };
-    let clamped: String = joined.chars().take(2000).collect();
-    let patch = json!({"pitch": clamped});
-    let out = state.cloud.patch_project(&slug, &patch).await?;
-    Ok(json!({"ok": true, "stub": "spec-2", "project": out}).to_string())
+    let out = state.cloud.put_notes(&slug, &appended).await?;
+    Ok(out.to_string())
+}
+
+async fn ship(state: &AppState, args: &Value) -> Result<String> {
+    let slug = resolve_slug(state, args).await?;
+    let now = chrono::Utc::now().to_rfc3339();
+    let body = json!({
+        "shipped_at": now,
+        "version": arg_str(args, "version"),
+        "summary": arg_str(args, "summary"),
+        "changelog_md": arg_str(args, "changelog_md"),
+    });
+    let out = state.cloud.create_ship(&slug, &body).await?;
+    Ok(out.to_string())
 }
 
 async fn set_status(state: &AppState, args: &Value) -> Result<String> {
@@ -830,6 +837,29 @@ pub(crate) fn render_handover(full: &Value) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn tool_specs_has_18_tools() {
+        let specs = tool_specs();
+        let arr = specs.as_array().expect("tool_specs is array");
+        assert_eq!(arr.len(), 18, "expected 18 MCP tools");
+        let names: Vec<&str> = arr
+            .iter()
+            .filter_map(|t| t.get("name").and_then(|v| v.as_str()))
+            .collect();
+        // Spec 2 new additions.
+        assert!(names.contains(&"hangar.ship"));
+        // Existing write tools still present (no removals).
+        for required in [
+            "hangar.log_session",
+            "hangar.decision",
+            "hangar.idea",
+            "hangar.note_append",
+            "hangar.search",
+        ] {
+            assert!(names.contains(&required), "missing {required}");
+        }
+    }
 
     #[test]
     fn claude_md_has_all_sections() {

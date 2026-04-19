@@ -229,6 +229,7 @@ impl Client {
         Self::check(r).await
     }
 
+    #[allow(dead_code)] // retained for future MCP tools
     pub async fn get_context(&self, slug: &str) -> Result<Value> {
         let r = self
             .http
@@ -308,6 +309,99 @@ impl Client {
             );
         }
         Ok(())
+    }
+
+    // ---- Spec 2: ship-loop writes (sessions / decisions / ideas / notes / ships / search) ----
+
+    pub async fn create_session(&self, slug: &str, body: &Value) -> Result<Value> {
+        let r = self
+            .http
+            .post(self.url(&format!("/api/v1/projects/{slug}/sessions")))
+            .bearer_auth(&self.token)
+            .json(body)
+            .send()
+            .await?;
+        Self::check(r).await
+    }
+
+    pub async fn create_decision(&self, slug: &str, body: &Value) -> Result<Value> {
+        let r = self
+            .http
+            .post(self.url(&format!("/api/v1/projects/{slug}/decisions")))
+            .bearer_auth(&self.token)
+            .json(body)
+            .send()
+            .await?;
+        Self::check(r).await
+    }
+
+    pub async fn create_idea_workspace(&self, body: &Value) -> Result<Value> {
+        let r = self
+            .http
+            .post(self.url("/api/v1/ideas"))
+            .bearer_auth(&self.token)
+            .json(body)
+            .send()
+            .await?;
+        Self::check(r).await
+    }
+
+    pub async fn create_idea_project(&self, slug: &str, body: &Value) -> Result<Value> {
+        let r = self
+            .http
+            .post(self.url(&format!("/api/v1/projects/{slug}/ideas")))
+            .bearer_auth(&self.token)
+            .json(body)
+            .send()
+            .await?;
+        Self::check(r).await
+    }
+
+    pub async fn get_notes(&self, slug: &str) -> Result<String> {
+        let r = self
+            .http
+            .get(self.url(&format!("/api/v1/projects/{slug}/notes")))
+            .bearer_auth(&self.token)
+            .send()
+            .await?;
+        let v = Self::check(r).await?;
+        Ok(v.get("markdown")
+            .and_then(|x| x.as_str())
+            .unwrap_or("")
+            .to_string())
+    }
+
+    pub async fn put_notes(&self, slug: &str, markdown: &str) -> Result<Value> {
+        let r = self
+            .http
+            .put(self.url(&format!("/api/v1/projects/{slug}/notes")))
+            .bearer_auth(&self.token)
+            .json(&serde_json::json!({ "markdown": markdown }))
+            .send()
+            .await?;
+        Self::check(r).await
+    }
+
+    pub async fn create_ship(&self, slug: &str, body: &Value) -> Result<Value> {
+        let r = self
+            .http
+            .post(self.url(&format!("/api/v1/projects/{slug}/ships")))
+            .bearer_auth(&self.token)
+            .json(body)
+            .send()
+            .await?;
+        Self::check(r).await
+    }
+
+    pub async fn search_all(&self, q: &str, limit: i64) -> Result<Value> {
+        let r = self
+            .http
+            .get(self.url("/api/v1/search"))
+            .bearer_auth(&self.token)
+            .query(&[("q", q.to_string()), ("limit", limit.to_string())])
+            .send()
+            .await?;
+        Self::check(r).await
     }
 
     #[allow(dead_code)] // used by `hangar run` + MCP tool (commit 5)
