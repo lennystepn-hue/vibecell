@@ -43,7 +43,8 @@ async def list_projects(
             raise ValidationError(detail=f"invalid cursor: {e}") from e
         stmt = stmt.where(Project.created_at < cursor_dt)
 
-    stmt = stmt.order_by(Project.created_at.desc()).limit(limit + 1)
+    # Custom position first (user drag-order), then most-recent
+    stmt = stmt.order_by(Project.position.asc(), Project.created_at.desc()).limit(limit + 1)
     rows = (await db.execute(stmt)).scalars().all()
 
     has_more = len(rows) > limit

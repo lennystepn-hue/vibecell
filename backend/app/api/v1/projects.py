@@ -48,6 +48,8 @@ def _to_out(project: Project) -> ProjectOut:
         status=project.status,
         is_public=project.is_public,
         archived_at=project.archived_at.isoformat() if project.archived_at else None,
+        group_id=project.group_id,
+        position=project.position,
     )
 
 
