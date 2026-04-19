@@ -43,6 +43,14 @@ enum Command {
         #[command(subcommand)]
         cmd: cmd::secret::SecretCommand,
     },
+    /// Run a saved project command; resolves `@label` placeholders via the secret store.
+    Run {
+        /// Command label (case-insensitive).
+        label: String,
+        /// Project slug. Defaults to the active project.
+        #[arg(long)]
+        project: Option<String>,
+    },
 }
 
 #[tokio::main]
@@ -65,9 +73,10 @@ async fn main() -> anyhow::Result<()> {
         Some(Command::McpToken(args)) => cmd::mcp_token::run(args).await,
         Some(Command::Skill { cmd }) => cmd::skill::run(cmd).await,
         Some(Command::Secret { cmd }) => cmd::secret::run(cmd).await,
+        Some(Command::Run { label, project }) => cmd::run::run(label, project).await,
         None => {
             println!(
-                "hangar {} — subcommands: pair | status | unpair | sync | daemon | mcp-token | skill | secret",
+                "hangar {} — subcommands: pair | status | unpair | sync | daemon | mcp-token | skill | secret | run",
                 env!("CARGO_PKG_VERSION")
             );
             println!("run `hangar pair` to connect this device.");

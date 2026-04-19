@@ -1,6 +1,7 @@
 pub mod daemon;
 pub mod mcp_token;
 pub mod pair;
+pub mod run;
 pub mod secret;
 pub mod skill;
 pub mod status;
