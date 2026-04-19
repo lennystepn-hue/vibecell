@@ -4,6 +4,8 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from app.schemas.tag import TagOut as TagOut  # re-export for consumers that imported from here
+
 _SLUG_RE = r"^[a-z0-9][a-z0-9-]{0,48}[a-z0-9]$"
 _VALID_STATUSES = {"idea", "building", "live", "paused", "shipped", "archived", "dead"}
 
@@ -214,14 +216,6 @@ class TagAttachIn(BaseModel):
     tag_id: str | None = None
     name: str | None = Field(default=None, max_length=100)
     color: str | None = Field(default=None, max_length=20)
-
-
-class TagOut(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
-    id: str
-    name: str
-    color: str | None = None
 
 
 class ProjectFullOut(ProjectOut):
