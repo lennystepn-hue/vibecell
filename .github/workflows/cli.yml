@@ -1,0 +1,63 @@
+name: CLI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "cli/**"
+      - ".github/workflows/cli.yml"
+  pull_request:
+    paths:
+      - "cli/**"
+      - ".github/workflows/cli.yml"
+
+concurrency:
+  group: cli-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: build (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            bin: hangar
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            bin: hangar
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            bin: hangar.exe
+    defaults:
+      run:
+        working-directory: cli
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+          components: clippy, rustfmt
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: cli -> cli/target
+      - name: rustfmt
+        run: cargo fmt -- --check
+      - name: clippy
+        run: cargo clippy --target ${{ matrix.target }} -- -D warnings
+      - name: test
+        run: cargo test --target ${{ matrix.target }}
+      - name: build release
+        run: cargo build --release --target ${{ matrix.target }}
+      - name: smoke test
+        shell: bash
+        run: ./target/${{ matrix.target }}/release/${{ matrix.bin }} --version
+      - name: upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: hangar-${{ matrix.target }}
+          path: cli/target/${{ matrix.target }}/release/${{ matrix.bin }}
+          retention-days: 7
