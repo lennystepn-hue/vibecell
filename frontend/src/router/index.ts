@@ -38,6 +38,16 @@ const router = createRouter({
       component: () => import("@/pages/ImportGitHub.vue"),
     },
     {
+      path: "/settings",
+      name: "settings",
+      component: () => import("@/pages/Settings.vue"),
+    },
+    {
+      path: "/settings/integrations",
+      name: "settings-integrations",
+      component: () => import("@/pages/SettingsIntegrations.vue"),
+    },
+    {
       path: "/:catchAll(.*)*",
       name: "not-found",
       component: () => import("@/pages/NotFound.vue"),
