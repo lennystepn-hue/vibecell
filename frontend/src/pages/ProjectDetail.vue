@@ -8,8 +8,10 @@ import ProjectContextEditor from "@/components/projects/ProjectContextEditor.vue
 import ProjectFocusCard from "@/components/projects/ProjectFocusCard.vue";
 import ProjectInfraCard from "@/components/projects/ProjectInfraCard.vue";
 import ProjectDecisionsCard from "@/components/projects/ProjectDecisionsCard.vue";
+import ProjectLaunchesCard from "@/components/projects/ProjectLaunchesCard.vue";
 import ProjectLinksCommands from "@/components/projects/ProjectLinksCommands.vue";
 import ProjectSessionsCard from "@/components/projects/ProjectSessionsCard.vue";
+import ShipButton from "@/components/projects/ShipButton.vue";
 import ProjectStackEditor from "@/components/projects/ProjectStackEditor.vue";
 import ProjectStatusDropdown from "@/components/projects/ProjectStatusDropdown.vue";
 import ProjectTagsEditor from "@/components/projects/ProjectTagsEditor.vue";
@@ -94,6 +96,7 @@ watch(
             <p v-else class="mono-label mt-2 opacity-50">// no pitch set</p>
           </div>
           <div v-if="!editingContext" class="flex flex-col items-end gap-2 self-start">
+            <ShipButton :project="projects.active" />
             <button
               type="button"
               class="mono-label hover:text-fg-body transition-colors"
@@ -159,6 +162,9 @@ watch(
           </div>
           <div class="xl:col-span-3">
             <ProjectDecisionsCard :project="projects.active" />
+          </div>
+          <div class="xl:col-span-3">
+            <ProjectLaunchesCard :project="projects.active" />
           </div>
         </div>
       </div>
