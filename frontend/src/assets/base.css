@@ -1,0 +1,100 @@
+@import "./tokens.css";
+@import "./fonts.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    color-scheme: dark;
+  }
+
+  body {
+    font-family: "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--fg-body);
+    background: var(--bg-body-to);
+    background-image: var(--bg-body);
+    background-attachment: fixed;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Tabular numerals on any monospace inputs and data displays. */
+  .mono, code, kbd, pre, [class*="font-mono"] {
+    font-family: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Default focus ring — phosphor-green. Never outline:none without replacement. */
+  :focus-visible {
+    outline: 2px solid var(--signal-green);
+    outline-offset: 2px;
+    border-radius: 3px;
+  }
+
+  /* Links default to no underline; dashed bottom-border that firms up on hover. */
+  a.link {
+    color: var(--signal-blue);
+    border-bottom: 1px dashed var(--signal-blue-bg);
+    transition: color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out);
+  }
+
+  a.link:hover {
+    color: var(--signal-blue);
+    border-bottom-color: var(--signal-blue);
+  }
+
+  /* Scrollbars subtle. */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--border-default);
+    border-radius: 8px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--border-strong);
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+}
+
+@layer components {
+  .glass {
+    background: var(--bg-surface);
+    backdrop-filter: blur(10px) saturate(1.2);
+    -webkit-backdrop-filter: blur(10px) saturate(1.2);
+    border: 1px solid var(--border-default);
+  }
+
+  .glass-hi {
+    background: var(--bg-surface-hi);
+    backdrop-filter: blur(10px) saturate(1.2);
+    -webkit-backdrop-filter: blur(10px) saturate(1.2);
+    border: 1px solid var(--border-strong);
+  }
+
+  .chrome {
+    background: var(--bg-chrome);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-color: var(--border-subtle);
+  }
+
+  /* Cockpit signature: uppercase mono-label above cards. */
+  .mono-label {
+    font-family: "Geist Mono", ui-monospace, monospace;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--fg-muted);
+  }
+}

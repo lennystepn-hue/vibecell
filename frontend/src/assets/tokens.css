@@ -1,0 +1,50 @@
+:root {
+  /* base */
+  --bg-body-from: #142132;
+  --bg-body-to: #070b10;
+  --bg-body: radial-gradient(ellipse at 20% -10%, var(--bg-body-from) 0%, var(--bg-body-to) 55%);
+  --bg-surface: rgba(20, 33, 50, 0.45);
+  --bg-surface-hi: rgba(20, 33, 50, 0.65);
+  --bg-overlay: rgba(7, 11, 16, 0.8);
+  --bg-chrome: rgba(13, 18, 26, 0.7);
+
+  /* foreground */
+  --fg-primary: #ffffff;
+  --fg-body: #cfd4dc;
+  --fg-muted: #8ba1bd;
+  --fg-subtle: #5e7088;
+  --fg-disabled: #3d4a5c;
+
+  /* signal */
+  --signal-green: #5cc8a4;
+  --signal-green-bg: rgba(92, 200, 164, 0.12);
+  --signal-amber: #f5b84a;
+  --signal-amber-bg: rgba(245, 184, 74, 0.12);
+  --signal-red: #ff5b5b;
+  --signal-red-bg: rgba(255, 91, 91, 0.12);
+  --signal-blue: #8ab4ff;
+  --signal-blue-bg: rgba(138, 180, 255, 0.08);
+
+  /* borders */
+  --border-subtle: rgba(138, 180, 255, 0.08);
+  --border-default: rgba(138, 180, 255, 0.12);
+  --border-strong: rgba(138, 180, 255, 0.18);
+
+  /* depth */
+  --glow-signal: 0 0 6px currentColor;
+
+  /* motion */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in: cubic-bezier(0.64, 0, 0.78, 0);
+  --dur-fast: 120ms;
+  --dur-med: 200ms;
+  --dur-slow: 300ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-fast: 0ms;
+    --dur-med: 0ms;
+    --dur-slow: 0ms;
+  }
+}
