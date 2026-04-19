@@ -13,7 +13,8 @@ DAY_OF_MONTH="$(date +%d)"
 DAILY_FILE="$BACKUP_DIR/daily/hangar-$DATE.sql.gz"
 
 echo "[$(date -Is)] dumping to $DAILY_FILE"
-docker compose -f /srv/hangar/ops/docker-compose.prod.yml exec -T postgres \
+docker compose --env-file /etc/hangar/hangar.env \
+  -f /srv/hangar/ops/docker-compose.prod.yml exec -T postgres \
   pg_dump -U hangar hangar \
   | gzip -9 > "$DAILY_FILE"
 

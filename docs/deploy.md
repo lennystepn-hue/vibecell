@@ -110,7 +110,8 @@ Backups land in `/srv/hangar/backups/{daily,weekly,monthly}/`.
 ### Manual restore
 
 ```bash
-docker compose -f /srv/hangar/ops/docker-compose.prod.yml exec -T postgres \
+docker compose --env-file /etc/hangar/hangar.env \
+  -f /srv/hangar/ops/docker-compose.prod.yml exec -T postgres \
   psql -U hangar -d hangar < /srv/hangar/backups/daily/hangar-2026-04-20.sql.gz.decompressed
 ```
 
@@ -118,7 +119,8 @@ Or in-place:
 
 ```bash
 gunzip -c /srv/hangar/backups/daily/hangar-YYYY-MM-DD.sql.gz \
-  | docker compose -f /srv/hangar/ops/docker-compose.prod.yml exec -T postgres \
+  | docker compose --env-file /etc/hangar/hangar.env \
+  -f /srv/hangar/ops/docker-compose.prod.yml exec -T postgres \
     psql -U hangar -d hangar
 ```
 
@@ -134,11 +136,11 @@ Point an external pinger (UptimeRobot free tier works) at:
 `deploy.sh` auto-rolls back on health-check fail. Manual rollback:
 
 ```bash
-ssh root@89.167.111.89 "cd /srv/hangar && HANGAR_SHA=<prev-sha> docker compose -f ops/docker-compose.prod.yml up -d backend frontend nginx"
+ssh root@89.167.111.89 "cd /srv/hangar && HANGAR_SHA=<prev-sha> docker compose --env-file /etc/hangar/hangar.env -f ops/docker-compose.prod.yml up -d backend frontend nginx"
 ```
 
 ## Secret rotation
 
 1. Edit `/etc/hangar/hangar.env` on the server (root:root, mode 600).
-2. `docker compose -f ops/docker-compose.prod.yml restart backend`.
+2. `docker compose --env-file /etc/hangar/hangar.env -f ops/docker-compose.prod.yml restart backend`.
 3. Verify via `/api/v1/healthz`.

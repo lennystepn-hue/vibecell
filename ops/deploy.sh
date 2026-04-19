@@ -10,24 +10,33 @@ cd "$(dirname "$0")/.."
 SHA="${1:-$(date +%s)}"
 export HANGAR_SHA="$SHA"
 
+# /etc/hangar/hangar.env holds POSTGRES_PASSWORD etc. — docker compose needs
+# --env-file for shell-style ${VAR} interpolation in the compose file.
+ENV_FILE="${HANGAR_ENV_FILE:-/etc/hangar/hangar.env}"
+if [[ ! -f "$ENV_FILE" ]]; then
+  echo "==> FATAL: $ENV_FILE not found. Create it (see docs/deploy.md)."
+  exit 1
+fi
+
+COMPOSE="docker compose --env-file $ENV_FILE -f ops/docker-compose.prod.yml"
+
 echo "==> Deploying Hangar at SHA=$SHA"
 
 # 1. Build images
 echo "==> Building backend image"
-docker compose -f ops/docker-compose.prod.yml build backend
+$COMPOSE build backend
 
 echo "==> Building frontend image"
-docker compose -f ops/docker-compose.prod.yml build frontend
+$COMPOSE build frontend
 
 # 2. Bring up dependencies (postgres + redis)
 echo "==> Starting postgres + redis"
-docker compose -f ops/docker-compose.prod.yml up -d postgres redis
+$COMPOSE up -d postgres redis
 
 # Wait for postgres healthy
 echo "==> Waiting for postgres to be healthy"
 for i in {1..30}; do
-  if docker compose -f ops/docker-compose.prod.yml ps postgres --format json \
-      | grep -q '"Health":"healthy"'; then
+  if $COMPOSE ps postgres --format json | grep -q '"Health":"healthy"'; then
     break
   fi
   sleep 1
@@ -35,11 +44,11 @@ done
 
 # 3. Run migrations
 echo "==> Running Alembic migrations"
-docker compose -f ops/docker-compose.prod.yml run --rm backend alembic upgrade head
+$COMPOSE run --rm backend alembic upgrade head
 
 # 4. Roll out backend + frontend + nginx
 echo "==> Rolling out app containers"
-docker compose -f ops/docker-compose.prod.yml up -d backend frontend nginx
+$COMPOSE up -d backend frontend nginx
 
 # 5. Health check
 sleep 5
@@ -53,7 +62,7 @@ else
   echo "==> Rolling back"
   if [[ "$PREV" != "unknown" ]]; then
     export HANGAR_SHA="$PREV"
-    docker compose -f ops/docker-compose.prod.yml up -d backend frontend nginx
+    $COMPOSE up -d backend frontend nginx
   fi
   exit 1
 fi
