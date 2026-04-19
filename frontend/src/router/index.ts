@@ -48,6 +48,11 @@ const router = createRouter({
       component: () => import("@/pages/SettingsIntegrations.vue"),
     },
     {
+      path: "/cli/pair",
+      name: "cli-pair",
+      component: () => import("@/pages/CliPair.vue"),
+    },
+    {
       path: "/:catchAll(.*)*",
       name: "not-found",
       component: () => import("@/pages/NotFound.vue"),

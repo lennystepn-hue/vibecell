@@ -613,6 +613,102 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/cli/pair/start": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Pair Start
+         * @description Anonymous — CLI calls this to obtain a device_code + user_code.
+         *
+         *     Rate-limited per IP (10/hour) to prevent code-farming.
+         */
+        post: operations["pair_start_api_v1_cli_pair_start_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/cli/pair/complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Pair Complete
+         * @description Polling endpoint for the CLI. Returns 202 while pending, 200 with bearer token when ready.
+         */
+        post: operations["pair_complete_api_v1_cli_pair_complete_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/cli/pair/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Pair Confirm
+         * @description Browser-side confirm: signed-in user submits the code from their terminal.
+         */
+        post: operations["pair_confirm_api_v1_cli_pair_confirm_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/cli/devices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Devices */
+        get: operations["list_devices_api_v1_cli_devices_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/cli/devices/{device_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Revoke Device */
+        delete: operations["revoke_device_api_v1_cli_devices__device_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/test/magic-link-token": {
         parameters: {
             query?: never;
@@ -739,6 +835,17 @@ export interface components {
             known_issues?: unknown[] | null;
             /** Blocked By */
             blocked_by?: string | null;
+        };
+        /** DeviceOut */
+        DeviceOut: {
+            /** Id */
+            id: string;
+            /** Name */
+            name: string | null;
+            /** Paired At */
+            paired_at: string;
+            /** Last Seen At */
+            last_seen_at: string | null;
         };
         /** EnvironmentIn */
         EnvironmentIn: {
@@ -972,6 +1079,42 @@ export interface components {
             active_workspace: components["schemas"]["WorkspaceOut"];
             /** Workspaces */
             workspaces: components["schemas"]["WorkspaceListItem"][];
+        };
+        /** PairCompleteRequest */
+        PairCompleteRequest: {
+            /** Device Code */
+            device_code: string;
+        };
+        /** PairCompleteResponse */
+        PairCompleteResponse: {
+            /** Token */
+            token: string;
+            /** Device Id */
+            device_id: string;
+            /** User Id */
+            user_id: string;
+            /** Workspace Id */
+            workspace_id: string;
+            /** Workspace Slug */
+            workspace_slug: string;
+        };
+        /** PairConfirmRequest */
+        PairConfirmRequest: {
+            /** User Code */
+            user_code: string;
+            /** Device Name */
+            device_name?: string | null;
+        };
+        /** PairStartResponse */
+        PairStartResponse: {
+            /** Device Code */
+            device_code: string;
+            /** User Code */
+            user_code: string;
+            /** Verification Url */
+            verification_url: string;
+            /** Expires In */
+            expires_in: number;
         };
         /** ProjectCreate */
         ProjectCreate: {
@@ -2822,6 +2965,146 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["ImportResponse"];
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    pair_start_api_v1_cli_pair_start_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PairStartResponse"];
+                };
+            };
+        };
+    };
+    pair_complete_api_v1_cli_pair_complete_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PairCompleteRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PairCompleteResponse"];
+                };
+            };
+            /** @description pairing pending — user has not confirmed yet */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    pair_confirm_api_v1_cli_pair_confirm_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PairConfirmRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_devices_api_v1_cli_devices_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeviceOut"][];
+                };
+            };
+        };
+    };
+    revoke_device_api_v1_cli_devices__device_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                device_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {
