@@ -10,6 +10,7 @@ from app.api.v1.integrations import router as integrations_router
 from app.api.v1.me import router as me_router
 from app.api.v1.project_children import router as project_children_router
 from app.api.v1.projects import router as projects_router
+from app.api.v1.secrets import router as secrets_router
 from app.api.v1.stack_items import router as stack_items_router
 from app.api.v1.tags import router as tags_router
 from app.api.v1.workspaces import router as workspaces_router
@@ -28,6 +29,7 @@ app.include_router(me_router)
 app.include_router(workspaces_router)
 app.include_router(projects_router)
 app.include_router(project_children_router)
+app.include_router(secrets_router)
 app.include_router(groups_router)
 app.include_router(stack_items_router)
 app.include_router(tags_router)

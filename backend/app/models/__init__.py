@@ -21,6 +21,7 @@ from app.models.project import (
     ProjectLink,
     ProjectRepo,
 )
+from app.models.secret import ProjectSecretRef
 
 __all__ = [
     "ActiveProject",
@@ -37,6 +38,7 @@ __all__ = [
     "ProjectInfra",
     "ProjectLink",
     "ProjectRepo",
+    "ProjectSecretRef",
     "ProjectStack",
     "ProjectTag",
     "StackItem",
