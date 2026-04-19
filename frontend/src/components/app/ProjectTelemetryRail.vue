@@ -1,10 +1,17 @@
 <script setup lang="ts">
+import { onMounted, ref, watch } from "vue";
+
 import DataRow from "@/components/ui/DataRow.vue";
 import MonoLabel from "@/components/ui/MonoLabel.vue";
+import { api } from "@/api/client";
 import type { components } from "@/api/types.gen";
 
 type Project = components["schemas"]["ProjectFullOut"];
-defineProps<{ project: Project }>();
+type LifecycleEventOut = components["schemas"]["LifecycleEventOut"];
+
+const props = defineProps<{ project: Project }>();
+
+const events = ref<LifecycleEventOut[]>([]);
 
 function formatDate(iso: string | null | undefined): string {
   if (!iso) return "—";
@@ -15,6 +22,43 @@ function formatDate(iso: string | null | undefined): string {
 function hostOf(url: string): string {
   return new URL(url).host;
 }
+
+function kindIcon(kind: string): string {
+  if (kind.startsWith("ship")) return "🚀";
+  if (kind.startsWith("launch")) return "📣";
+  if (kind.startsWith("decision")) return "⚖";
+  if (kind.startsWith("session")) return "🛠";
+  if (kind.startsWith("idea")) return "💡";
+  if (kind.startsWith("note")) return "📝";
+  return "•";
+}
+
+function detailSnippet(ev: LifecycleEventOut): string {
+  if (!ev.detail) return "";
+  if (typeof ev.detail === "object") {
+    const d = ev.detail as Record<string, unknown>;
+    const preferred = ["title", "version", "summary", "platform", "body"];
+    for (const k of preferred) {
+      const v = d[k];
+      if (typeof v === "string" && v.length > 0) return v.slice(0, 40);
+    }
+  }
+  return "";
+}
+
+async function fetchEvents() {
+  const { data } = await api.GET("/api/v1/projects/{slug}/lifecycle-events", {
+    params: { path: { slug: props.project.slug } },
+  });
+  // Newest first, top 5.
+  events.value = (data ?? [])
+    .slice()
+    .sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime())
+    .slice(0, 5);
+}
+
+onMounted(fetchEvents);
+watch(() => props.project.slug, fetchEvents);
 </script>
 
 <template>
@@ -72,6 +116,29 @@ function hostOf(url: string): string {
             <span v-else class="text-fg-subtle">—</span>
           </DataRow>
         </div>
+      </section>
+
+      <section v-if="events.length > 0">
+        <MonoLabel>lifecycle</MonoLabel>
+        <ul class="mt-2 space-y-1">
+          <li
+            v-for="ev in events"
+            :key="ev.id"
+            class="flex items-start gap-2 text-[11px]"
+          >
+            <span aria-hidden="true" class="shrink-0">{{ kindIcon(ev.kind) }}</span>
+            <div class="min-w-0 flex-1">
+              <div class="flex items-center gap-1.5">
+                <span class="font-mono text-[10px] text-fg-subtle">{{ formatDate(ev.at) }}</span>
+                <span
+                  class="font-mono text-[9px] uppercase tracking-wider px-1 py-0.5 rounded-sm"
+                  :style="{ background: 'var(--signal-blue-bg)', color: 'var(--fg-body)' }"
+                >{{ ev.kind }}</span>
+              </div>
+              <p v-if="detailSnippet(ev)" class="text-fg-body truncate mt-0.5">{{ detailSnippet(ev) }}</p>
+            </div>
+          </li>
+        </ul>
       </section>
 
       <section>

@@ -25,6 +25,19 @@ const palette = useCommandPaletteStore();
       </span>
     </div>
 
+    <nav class="ml-6 flex items-center gap-4 text-small">
+      <RouterLink
+        to="/ideas"
+        class="mono-label hover:text-fg-body transition-colors"
+        active-class="text-fg-primary"
+      >ideas</RouterLink>
+      <RouterLink
+        to="/search"
+        class="mono-label hover:text-fg-body transition-colors"
+        active-class="text-fg-primary"
+      >search</RouterLink>
+    </nav>
+
     <button
       class="ml-auto flex items-center gap-3 h-7 px-3 rounded-md border border-border bg-bg-surface/50 text-fg-muted text-small transition-colors hover:bg-bg-surface-hi"
       @click="palette.toggle"

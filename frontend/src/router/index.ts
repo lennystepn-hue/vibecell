@@ -38,6 +38,11 @@ const router = createRouter({
       component: () => import("@/pages/ImportGitHub.vue"),
     },
     {
+      path: "/ideas",
+      name: "ideas",
+      component: () => import("@/pages/Ideas.vue"),
+    },
+    {
       path: "/settings",
       name: "settings",
       component: () => import("@/pages/Settings.vue"),

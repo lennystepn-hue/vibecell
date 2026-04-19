@@ -10,6 +10,7 @@ import ProjectInfraCard from "@/components/projects/ProjectInfraCard.vue";
 import ProjectDecisionsCard from "@/components/projects/ProjectDecisionsCard.vue";
 import ProjectLaunchesCard from "@/components/projects/ProjectLaunchesCard.vue";
 import ProjectLinksCommands from "@/components/projects/ProjectLinksCommands.vue";
+import ProjectNotesCard from "@/components/projects/ProjectNotesCard.vue";
 import ProjectSessionsCard from "@/components/projects/ProjectSessionsCard.vue";
 import ShipButton from "@/components/projects/ShipButton.vue";
 import ProjectStackEditor from "@/components/projects/ProjectStackEditor.vue";
@@ -165,6 +166,9 @@ watch(
           </div>
           <div class="xl:col-span-3">
             <ProjectLaunchesCard :project="projects.active" />
+          </div>
+          <div class="xl:col-span-3">
+            <ProjectNotesCard :project="projects.active" />
           </div>
         </div>
       </div>
