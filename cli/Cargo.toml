@@ -35,6 +35,10 @@ rand = "0.8"
 base64 = "0.22"
 rpassword = "7"
 
+[dev-dependencies]
+mockito = "1.5"
+tempfile = "3"
+
 [profile.release]
 opt-level = 3
 lto = "thin"
