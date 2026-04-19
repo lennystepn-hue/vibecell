@@ -1,0 +1,21 @@
+[package]
+name = "hangar-cli"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.83"
+description = "Hangar CLI + daemon + MCP server"
+license = "MIT"
+repository = "https://github.com/lenny/hangar"
+
+[[bin]]
+name = "hangar"
+path = "src/main.rs"
+
+[dependencies]
+clap = { version = "4.5", features = ["derive"] }
+
+[profile.release]
+opt-level = 3
+lto = "thin"
+codegen-units = 1
+strip = true
