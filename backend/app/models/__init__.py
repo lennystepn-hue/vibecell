@@ -22,14 +22,28 @@ from app.models.project import (
     ProjectRepo,
 )
 from app.models.secret import ProjectSecretRef
+from app.models.ship_loop import (
+    Decision,
+    Idea,
+    Launch,
+    LifecycleEvent,
+    Note,
+    Session,
+    Ship,
+)
 
 __all__ = [
     "ActiveProject",
     "AuditLog",
     "Base",
     "CliDevice",
+    "Decision",
+    "Idea",
     "Integration",
+    "Launch",
+    "LifecycleEvent",
     "MagicLinkToken",
+    "Note",
     "Project",
     "ProjectCommand",
     "ProjectContext",
@@ -41,6 +55,8 @@ __all__ = [
     "ProjectSecretRef",
     "ProjectStack",
     "ProjectTag",
+    "Session",
+    "Ship",
     "StackItem",
     "Tag",
     "User",
