@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref, watch } from "vue";
-import { useRoute } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 
 import ProjectTelemetryRail from "@/components/app/ProjectTelemetryRail.vue";
 import SidebarProjects from "@/components/app/SidebarProjects.vue";
@@ -11,15 +11,39 @@ import ProjectLinksCommands from "@/components/projects/ProjectLinksCommands.vue
 import ProjectStackEditor from "@/components/projects/ProjectStackEditor.vue";
 import ProjectStatusDropdown from "@/components/projects/ProjectStatusDropdown.vue";
 import ProjectTagsEditor from "@/components/projects/ProjectTagsEditor.vue";
+import { api } from "@/api/client";
 import { useProjectsStore } from "@/stores/projects";
+import { useToastStore } from "@/stores/toast";
 
 const route = useRoute();
+const router = useRouter();
 const projects = useProjectsStore();
+const toast = useToastStore();
 
 const editingContext = ref(false);
+const confirmingDelete = ref(false);
+const deleting = ref(false);
 
 function load(slug: string) {
   return projects.fetchProject(slug);
+}
+
+async function doDelete() {
+  const project = projects.active;
+  if (!project) return;
+  deleting.value = true;
+  const { error } = await api.DELETE("/api/v1/projects/{slug}", {
+    params: { path: { slug: project.slug } },
+  });
+  deleting.value = false;
+  if (error) {
+    toast.push("Couldn't delete project", "error");
+    return;
+  }
+  toast.push(`${project.name} deleted`, "success");
+  projects.active = null;
+  await projects.fetchList();
+  router.push("/p");
 }
 
 onMounted(() => {
@@ -33,6 +57,7 @@ watch(
   (slug) => {
     if (typeof slug === "string") {
       editingContext.value = false;
+      confirmingDelete.value = false;
       load(slug);
     }
   },
@@ -66,13 +91,49 @@ watch(
             </p>
             <p v-else class="mono-label mt-2 opacity-50">// no pitch set</p>
           </div>
-          <button
-            v-if="!editingContext"
-            type="button"
-            class="mono-label hover:text-fg-body transition-colors self-start"
-            @click="editingContext = true"
-          >✎ edit context</button>
+          <div v-if="!editingContext" class="flex flex-col items-end gap-2 self-start">
+            <button
+              type="button"
+              class="mono-label hover:text-fg-body transition-colors"
+              @click="editingContext = true"
+            >✎ edit context</button>
+            <button
+              type="button"
+              class="mono-label transition-colors"
+              :class="confirmingDelete ? 'text-signal-red' : 'hover:text-signal-red text-fg-subtle'"
+              @click="confirmingDelete = true"
+            >🗑 delete project</button>
+          </div>
         </header>
+
+        <!-- Delete confirmation banner -->
+        <div
+          v-if="confirmingDelete"
+          class="mb-6 rounded-lg p-4 flex items-center gap-4"
+          :style="{ background: 'var(--signal-red-bg)', border: '1px solid var(--signal-red)' }"
+        >
+          <div class="flex-1">
+            <p class="text-section text-signal-red font-semibold">Delete this project?</p>
+            <p class="text-small text-fg-muted mt-1">
+              Removes <span class="font-mono">{{ projects.active.slug }}</span>
+              and all its children (repos, envs, links, commands, stack, tags, context).
+              This cannot be undone.
+            </p>
+          </div>
+          <button
+            type="button"
+            class="h-9 px-4 rounded-md font-medium text-small text-fg-body hover:text-fg-primary transition-colors"
+            :disabled="deleting"
+            @click="confirmingDelete = false"
+          >Cancel</button>
+          <button
+            type="button"
+            class="h-9 px-4 rounded-md font-semibold text-small"
+            :style="{ background: 'var(--signal-red)', color: 'var(--bg-body-to)' }"
+            :disabled="deleting"
+            @click="doDelete"
+          >{{ deleting ? "Deleting…" : "Yes, delete" }}</button>
+        </div>
 
         <div class="grid grid-cols-1 xl:grid-cols-3 gap-4">
           <div class="xl:col-span-2">
