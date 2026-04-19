@@ -29,8 +29,8 @@ function stubProjectsStore(ps = useProjectsStore()) {
 
 function seed(ps = useProjectsStore()) {
   ps.list = [
-    { id: "1", slug: "butlr", name: "Butlr", emoji: "🛎️", color: null, pitch: null, status: "building" },
-    { id: "2", slug: "zapline", name: "Zapline", emoji: "⚡", color: null, pitch: null, status: "live" },
+    { id: "1", slug: "butlr", name: "Butlr", emoji: "🛎️", color: null, pitch: null, status: "building", group_id: null, position: 0 },
+    { id: "2", slug: "zapline", name: "Zapline", emoji: "⚡", color: null, pitch: null, status: "live", group_id: null, position: 1 },
   ];
   stubProjectsStore(ps);
 }

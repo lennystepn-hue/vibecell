@@ -20,6 +20,8 @@ function fakeProject(overrides: Partial<Project> = {}): Project {
     status: "building",
     is_public: 0,
     archived_at: null,
+    group_id: null,
+    position: 0,
     context: {
       current_focus: "Stripe webhook",
       next_step: "Handle subscription.deleted",

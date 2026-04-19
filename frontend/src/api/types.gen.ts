@@ -422,6 +422,59 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/groups": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Groups */
+        get: operations["list_groups_api_v1_groups_get"];
+        put?: never;
+        /** Create Group */
+        post: operations["create_group_api_v1_groups_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/groups/{group_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Group */
+        delete: operations["delete_group_api_v1_groups__group_id__delete"];
+        options?: never;
+        head?: never;
+        /** Patch Group */
+        patch: operations["patch_group_api_v1_groups__group_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/projects/reorder": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reorder Projects */
+        post: operations["reorder_projects_api_v1_projects_reorder_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/stack-items": {
         parameters: {
             query?: never;
@@ -554,6 +607,35 @@ export interface paths {
         put?: never;
         /** Bulk Import */
         post: operations["bulk_import_api_v1_integrations_github_import_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/test/magic-link-token": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Latest Magic Link Token
+         * @description Return the RAW token for the most-recent unconsumed magic-link for `email`.
+         *
+         *     Note: we only store the hash, not the raw token. So this route can't return
+         *     the token — it returns the token_hash instead, and the E2E fixture uses a
+         *     different strategy: it POSTs /auth/magic-link, then reads the backend logs
+         *     where the dev-mode mailer printed the full verify_url.
+         *
+         *     For now, we return the hash so the test can at least confirm the token was
+         *     issued. Real E2E is gated on another mechanism (see Task 16.4 — direct DB
+         *     seeding via SQL).
+         */
+        get: operations["latest_magic_link_token_api_v1_test_magic_link_token_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -717,6 +799,37 @@ export interface components {
             clone_url: string;
             /** Pushed At */
             pushed_at?: string | null;
+        };
+        /** GroupCreate */
+        GroupCreate: {
+            /** Name */
+            name: string;
+            /** Slug */
+            slug?: string | null;
+            /** Color */
+            color?: string | null;
+        };
+        /** GroupOut */
+        GroupOut: {
+            /** Id */
+            id: string;
+            /** Slug */
+            slug: string;
+            /** Name */
+            name: string;
+            /** Color */
+            color?: string | null;
+            /** Position */
+            position: number;
+        };
+        /** GroupUpdate */
+        GroupUpdate: {
+            /** Name */
+            name?: string | null;
+            /** Color */
+            color?: string | null;
+            /** Position */
+            position?: number | null;
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -897,6 +1010,13 @@ export interface components {
             pitch?: string | null;
             /** Status */
             status: string;
+            /** Group Id */
+            group_id?: string | null;
+            /**
+             * Position
+             * @default 0
+             */
+            position: number;
             /** Is Public */
             is_public: number;
             /** Archived At */
@@ -950,6 +1070,13 @@ export interface components {
             pitch?: string | null;
             /** Status */
             status: string;
+            /** Group Id */
+            group_id?: string | null;
+            /**
+             * Position
+             * @default 0
+             */
+            position: number;
         };
         /** ProjectListPage */
         ProjectListPage: {
@@ -974,6 +1101,13 @@ export interface components {
             pitch?: string | null;
             /** Status */
             status: string;
+            /** Group Id */
+            group_id?: string | null;
+            /**
+             * Position
+             * @default 0
+             */
+            position: number;
             /** Is Public */
             is_public: number;
             /** Archived At */
@@ -993,6 +1127,25 @@ export interface components {
             status?: string | null;
             /** Is Public */
             is_public?: number | null;
+        };
+        /** ReorderItem */
+        ReorderItem: {
+            /** Slug */
+            slug: string;
+            /** Group Id */
+            group_id?: string | null;
+            /** Position */
+            position: number;
+        };
+        /** ReorderRequest */
+        ReorderRequest: {
+            /** Items */
+            items: components["schemas"]["ReorderItem"][];
+        };
+        /** ReorderResult */
+        ReorderResult: {
+            /** Updated */
+            updated: number;
         };
         /** RepoIn */
         RepoIn: {
@@ -2257,6 +2410,156 @@ export interface operations {
             };
         };
     };
+    list_groups_api_v1_groups_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GroupOut"][];
+                };
+            };
+        };
+    };
+    create_group_api_v1_groups_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GroupCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GroupOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_group_api_v1_groups__group_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                group_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    patch_group_api_v1_groups__group_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                group_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GroupUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GroupOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reorder_projects_api_v1_projects_reorder_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReorderRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReorderResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list__api_v1_stack_items_get: {
         parameters: {
             query?: {
@@ -2518,6 +2821,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ImportResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    latest_magic_link_token_api_v1_test_magic_link_token_get: {
+        parameters: {
+            query: {
+                email: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: string;
+                    };
                 };
             };
             /** @description Validation Error */
