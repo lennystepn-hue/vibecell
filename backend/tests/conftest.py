@@ -2,11 +2,10 @@ from __future__ import annotations
 
 import asyncio
 import os
-from collections.abc import AsyncIterator, Iterator
+from collections.abc import AsyncIterator
 from pathlib import Path
 from typing import Any
 
-import pytest
 import pytest_asyncio
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
@@ -50,16 +49,14 @@ def _start_testcontainer_postgres() -> str:
     return f"postgresql+asyncpg://{user}:{password}@{host}:{port}/{dbname}"
 
 
-@pytest.fixture(scope="session")
-def event_loop() -> Iterator[asyncio.AbstractEventLoop]:
-    """Session-scoped event loop so testcontainer + engine survive across tests."""
-    loop = asyncio.new_event_loop()
-    yield loop
-    loop.close()
+# NOTE: No custom `event_loop` fixture — pytest-asyncio manages one per session
+# via `asyncio_default_fixture_loop_scope = "session"` in pyproject.toml. The
+# old explicit fixture conflicted with `command.upgrade(...)`'s internal
+# `asyncio.run(...)` call (see `engine` fixture below for the workaround).
 
 
-@pytest.fixture(scope="session")
-def database_url() -> str:
+@pytest_asyncio.fixture(scope="session", loop_scope="session")
+async def database_url() -> str:
     """Resolve which Postgres to use for this test session.
 
     Priority:
@@ -72,7 +69,7 @@ def database_url() -> str:
     return _start_testcontainer_postgres()
 
 
-@pytest_asyncio.fixture(scope="session")
+@pytest_asyncio.fixture(scope="session", loop_scope="session")
 async def engine(database_url: str) -> AsyncIterator[AsyncEngine]:
     """Session-scoped async engine. Creates schema via alembic upgrade once;
     tests run in wrapping transactions that get rolled back at function scope."""
@@ -88,14 +85,24 @@ async def engine(database_url: str) -> AsyncIterator[AsyncEngine]:
 
     eng = create_async_engine(database_url, echo=False, pool_pre_ping=True)
 
-    # Drop any lingering schema (rerun safety), then apply all migrations.
+    # Drop everything including `alembic_version` — a plain `drop_all` only
+    # removes tables in `Base.metadata`, leaving alembic_version behind from
+    # a prior run so Alembic would skip migrations thinking we're already at
+    # head. Nuking the schema is the simplest deterministic reset.
+    from sqlalchemy import text
     async with eng.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
+        await conn.execute(text("DROP SCHEMA public CASCADE"))
+        await conn.execute(text("CREATE SCHEMA public"))
 
     alembic_root = Path(__file__).parent.parent
     cfg = Config(str(alembic_root / "alembic.ini"))
     cfg.set_main_option("script_location", str(alembic_root / "alembic"))
-    command.upgrade(cfg, "head")
+    # Alembic's async env.py internally calls `asyncio.run(...)`, which cannot
+    # be nested inside the pytest-asyncio event loop. Run it in a worker
+    # thread so `asyncio.run` there is free to spin up its own loop.
+    await asyncio.to_thread(command.upgrade, cfg, "head")
+    # Silence unused-import warning while keeping Base in scope for future use.
+    _ = Base
 
     yield eng
     await eng.dispose()
@@ -103,7 +110,7 @@ async def engine(database_url: str) -> AsyncIterator[AsyncEngine]:
         _pg_container.stop()
 
 
-@pytest_asyncio.fixture
+@pytest_asyncio.fixture(loop_scope="session")
 async def session(engine: AsyncEngine) -> AsyncIterator[AsyncSession]:
     """Function-scoped session; rolls back the outer transaction at test end for isolation."""
     connection = await engine.connect()

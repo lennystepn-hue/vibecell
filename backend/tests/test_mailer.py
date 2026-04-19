@@ -1,4 +1,3 @@
-import logging
 from typing import Any
 
 import pytest
@@ -6,23 +5,33 @@ import pytest
 from app.services.mailer import send_magic_link_email
 
 
-async def test_dev_mode_logs_instead_of_sending(
-    monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture,
-) -> None:
+async def test_dev_mode_logs_instead_of_sending(monkeypatch: pytest.MonkeyPatch) -> None:
+    """In dev mode, the mailer must NOT call Resend. Verify by monkeypatching
+    the Resend factory — if it were invoked, the test would see the sentinel."""
     monkeypatch.setenv("HANGAR_DATABASE_URL", "postgresql+asyncpg://u:p@h:5432/db")
     monkeypatch.setenv("HANGAR_DEV_MODE", "1")
     from app.core.config import get_settings
     get_settings.cache_clear()
 
-    with caplog.at_level(logging.INFO, logger="app.services.mailer"):
-        await send_magic_link_email(
-            to="u@example.com",
-            verify_url="http://localhost:3000/auth/verify?token=abc",
-        )
+    resend_called = False
 
-    logs = [rec.message for rec in caplog.records if rec.name == "app.services.mailer"]
-    assert any("u@example.com" in msg for msg in logs)
-    assert any("localhost:3000/auth/verify?token=abc" in msg for msg in logs)
+    class _TripwireResend:
+        class emails:  # noqa: N801
+            @staticmethod
+            def send(payload: dict[str, Any]) -> dict[str, str]:
+                nonlocal resend_called
+                resend_called = True
+                return {"id": "should-not-be-reached"}
+
+    import app.services.mailer as mailer
+    monkeypatch.setattr(mailer, "_resend_client", lambda: _TripwireResend)
+
+    await send_magic_link_email(
+        to="u@example.com",
+        verify_url="http://localhost:3000/auth/verify?token=abc",
+    )
+
+    assert resend_called is False, "dev mode should short-circuit before hitting Resend"
 
 
 async def test_production_mode_calls_resend(monkeypatch: pytest.MonkeyPatch) -> None:

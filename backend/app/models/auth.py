@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import TIMESTAMP, ForeignKey, String, func
+from sqlalchemy import TIMESTAMP, ForeignKey, String, Text, func
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -70,7 +70,9 @@ class AuditLog(Base):
     actor: Mapped[str] = mapped_column(String(100), nullable=False)
     op: Mapped[str] = mapped_column(String(20), nullable=False)
     entity: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
-    entity_id: Mapped[str] = mapped_column(String(26), nullable=False, index=True)
+    # Text (not String(26)) because composite-PK entities serialise as
+    # "v1:v2" (e.g. workspace_members → "<workspace_id>:<user_id>" = 53 chars).
+    entity_id: Mapped[str] = mapped_column(Text, nullable=False, index=True)
     diff: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
 
 

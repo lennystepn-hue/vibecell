@@ -62,11 +62,16 @@ def _jsonify(value: Any) -> Any:
     return value
 
 
-def _resolve_entity_id(obj: Any) -> str | None:
+def _resolve_entity_id(obj: Any, op: str) -> str | None:
     """Serialise an ORM instance's primary-key value to a single string.
 
     - Single-column PK: returns its string value (or None if unset).
     - Composite PK: joins column values with ':' (e.g., "<workspace_id>:<user_id>").
+
+    On `create`, nudge any callable default (e.g. ulid_pk's `new_ulid`) so the
+    PK is populated *before* flush — SQLAlchemy normally applies column
+    defaults mid-flush (after `before_flush` has fired), which would leave
+    the audit row referencing `None`.
     """
     state = inspect(obj)
     pk_cols = state.mapper.primary_key
@@ -74,7 +79,19 @@ def _resolve_entity_id(obj: Any) -> str | None:
     for col in pk_cols:
         v = getattr(obj, col.key, None)
         if v is None:
-            return None
+            if op == "create" and col.default is not None:
+                default = col.default
+                if getattr(default, "is_callable", False):
+                    v = default.arg(None)  # ColumnDefault.arg is the callable
+                elif getattr(default, "is_scalar", False):
+                    v = default.arg
+                else:
+                    return None
+                if v is None:
+                    return None
+                setattr(obj, col.key, v)
+            else:
+                return None
         values.append(str(v))
     return ":".join(values)
 
@@ -128,7 +145,7 @@ def install_audit_listener() -> None:
             if not isinstance(ws_id, str):
                 return
 
-            entity_id = _resolve_entity_id(obj)
+            entity_id = _resolve_entity_id(obj, op)
             if entity_id is None:
                 return
 

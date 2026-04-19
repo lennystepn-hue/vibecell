@@ -12,6 +12,11 @@ def test_settings_loads_from_env(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("HANGAR_GITHUB_CLIENT_ID", "gh_client")
     monkeypatch.setenv("HANGAR_GITHUB_CLIENT_SECRET", "gh_secret")
     monkeypatch.setenv("HANGAR_BASE_URL", "http://localhost:3000")
+    # Test asserts default values — ensure the shell env doesn't leak in
+    # with HANGAR_DEV_MODE already set to 1 (dev workflow default).
+    monkeypatch.delenv("HANGAR_DEV_MODE", raising=False)
+    monkeypatch.delenv("HANGAR_COOKIE_DOMAIN", raising=False)
+    monkeypatch.delenv("HANGAR_SESSION_MAX_AGE", raising=False)
 
     settings = Settings()  # type: ignore[call-arg]
 

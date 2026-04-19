@@ -159,17 +159,19 @@ async def test_full_project_aggregate_roundtrip(session: AsyncSession) -> None:
 
 
 async def test_unique_slug_per_workspace(session: AsyncSession) -> None:
+    from sqlalchemy.exc import IntegrityError
+
     _user_id, workspace_id, _ = await _make_base(session)
 
     session.add(Project(workspace_id=workspace_id, slug="duplicate", name="First"))
     await session.flush()
 
-    session.add(Project(workspace_id=workspace_id, slug="duplicate", name="Second"))
-
-    from sqlalchemy.exc import IntegrityError
+    # Use a savepoint so the duplicate-insert failure doesn't corrupt the
+    # outer wrapping transaction used by the test fixture.
     with pytest.raises(IntegrityError):
-        await session.flush()
-    await session.rollback()
+        async with session.begin_nested():
+            session.add(Project(workspace_id=workspace_id, slug="duplicate", name="Second"))
+            await session.flush()
 
 
 async def test_slug_same_across_workspaces_allowed(session: AsyncSession) -> None:

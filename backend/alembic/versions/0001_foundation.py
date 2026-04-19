@@ -71,7 +71,8 @@ def upgrade() -> None:
         sa.Column("actor", sa.String(100), nullable=False),
         sa.Column("op", sa.String(20), nullable=False),
         sa.Column("entity", sa.String(100), nullable=False),
-        sa.Column("entity_id", sa.String(26), nullable=False),
+        # Text (not String(26)) — composite-PK entities serialise as "v1:v2".
+        sa.Column("entity_id", sa.Text, nullable=False),
         sa.Column("diff", postgresql.JSONB),
     )
     op.create_index("ix_audit_log_workspace_id", "audit_log", ["workspace_id"])
