@@ -10,12 +10,22 @@ from app.core.db import get_db
 from app.core.deps import AuthContext, ProjectContext, require_auth, require_project
 from app.models import Project
 from app.schemas.project import (
+    CommandOut,
+    ContextOut,
+    EnvironmentOut,
+    InfraOut,
+    LinkOut,
     ProjectCreate,
+    ProjectFullOut,
     ProjectListItem,
     ProjectListPage,
     ProjectOut,
     ProjectUpdate,
+    RepoOut,
+    StackOut,
+    TagOut,
 )
+from app.services import project_children as children_svc
 from app.services.project import (
     create_project,
     delete_project,
@@ -86,11 +96,35 @@ async def create(
     return _to_out(project)
 
 
-@router.get("/{slug}", response_model=ProjectOut)
+@router.get("/{slug}", response_model=ProjectFullOut)
 async def get(
     ctx: Annotated[ProjectContext, Depends(require_project)],
-) -> ProjectOut:
-    return _to_out(ctx.project)
+    db: Annotated[AsyncSession, Depends(get_db)],
+) -> ProjectFullOut:
+    ctx_row = await children_svc.get_context(db, ctx.project)
+    infra_row = await children_svc.get_infra(db, ctx.project)
+    repos = await children_svc.list_repos(db, ctx.project)
+    envs = await children_svc.list_environments(db, ctx.project)
+    links = await children_svc.list_links(db, ctx.project)
+    commands = await children_svc.list_commands(db, ctx.project)
+    stack = await children_svc.list_stack(db, ctx.project)
+    tags = await children_svc.list_tags(db, ctx.project)
+
+    base = _to_out(ctx.project)
+    return ProjectFullOut(
+        **base.model_dump(),
+        context=ContextOut.model_validate(ctx_row) if ctx_row else None,
+        infra=InfraOut.model_validate(infra_row) if infra_row else None,
+        repos=[RepoOut.model_validate(r) for r in repos],
+        environments=[EnvironmentOut.model_validate(e) for e in envs],
+        links=[LinkOut.model_validate(link) for link in links],
+        commands=[CommandOut.model_validate(c) for c in commands],
+        stack=[
+            StackOut(stack_item_slug=si.slug, name=si.name, kind=si.kind, role=ps.role)
+            for si, ps in stack
+        ],
+        tags=[TagOut.model_validate(t) for t in tags],
+    )
 
 
 @router.patch("/{slug}", response_model=ProjectOut)
