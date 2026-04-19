@@ -33,6 +33,11 @@ const router = createRouter({
       component: () => import("@/pages/ProjectDetail.vue"),
     },
     {
+      path: "/import/github",
+      name: "import-github",
+      component: () => import("@/pages/ImportGitHub.vue"),
+    },
+    {
       path: "/:catchAll(.*)*",
       name: "not-found",
       component: () => import("@/pages/NotFound.vue"),
