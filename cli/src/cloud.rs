@@ -50,6 +50,14 @@ pub struct WorkspaceBrief {
     pub name: String,
 }
 
+#[derive(Deserialize, Debug, Serialize, Clone)]
+pub struct SecretRow {
+    pub id: String,
+    pub label: String,
+    pub kind: String,
+    pub reference: String,
+}
+
 pub fn client() -> Result<HttpClient> {
     HttpClient::builder()
         .timeout(Duration::from_secs(30))
@@ -240,5 +248,87 @@ impl Client {
             .send()
             .await?;
         Self::check(r).await
+    }
+
+    // ---- secrets ----
+
+    pub async fn add_secret(
+        &self,
+        project_slug: &str,
+        label: &str,
+        kind: &str,
+        reference: &str,
+    ) -> Result<SecretRow> {
+        let r = self
+            .http
+            .post(self.url(&format!("/api/v1/projects/{project_slug}/secrets")))
+            .bearer_auth(&self.token)
+            .json(&serde_json::json!({
+                "label": label,
+                "kind": kind,
+                "reference": reference,
+            }))
+            .send()
+            .await?;
+        let status = r.status();
+        let body = r.text().await.unwrap_or_default();
+        if !status.is_success() {
+            bail!("add_secret: {} {}", status, body);
+        }
+        Ok(serde_json::from_str(&body)?)
+    }
+
+    pub async fn list_secrets(&self, project_slug: &str) -> Result<Vec<SecretRow>> {
+        let r = self
+            .http
+            .get(self.url(&format!("/api/v1/projects/{project_slug}/secrets")))
+            .bearer_auth(&self.token)
+            .send()
+            .await?;
+        let status = r.status();
+        let body = r.text().await.unwrap_or_default();
+        if !status.is_success() {
+            bail!("list_secrets: {} {}", status, body);
+        }
+        Ok(serde_json::from_str(&body)?)
+    }
+
+    pub async fn remove_secret(&self, project_slug: &str, label: &str) -> Result<()> {
+        let r = self
+            .http
+            .delete(self.url(&format!("/api/v1/projects/{project_slug}/secrets/{label}")))
+            .bearer_auth(&self.token)
+            .send()
+            .await?;
+        if !r.status().is_success() {
+            bail!(
+                "remove_secret: {} {}",
+                r.status(),
+                r.text().await.unwrap_or_default()
+            );
+        }
+        Ok(())
+    }
+
+    #[allow(dead_code)] // used by `hangar run` + MCP tool (commit 5)
+    pub async fn get_secret_value(&self, project_slug: &str, label: &str) -> Result<String> {
+        let r = self
+            .http
+            .get(self.url(&format!(
+                "/api/v1/projects/{project_slug}/secrets/{label}/resolve"
+            )))
+            .bearer_auth(&self.token)
+            .send()
+            .await?;
+        let status = r.status();
+        let body = r.text().await.unwrap_or_default();
+        if !status.is_success() {
+            bail!("resolve: {} {}", status, body);
+        }
+        let v: Value = serde_json::from_str(&body)?;
+        v.get("value")
+            .and_then(|x| x.as_str())
+            .map(|s| s.to_string())
+            .context("resolve response missing `value`")
     }
 }

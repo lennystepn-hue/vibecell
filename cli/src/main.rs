@@ -6,6 +6,7 @@ mod cmd;
 mod config;
 mod daemon;
 mod keychain;
+mod resolver;
 
 #[derive(Parser)]
 #[command(name = "hangar", version, about = "Hangar CLI + daemon + MCP server", long_about = None)]
@@ -37,6 +38,11 @@ enum Command {
         #[command(subcommand)]
         cmd: cmd::skill::SkillCommand,
     },
+    /// Manage per-project secrets (set / list / remove).
+    Secret {
+        #[command(subcommand)]
+        cmd: cmd::secret::SecretCommand,
+    },
 }
 
 #[tokio::main]
@@ -58,9 +64,10 @@ async fn main() -> anyhow::Result<()> {
         Some(Command::Daemon { cmd }) => cmd::daemon::run(cmd).await,
         Some(Command::McpToken(args)) => cmd::mcp_token::run(args).await,
         Some(Command::Skill { cmd }) => cmd::skill::run(cmd).await,
+        Some(Command::Secret { cmd }) => cmd::secret::run(cmd).await,
         None => {
             println!(
-                "hangar {} — subcommands: pair | status | unpair | sync | daemon | mcp-token | skill",
+                "hangar {} — subcommands: pair | status | unpair | sync | daemon | mcp-token | skill | secret",
                 env!("CARGO_PKG_VERSION")
             );
             println!("run `hangar pair` to connect this device.");
