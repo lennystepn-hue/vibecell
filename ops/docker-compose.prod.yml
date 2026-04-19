@@ -1,0 +1,70 @@
+name: hangar
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-hangar}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-hangar}
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-hangar} -d ${POSTGRES_DB:-hangar}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      retries: 10
+
+  backend:
+    image: hangar-backend:${HANGAR_SHA:-latest}
+    build:
+      context: ../backend
+    restart: unless-stopped
+    env_file:
+      - /etc/hangar/hangar.env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8000/api/v1/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  frontend:
+    image: hangar-frontend:${HANGAR_SHA:-latest}
+    build:
+      context: ../frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+
+  nginx:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    volumes:
+      - ./nginx/hangar.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - backend
+      - frontend
+
+volumes:
+  pg-data:
+  redis-data:
