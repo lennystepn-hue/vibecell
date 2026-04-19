@@ -1,0 +1,100 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: build (${{ matrix.target }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            archive: hangar-x86_64-unknown-linux-gnu.tar.gz
+            bin: hangar
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            archive: hangar-aarch64-apple-darwin.tar.gz
+            bin: hangar
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            archive: hangar-x86_64-pc-windows-msvc.zip
+            bin: hangar.exe
+    defaults:
+      run:
+        working-directory: cli
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: cli -> cli/target
+
+      - name: build release
+        run: cargo build --release --target ${{ matrix.target }}
+
+      - name: package (tar.gz)
+        if: "!contains(matrix.archive, '.zip')"
+        shell: bash
+        run: |
+          cd target/${{ matrix.target }}/release
+          tar czf "${{ matrix.archive }}" "${{ matrix.bin }}"
+          sha256sum "${{ matrix.archive }}" > "${{ matrix.archive }}.sha256"
+
+      - name: package (zip)
+        if: "contains(matrix.archive, '.zip')"
+        shell: pwsh
+        run: |
+          cd target/${{ matrix.target }}/release
+          Compress-Archive -Path "${{ matrix.bin }}" -DestinationPath "${{ matrix.archive }}"
+          $hash = (Get-FileHash "${{ matrix.archive }}" -Algorithm SHA256).Hash.ToLower()
+          "$hash  ${{ matrix.archive }}" | Out-File "${{ matrix.archive }}.sha256" -Encoding ASCII
+
+      - name: upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.target }}
+          path: |
+            cli/target/${{ matrix.target }}/release/${{ matrix.archive }}
+            cli/target/${{ matrix.target }}/release/${{ matrix.archive }}.sha256
+          retention-days: 14
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+
+      - name: flatten artifacts
+        shell: bash
+        run: |
+          mkdir -p release-assets
+          find dist -type f \( -name "hangar-*.tar.gz" -o -name "hangar-*.zip" -o -name "*.sha256" \) \
+            -exec cp {} release-assets/ \;
+          ls -la release-assets
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: release-assets/*
+          generate_release_notes: true
+          draft: false
+          prerelease: false
