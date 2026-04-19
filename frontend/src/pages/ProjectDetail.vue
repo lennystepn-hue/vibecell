@@ -7,6 +7,7 @@ import SidebarProjects from "@/components/app/SidebarProjects.vue";
 import ProjectContextEditor from "@/components/projects/ProjectContextEditor.vue";
 import ProjectFocusCard from "@/components/projects/ProjectFocusCard.vue";
 import ProjectInfraCard from "@/components/projects/ProjectInfraCard.vue";
+import ProjectDecisionsCard from "@/components/projects/ProjectDecisionsCard.vue";
 import ProjectLinksCommands from "@/components/projects/ProjectLinksCommands.vue";
 import ProjectSessionsCard from "@/components/projects/ProjectSessionsCard.vue";
 import ProjectStackEditor from "@/components/projects/ProjectStackEditor.vue";
@@ -155,6 +156,9 @@ watch(
           </div>
           <div class="xl:col-span-3">
             <ProjectSessionsCard :project="projects.active" />
+          </div>
+          <div class="xl:col-span-3">
+            <ProjectDecisionsCard :project="projects.active" />
           </div>
         </div>
       </div>
