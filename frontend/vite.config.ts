@@ -12,7 +12,10 @@ export default defineConfig({
     port: 3000,
     strictPort: true,
     proxy: {
-      "/api": { target: "http://localhost:8000", changeOrigin: false },
+      "/api": {
+        target: process.env.HANGAR_E2E_BACKEND_URL ?? "http://localhost:8000",
+        changeOrigin: true,
+      },
     },
   },
   // @ts-expect-error vitest 2.x augments vite 5's UserConfig; project uses vite 6
