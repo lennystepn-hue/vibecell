@@ -1,4 +1,4 @@
-# Production deploy — Hangar
+# Production deploy — Vibecell
 
 Staging + first production instance: `89.167.111.89` (Hetzner Helsinki, 4 GB).
 
@@ -6,7 +6,7 @@ Staging + first production instance: `89.167.111.89` (Hetzner Helsinki, 4 GB).
 
 - Docker + Docker Compose v2 (already installed).
 - `/etc/hangar/hangar.env` with production secrets.
-- DNS: point `hangar.dev` (and `www.hangar.dev`) at the server's IP.
+- DNS: point `vibecell.dev` (and `www.vibecell.dev`) at the server's IP.
 
 ### Server environment file
 
@@ -19,8 +19,8 @@ HANGAR_REDIS_URL=redis://redis:6379/0
 HANGAR_RESEND_API_KEY=re_...
 HANGAR_GITHUB_CLIENT_ID=...
 HANGAR_GITHUB_CLIENT_SECRET=...
-HANGAR_BASE_URL=https://hangar.dev
-HANGAR_COOKIE_DOMAIN=hangar.dev
+HANGAR_BASE_URL=https://vibecell.dev
+HANGAR_COOKIE_DOMAIN=vibecell.dev
 HANGAR_SESSION_MAX_AGE=2592000
 HANGAR_SENTRY_DSN=
 HANGAR_DEV_MODE=0
@@ -47,44 +47,20 @@ ssh root@89.167.111.89 "cd /srv/hangar && ./ops/deploy.sh $(git rev-parse --shor
 
 Verify: `curl http://89.167.111.89:8080/api/v1/healthz` → `{"ok":true,...}`.
 
-## Expose hangar.dev
+## Expose vibecell.dev
 
 Two options:
 
 ### Option 1: Route through existing `agentready-nginx`
 
-The server already runs `agentready-nginx` on ports 80/443. Add a server
-block that proxies `hangar.dev` to `localhost:8080`:
-
-```nginx
-server {
-  listen 443 ssl http2;
-  server_name hangar.dev www.hangar.dev;
-  ssl_certificate /etc/letsencrypt/live/hangar.dev/fullchain.pem;
-  ssl_certificate_key /etc/letsencrypt/live/hangar.dev/privkey.pem;
-
-  location / {
-    proxy_pass http://localhost:8080;
-    proxy_http_version 1.1;
-    proxy_set_header Host $host;
-    proxy_set_header X-Real-IP $remote_addr;
-    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-    proxy_set_header X-Forwarded-Proto $scheme;
-  }
-}
-
-server {
-  listen 80;
-  server_name hangar.dev www.hangar.dev;
-  return 301 https://$host$request_uri;
-}
-```
-
-Issue cert: `certbot --nginx -d hangar.dev -d www.hangar.dev`.
+The server already runs `agentready-nginx` on ports 80/443. The canonical
+server block lives in-repo at `ops/nginx/vibecell.dev.conf` — copy it into
+the nginx container's `/etc/nginx/conf.d/` and reload. Certbot issues the
+cert via webroot challenge.
 
 ### Option 2: Cloudflare proxy
 
-Point `hangar.dev` A record at 89.167.111.89, orange-cloud on. Cloudflare
+Point `vibecell.dev` A record at 89.167.111.89, orange-cloud on. Cloudflare
 terminates TLS; backend sees HTTP. Set an origin rule so Cloudflare pulls
 from `http://89.167.111.89:8080`.
 
@@ -128,7 +104,7 @@ gunzip -c /srv/hangar/backups/daily/hangar-YYYY-MM-DD.sql.gz \
 
 Point an external pinger (UptimeRobot free tier works) at:
 
-- `https://hangar.dev/api/v1/healthz` — must return `{"ok": true}` with status 200.
+- `https://vibecell.dev/api/v1/healthz` — must return `{"ok": true}` with status 200.
 - Alert threshold: down for > 2 checks in a row (10 min).
 
 ## Rollback

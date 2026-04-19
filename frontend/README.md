@@ -1,4 +1,4 @@
-# Hangar Frontend
+# Vibecell Frontend
 
 Vue 3 + TS + Vite + Pinia.
 

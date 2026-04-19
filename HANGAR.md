@@ -1,6 +1,13 @@
-# HANGAR
+# VIBECELL (internal codename: hangar)
 
 **The operating system for vibecoders.**
+
+> Historical note: this project shipped under the working title "Hangar";
+> the user-facing brand is now Vibecell (domain `vibecell.dev`). Internal
+> codenames — CLI binary `hangar`, package names `hangar-*`, env var prefix
+> `HANGAR_`, config dir `~/.hangar`, MCP tool names `hangar.*`, DB name
+> `hangar` — all stay. This spec document keeps "Hangar" in prose as the
+> historical record.
 
 A single source of truth for every project a solo builder is shipping — context, costs, customers, domains, distribution, decisions — with Claude Code plugged straight in via a local MCP server.
 

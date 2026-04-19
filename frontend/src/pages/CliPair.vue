@@ -116,7 +116,7 @@ onMounted(loadDevices);
     <div class="w-full max-w-[560px] mx-auto space-y-6">
       <div class="flex items-center gap-2 text-fg-subtle">
         <span class="text-signal-green font-mono text-section">◈</span>
-        <span class="font-mono text-small tracking-[0.08em] uppercase">Hangar · CLI</span>
+        <span class="font-mono text-small tracking-[0.08em] uppercase">Vibecell · CLI</span>
       </div>
 
       <section class="glass rounded-lg p-6">

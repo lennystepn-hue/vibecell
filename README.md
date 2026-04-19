@@ -1,6 +1,10 @@
-# Hangar
+# Vibecell
 
 The operating system for vibecoders.
+
+(Internal codename: `hangar`. The CLI binary, package names, env vars,
+config dir, MCP tool names, and DB identifiers all stay `hangar*` —
+they're developer-facing and renaming would churn every user's setup.)
 
 - Full spec: [HANGAR.md](HANGAR.md)
 - Spec 1 design: [docs/superpowers/specs/2026-04-18-spec-1-foundation-dashboard-design.md](docs/superpowers/specs/2026-04-18-spec-1-foundation-dashboard-design.md)

@@ -2,7 +2,7 @@
 //!
 //! `print`   — fetch SKILL.md from the backend and dump to stdout (unchanged).
 //! `install` — copy SKILL.md into `~/.claude/skills/hangar/SKILL.md` so Claude
-//!             auto-loads Hangar context on every session.
+//!             auto-loads Vibecell context on every session.
 //! `update`  — refresh an installed skill if the remote content changed.
 
 use anyhow::{bail, Context, Result};
@@ -91,7 +91,7 @@ async fn install_skill(force: bool) -> Result<()> {
     }
     std::fs::write(&dest, &remote).with_context(|| format!("writing {}", dest.display()))?;
     println!("ok installed skill to {}", dest.display());
-    println!("  Claude will now auto-load Hangar context on session start.");
+    println!("  Claude will now auto-load Vibecell context on session start.");
     Ok(())
 }
 

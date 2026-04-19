@@ -1,10 +1,10 @@
-# Hangar CLI installer for Windows.
+# Vibecell CLI installer for Windows.
 #
 # Usage:
-#   iwr -useb http://89.167.111.89:8080/install.ps1 | iex
+#   iwr -useb https://vibecell.dev/install.ps1 | iex
 #
 # Environment overrides:
-#   HANGAR_BASE_URL     — base URL to fetch from (default: http://89.167.111.89:8080)
+#   HANGAR_BASE_URL     — base URL to fetch from (default: https://vibecell.dev)
 #   HANGAR_INSTALL_DIR  — directory to install into (default: $env:USERPROFILE\.hangar\bin)
 
 $ErrorActionPreference = "Stop"

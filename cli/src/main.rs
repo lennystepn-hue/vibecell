@@ -9,7 +9,7 @@ mod keychain;
 mod resolver;
 
 #[derive(Parser)]
-#[command(name = "hangar", version, about = "Hangar CLI + daemon + MCP server", long_about = None)]
+#[command(name = "hangar", version, about = "Vibecell CLI + daemon + MCP server", long_about = None)]
 struct Cli {
     #[command(subcommand)]
     command: Option<Command>,
@@ -17,7 +17,7 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Command {
-    /// Pair this device with a Hangar workspace via the device-code flow.
+    /// Pair this device with a Vibecell workspace via the device-code flow.
     Pair,
     /// Show current pairing status.
     Status,
@@ -33,7 +33,7 @@ enum Command {
     /// Print (or rotate) the MCP bearer token used by Claude Code.
     #[command(name = "mcp-token")]
     McpToken(cmd::mcp_token::McpTokenArgs),
-    /// Manage the Hangar Claude skill (print / install).
+    /// Manage the Vibecell Claude skill (print / install).
     Skill {
         #[command(subcommand)]
         cmd: cmd::skill::SkillCommand,

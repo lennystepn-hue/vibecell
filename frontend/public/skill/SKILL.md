@@ -8,7 +8,7 @@ description: >
   call hangar.active() first to load context.
 ---
 
-# Hangar — project context for Claude Code
+# Vibecell — project context for Claude Code
 
 ## On session start (first action of every session)
 1. hangar.ping(). If unreachable, surface a subtle note and continue without context.
@@ -38,7 +38,7 @@ description: >
 
 ## Hard rules
 - Never invent project data. If a field is empty, say so.
-- Never persist secrets to Hangar. If user pastes one, reject and remind them to
+- Never persist secrets to Vibecell. If user pastes one, reject and remind them to
   use a project_secret_ref instead.
 - All writes go through MCP tools, never by touching ~/.hangar files directly.
 - When referencing a prompt or spec from the vault, cite it by slug in the

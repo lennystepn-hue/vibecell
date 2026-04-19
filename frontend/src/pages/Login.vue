@@ -48,7 +48,7 @@ function reset() {
     <div class="w-full max-w-[380px]">
       <div class="flex items-center gap-2 mb-10 text-fg-subtle">
         <span class="text-signal-green font-mono text-section">◈</span>
-        <span class="font-mono text-small tracking-[0.08em] uppercase">Hangar</span>
+        <span class="font-mono text-small tracking-[0.08em] uppercase">Vibecell</span>
       </div>
 
       <transition

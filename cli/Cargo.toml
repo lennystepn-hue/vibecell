@@ -3,7 +3,7 @@ name = "hangar-cli"
 version = "0.1.0"
 edition = "2021"
 rust-version = "1.83"
-description = "Hangar CLI + daemon + MCP server"
+description = "Vibecell CLI + daemon + MCP server"
 license = "MIT"
 repository = "https://github.com/lenny/hangar"
 

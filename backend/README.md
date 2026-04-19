@@ -1,4 +1,4 @@
-# Hangar Backend
+# Vibecell Backend
 
 FastAPI + SQLAlchemy-async + Alembic + Postgres + Redis.
 

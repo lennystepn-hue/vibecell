@@ -1,12 +1,12 @@
 #!/usr/bin/env sh
 #
-# Hangar CLI installer (macOS / Linux).
+# Vibecell CLI installer (macOS / Linux).
 #
 # Usage:
-#   curl -LsSf https://hangar.dev/install.sh | sh
+#   curl -LsSf https://vibecell.dev/install.sh | sh
 #
 # Environment overrides:
-#   HANGAR_BASE_URL      — base URL to fetch from (default: http://89.167.111.89:8080)
+#   HANGAR_BASE_URL      — base URL to fetch from (default: https://vibecell.dev)
 #   HANGAR_INSTALL_DIR   — directory to install into (default: $HOME/.local/bin)
 #
 # Verifying the download:

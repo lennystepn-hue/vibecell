@@ -64,5 +64,5 @@ async def test_production_mode_calls_resend(monkeypatch: pytest.MonkeyPatch) -> 
     assert len(sent_payloads) == 1
     payload = sent_payloads[0]
     assert payload["to"] == ["u@example.com"]
-    assert "Sign in to Hangar" in payload["subject"]
+    assert "Sign in to Vibecell" in payload["subject"]
     assert "abc" in payload["html"]

@@ -1,6 +1,8 @@
-# Hangar CLI
+# Vibecell CLI
 
 The `hangar` binary — CLI + daemon + MCP server for Claude Code integration.
+(Binary name stays `hangar` as an internal codename — renaming would
+break every user's existing shell history, keychain entry, and config dir.)
 
 ## Dev
 

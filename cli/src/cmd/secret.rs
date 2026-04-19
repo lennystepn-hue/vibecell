@@ -15,7 +15,7 @@ pub enum SecretCommand {
     Set {
         /// Label (unique per project, e.g. "anthropic-key").
         label: String,
-        /// Inline value. Stored encrypted with the workspace DEK on hangar.dev.
+        /// Inline value. Stored encrypted with the workspace DEK on vibecell.dev.
         value: Option<String>,
         /// External reference (e.g. op://Private/Anthropic/api-key).
         #[arg(long = "ref")]
@@ -115,7 +115,7 @@ async fn set(
         .await?;
 
     match kind.as_str() {
-        "inline_encrypted" => println!("ok stored encrypted on hangar.dev ({})", row.label),
+        "inline_encrypted" => println!("ok stored encrypted on vibecell.dev ({})", row.label),
         _ => println!(
             "ok stored reference (resolved at exec time) — {} ({})",
             row.label, kind

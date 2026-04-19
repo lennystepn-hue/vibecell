@@ -137,7 +137,7 @@ onMounted(() => loadIntegrations());
     <header class="mb-8">
       <h1 class="text-display text-fg-primary tracking-tight">Import from GitHub</h1>
       <p class="text-fg-muted mt-1">
-        Pull your repos in as Hangar projects. Stack + language + license auto-fill.
+        Pull your repos in as Vibecell projects. Stack + language + license auto-fill.
       </p>
     </header>
 
@@ -161,7 +161,7 @@ onMounted(() => loadIntegrations());
       <div class="max-w-sm">
         <h2 class="text-title text-fg-primary">Connect your GitHub</h2>
         <p class="text-fg-muted mt-2">
-          We'll read your repos so you can pick which become Hangar projects. Read-only access to metadata — no code is cloned.
+          We'll read your repos so you can pick which become Vibecell projects. Read-only access to metadata — no code is cloned.
         </p>
       </div>
       <a
