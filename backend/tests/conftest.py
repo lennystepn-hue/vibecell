@@ -2,10 +2,11 @@ from __future__ import annotations
 
 import asyncio
 import os
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Iterator
 from pathlib import Path
 from typing import Any
 
+import pytest
 import pytest_asyncio
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
@@ -13,6 +14,22 @@ from sqlalchemy.ext.asyncio import (
     async_sessionmaker,
     create_async_engine,
 )
+
+
+@pytest.fixture(autouse=True)
+def _clear_settings_cache() -> Iterator[None]:
+    """Prevent settings cache leakage across tests.
+
+    Some tests mutate HANGAR_* env vars via monkeypatch and call
+    `get_settings.cache_clear()` — but the cache populated during that test
+    persists to the next test, leaking stale values (e.g. dev_mode=False
+    making cookies Secure-only, breaking subsequent http:// client tests).
+    Clearing before AND after each test gives deterministic per-test settings.
+    """
+    from app.core.config import get_settings
+    get_settings.cache_clear()
+    yield
+    get_settings.cache_clear()
 
 # --- Set required env vars BEFORE any app module imports Settings. ---
 # Safe defaults so `from app.core.config import get_settings` works at import time.
