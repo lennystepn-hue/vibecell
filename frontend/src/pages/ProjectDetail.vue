@@ -8,6 +8,7 @@ import ProjectContextEditor from "@/components/projects/ProjectContextEditor.vue
 import ProjectFocusCard from "@/components/projects/ProjectFocusCard.vue";
 import ProjectInfraCard from "@/components/projects/ProjectInfraCard.vue";
 import ProjectLinksCommands from "@/components/projects/ProjectLinksCommands.vue";
+import ProjectSessionsCard from "@/components/projects/ProjectSessionsCard.vue";
 import ProjectStackEditor from "@/components/projects/ProjectStackEditor.vue";
 import ProjectStatusDropdown from "@/components/projects/ProjectStatusDropdown.vue";
 import ProjectTagsEditor from "@/components/projects/ProjectTagsEditor.vue";
@@ -151,6 +152,9 @@ watch(
           <ProjectTagsEditor :project="projects.active" />
           <div class="xl:col-span-3">
             <ProjectLinksCommands :project="projects.active" />
+          </div>
+          <div class="xl:col-span-3">
+            <ProjectSessionsCard :project="projects.active" />
           </div>
         </div>
       </div>
