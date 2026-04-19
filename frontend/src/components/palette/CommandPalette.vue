@@ -98,10 +98,29 @@ const matchedActions = computed(() =>
   fuzzyFilter(palette.query, actions.value, (a) => a.label),
 );
 
-const rows = computed<PaletteRow[]>(() => [
-  ...matchedProjects.value.map<ProjectItem>((p) => ({ kind: "project", id: p.id, project: p })),
-  ...matchedActions.value.map<ActionItem>((a) => a),
-]);
+const searchAction = computed<ActionItem | null>(() => {
+  const q = palette.query.trim();
+  if (q.length < 3) return null;
+  return {
+    kind: "action",
+    id: "search-all",
+    label: `Search all for "${q}"`,
+    icon: "⌕",
+    run: () => {
+      router.push({ path: "/search", query: { q } });
+      palette.hide();
+    },
+  };
+});
+
+const rows = computed<PaletteRow[]>(() => {
+  const list: PaletteRow[] = [
+    ...matchedProjects.value.map<ProjectItem>((p) => ({ kind: "project", id: p.id, project: p })),
+    ...matchedActions.value.map<ActionItem>((a) => a),
+  ];
+  if (searchAction.value) list.push(searchAction.value);
+  return list;
+});
 
 // Reset selection when rows change.
 watch(rows, () => {
@@ -230,6 +249,17 @@ function rowIndex(kind: "project" | "action", id: string): number {
                 :shortcut="a.shortcut"
                 @click="runRow(a)"
                 @hover="palette.selectedIndex = rowIndex('action', a.id)"
+              />
+            </template>
+
+            <template v-if="searchAction">
+              <PaletteSection label="search all…" />
+              <PaletteItem
+                :selected="palette.selectedIndex === rowIndex('action', searchAction.id)"
+                :icon="searchAction.icon"
+                :label="searchAction.label"
+                @click="runRow(searchAction)"
+                @hover="palette.selectedIndex = rowIndex('action', searchAction.id)"
               />
             </template>
           </template>
