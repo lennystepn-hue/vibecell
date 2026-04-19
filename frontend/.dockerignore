@@ -1,0 +1,9 @@
+node_modules/
+dist/
+.pnpm-store/
+coverage/
+test-results/
+playwright-report/
+e2e/
+**/*.spec.ts
+**/__tests__/
