@@ -19,7 +19,8 @@ onMounted(() => projects.fetchList());
       <div>
         <h1 class="text-display text-fg-primary tracking-tight">Projects</h1>
         <p class="text-fg-muted mt-1">
-          <span class="tabular-nums">{{ projects.list.length }}</span> in your hangar
+          <span class="tabular-nums">{{ projects.list.length }}</span>
+          {{ projects.list.length === 1 ? "project" : "projects" }} in your workspace
         </p>
       </div>
       <div class="flex gap-2">

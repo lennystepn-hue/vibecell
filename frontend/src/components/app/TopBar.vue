@@ -16,16 +16,23 @@ const palette = useCommandPaletteStore();
   >
     <div class="flex items-center gap-2 min-w-0">
       <span class="text-signal-green font-mono tracking-wider" aria-hidden="true">◈</span>
-      <span class="font-medium text-fg-primary truncate max-w-[20ch]">
-        {{ auth.activeWorkspace?.slug ?? "hangar" }}
-      </span>
-      <span v-if="route.params.slug" class="text-fg-subtle">/</span>
-      <span v-if="route.params.slug" class="font-mono text-fg-body truncate max-w-[24ch]">
-        {{ route.params.slug }}
-      </span>
+      <template v-if="auth.isAuthed && auth.activeWorkspace">
+        <span class="font-medium text-fg-primary truncate max-w-[20ch]">
+          {{ auth.activeWorkspace.slug }}
+        </span>
+        <span v-if="route.params.slug" class="text-fg-subtle">/</span>
+        <span v-if="route.params.slug" class="font-mono text-fg-body truncate max-w-[24ch]">
+          {{ route.params.slug }}
+        </span>
+      </template>
+      <template v-else>
+        <span class="font-mono text-fg-primary tracking-[0.08em] text-small uppercase">
+          Vibecell
+        </span>
+      </template>
     </div>
 
-    <nav class="ml-6 flex items-center gap-4 text-small">
+    <nav v-if="auth.isAuthed" class="ml-6 flex items-center gap-4 text-small">
       <RouterLink
         to="/ideas"
         class="mono-label hover:text-fg-body transition-colors"
@@ -39,6 +46,7 @@ const palette = useCommandPaletteStore();
     </nav>
 
     <button
+      v-if="auth.isAuthed"
       class="ml-auto flex items-center gap-3 h-7 px-3 rounded-md border border-border bg-bg-surface/50 text-fg-muted text-small transition-colors hover:bg-bg-surface-hi"
       @click="palette.toggle"
     >

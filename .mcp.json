@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "hangar": {
+      "type": "http",
+      "url": "http://127.0.0.1:7421/mcp/v1",
+      "headers": {
+        "Authorization": "Bearer ${HANGAR_MCP_TOKEN}"
+      },
+      "description": "Vibecell daemon — project context + Ship Loop + secrets. Requires `hangar daemon start` running locally. Token: read from ~/.hangar/mcp-token.",
+      "note": "If you don't have the hangar CLI installed yet, run: curl -LsSf https://vibecell.dev/install.sh | sh"
+    }
+  }
+}
