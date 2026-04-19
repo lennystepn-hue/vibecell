@@ -32,6 +32,11 @@ enum Command {
     /// Print (or rotate) the MCP bearer token used by Claude Code.
     #[command(name = "mcp-token")]
     McpToken(cmd::mcp_token::McpTokenArgs),
+    /// Manage the Hangar Claude skill (print / install).
+    Skill {
+        #[command(subcommand)]
+        cmd: cmd::skill::SkillCommand,
+    },
 }
 
 #[tokio::main]
@@ -52,9 +57,10 @@ async fn main() -> anyhow::Result<()> {
         Some(Command::Sync) => cmd::sync::run().await,
         Some(Command::Daemon { cmd }) => cmd::daemon::run(cmd).await,
         Some(Command::McpToken(args)) => cmd::mcp_token::run(args).await,
+        Some(Command::Skill { cmd }) => cmd::skill::run(cmd).await,
         None => {
             println!(
-                "hangar {} — subcommands: pair | status | unpair | sync | daemon | mcp-token",
+                "hangar {} — subcommands: pair | status | unpair | sync | daemon | mcp-token | skill",
                 env!("CARGO_PKG_VERSION")
             );
             println!("run `hangar pair` to connect this device.");
