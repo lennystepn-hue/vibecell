@@ -46,6 +46,7 @@ pub struct WorkspaceBrief {
     #[allow(dead_code)]
     pub id: String,
     pub slug: String,
+    #[allow(dead_code)]
     pub name: String,
 }
 

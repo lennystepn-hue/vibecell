@@ -85,6 +85,7 @@ pub fn list_projects(conn: &Connection) -> Result<Vec<ProjectCacheRow>> {
     rows.collect::<Result<Vec<_>, _>>().map_err(Into::into)
 }
 
+#[allow(dead_code)] // read path reserved for future cache-first tools
 pub fn get_project_full_json(conn: &Connection, slug: &str) -> Result<Option<String>> {
     let v: Option<Option<String>> = conn
         .query_row(
