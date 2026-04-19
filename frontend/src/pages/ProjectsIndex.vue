@@ -1,16 +1,16 @@
 <script setup lang="ts">
-import { onMounted } from "vue";
+import { onMounted, ref } from "vue";
 
 import ProjectCard from "@/components/projects/ProjectCard.vue";
+import QuickAddProject from "@/components/projects/QuickAddProject.vue";
 import EmptyState from "@/components/ui/EmptyState.vue";
 import PrimaryButton from "@/components/ui/PrimaryButton.vue";
 import { useProjectsStore } from "@/stores/projects";
 
 const projects = useProjectsStore();
+const quickAddOpen = ref(false);
 
-onMounted(() => {
-  projects.fetchList();
-});
+onMounted(() => projects.fetchList());
 </script>
 
 <template>
@@ -19,8 +19,7 @@ onMounted(() => {
       <div>
         <h1 class="text-display text-fg-primary tracking-tight">Projects</h1>
         <p class="text-fg-muted mt-1">
-          <span class="tabular-nums">{{ projects.list.length }}</span>
-          in your hangar
+          <span class="tabular-nums">{{ projects.list.length }}</span> in your hangar
         </p>
       </div>
       <div class="flex gap-2">
@@ -31,7 +30,7 @@ onMounted(() => {
           <span aria-hidden="true">↗</span>
           <span>Import from GitHub</span>
         </RouterLink>
-        <PrimaryButton>
+        <PrimaryButton @click="quickAddOpen = true">
           <span aria-hidden="true">+</span>
           <span>New project</span>
         </PrimaryButton>
@@ -54,16 +53,14 @@ onMounted(() => {
         >
           Import from GitHub
         </RouterLink>
-        <PrimaryButton>+ New project</PrimaryButton>
+        <PrimaryButton @click="quickAddOpen = true">+ New project</PrimaryButton>
       </template>
     </EmptyState>
 
     <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      <ProjectCard
-        v-for="p in projects.list"
-        :key="p.id"
-        :project="p"
-      />
+      <ProjectCard v-for="p in projects.list" :key="p.id" :project="p" />
     </div>
+
+    <QuickAddProject :open="quickAddOpen" @close="quickAddOpen = false" />
   </div>
 </template>
