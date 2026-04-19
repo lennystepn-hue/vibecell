@@ -2,9 +2,11 @@
 from __future__ import annotations
 
 from collections.abc import Awaitable, Callable
+from contextlib import AbstractAsyncContextManager
 from typing import TYPE_CHECKING
 
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import Response
@@ -17,6 +19,26 @@ if TYPE_CHECKING:
     from fastapi import FastAPI
 
 SESSION_COOKIE_NAME = "hangar_session"
+
+
+# Session-scope factory indirection — tests override this to route the
+# middleware's bearer-token DB lookups through the test's transactional session.
+_bearer_session_factory: Callable[[], AbstractAsyncContextManager[AsyncSession]] | None = None
+
+
+def set_bearer_session_factory(
+    factory: Callable[[], AbstractAsyncContextManager[AsyncSession]] | None,
+) -> None:
+    """Override the middleware's DB session factory (tests only)."""
+    global _bearer_session_factory
+    _bearer_session_factory = factory
+
+
+def _get_session_scope() -> AbstractAsyncContextManager[AsyncSession]:
+    if _bearer_session_factory is not None:
+        return _bearer_session_factory()
+    from app.core.db import session_scope  # lazy import
+    return session_scope()
 
 
 async def _resolve_bearer(request: Request) -> tuple[str, str, str] | None:
@@ -34,11 +56,10 @@ async def _resolve_bearer(request: Request) -> tuple[str, str, str] | None:
         return None
 
     # Local imports to avoid circular import at module load.
-    from app.core.db import session_scope
     from app.models import Workspace
     from app.services.cli_pair import find_device_by_token
 
-    async with session_scope() as db:
+    async with _get_session_scope() as db:
         device = await find_device_by_token(db, raw_token=raw_token)
         if device is None:
             return None
