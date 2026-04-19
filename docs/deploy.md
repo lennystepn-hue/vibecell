@@ -51,12 +51,35 @@ Verify: `curl http://89.167.111.89:8080/api/v1/healthz` → `{"ok":true,...}`.
 
 Two options:
 
-### Option 1: Route through existing `agentready-nginx`
+### Option 1: Route through existing `agentready-nginx` (current setup)
 
 The server already runs `agentready-nginx` on ports 80/443. The canonical
-server block lives in-repo at `ops/nginx/vibecell.dev.conf` — copy it into
-the nginx container's `/etc/nginx/conf.d/` and reload. Certbot issues the
-cert via webroot challenge.
+server block lives in-repo at `ops/nginx/vibecell.dev.conf`, with a
+transitional HTTP-only version at `ops/nginx/vibecell.dev.http-only.conf`
+used during cert bootstrap. The outer nginx proxies to `hangar-nginx-1`
+via the host gateway `http://172.17.0.1:8080` (docker0 bridge — no
+compose-file change needed on the agentready side).
+
+**First-time cert issuance** (once DNS A record points vibecell.dev at
+89.167.111.89):
+
+```bash
+scp ops/nginx/vibecell.dev.http-only.conf \
+    root@89.167.111.89:/tmp/vibecell-http.conf
+ssh root@89.167.111.89 'docker cp /tmp/vibecell-http.conf \
+  agentready-nginx-1:/etc/nginx/conf.d/vibecell.conf && \
+  docker exec agentready-nginx-1 nginx -s reload'
+
+scp ops/issue-cert.sh root@89.167.111.89:/tmp/issue-cert.sh
+ssh root@89.167.111.89 'chmod +x /tmp/issue-cert.sh && /tmp/issue-cert.sh'
+```
+
+The script does a DNS gate + HTTP-01 self-check, then runs certbot
+webroot, then swaps in `vibecell.dev.conf` and reloads nginx.
+
+**Renewal** is handled by the existing `agentready-certbot-1` container
+(internal 12h renew loop). A crontab entry reloads agentready-nginx-1
+nightly at 03:15 UTC so freshly renewed certs get picked up.
 
 ### Option 2: Cloudflare proxy
 
