@@ -26,7 +26,12 @@ from app.core.audit import install_audit_listener
 from app.core.middleware import install_session_middleware
 from app.core.problem import install_problem_handler
 
-app = FastAPI(title="Vibecell", version="0.1.0")
+app = FastAPI(
+    title="Vibecell",
+    version="0.1.0",
+    openapi_url="/api/v1/openapi.json",
+    docs_url="/api/v1/docs",
+)
 
 install_problem_handler(app)
 install_session_middleware(app)
