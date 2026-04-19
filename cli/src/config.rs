@@ -43,5 +43,5 @@ pub fn save(cfg: &Config) -> Result<()> {
 }
 
 pub fn default_base_url() -> String {
-    std::env::var("HANGAR_BASE_URL").unwrap_or_else(|_| "http://89.167.111.89:8080".to_string())
+    std::env::var("HANGAR_BASE_URL").unwrap_or_else(|_| "https://vibecell.dev".to_string())
 }

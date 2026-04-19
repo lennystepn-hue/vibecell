@@ -16,7 +16,7 @@
 
 set -eu
 
-BASE_URL="${HANGAR_BASE_URL:-http://89.167.111.89:8080}"
+BASE_URL="${HANGAR_BASE_URL:-https://vibecell.dev}"
 
 OS="$(uname -s | tr '[:upper:]' '[:lower:]')"
 ARCH="$(uname -m)"

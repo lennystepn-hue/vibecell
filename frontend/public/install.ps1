@@ -9,7 +9,7 @@
 
 $ErrorActionPreference = "Stop"
 
-$BaseUrl = if ($env:HANGAR_BASE_URL) { $env:HANGAR_BASE_URL } else { "http://89.167.111.89:8080" }
+$BaseUrl = if ($env:HANGAR_BASE_URL) { $env:HANGAR_BASE_URL } else { "https://vibecell.dev" }
 $Target  = "x86_64-pc-windows-msvc"
 $InstallDir = if ($env:HANGAR_INSTALL_DIR) { $env:HANGAR_INSTALL_DIR } else { "$env:USERPROFILE\.hangar\bin" }
 
