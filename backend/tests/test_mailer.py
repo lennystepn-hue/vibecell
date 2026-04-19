@@ -16,7 +16,7 @@ async def test_dev_mode_logs_instead_of_sending(monkeypatch: pytest.MonkeyPatch)
     resend_called = False
 
     class _TripwireResend:
-        class emails:  # noqa: N801
+        class Emails:
             @staticmethod
             def send(payload: dict[str, Any]) -> dict[str, str]:
                 nonlocal resend_called
@@ -51,7 +51,7 @@ async def test_production_mode_calls_resend(monkeypatch: pytest.MonkeyPatch) -> 
             return {"id": "fake-message-id"}
 
     class _FakeResend:
-        emails = _FakeEmails()
+        Emails = _FakeEmails
 
     import app.services.mailer as mailer
     monkeypatch.setattr(mailer, "_resend_client", lambda: _FakeResend)

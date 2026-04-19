@@ -49,6 +49,7 @@ async def send_magic_link_email(*, to: str, verify_url: str) -> None:
         "subject": _MAGIC_LINK_SUBJECT,
         "html": _MAGIC_LINK_HTML.format(verify_url=verify_url),
     }
-    # Resend SDK is sync; we call it synchronously from async context.
-    # Acceptable for an outbound call that only runs on magic-link request.
-    client.emails.send(payload)
+    # Resend SDK 2.x exposes `Emails` as a class with static `send`.
+    # Call is sync; we invoke it from async context because it's a single
+    # outbound HTTP request per magic-link request (rare) — acceptable.
+    client.Emails.send(payload)
