@@ -15,6 +15,7 @@ from app.api.v1.me import router as me_router
 from app.api.v1.notes import router as notes_router
 from app.api.v1.project_children import router as project_children_router
 from app.api.v1.projects import router as projects_router
+from app.api.v1.search import router as search_router
 from app.api.v1.secrets import router as secrets_router
 from app.api.v1.sessions import router as sessions_router
 from app.api.v1.ships import router as ships_router
@@ -52,6 +53,7 @@ app.include_router(ships_router)
 app.include_router(launches_router)
 app.include_router(lifecycle_router)
 app.include_router(notes_router)
+app.include_router(search_router)
 
 
 @app.get("/api/v1/healthz")
