@@ -1,5 +1,6 @@
 use clap::{Parser, Subcommand};
 
+mod cache;
 mod cloud;
 mod cmd;
 mod config;
@@ -20,6 +21,8 @@ enum Command {
     Status,
     /// Revoke the current pairing (removes keychain entry + server-side device).
     Unpair,
+    /// Pull workspace + projects into the local SQLite cache.
+    Sync,
 }
 
 #[tokio::main]
@@ -37,9 +40,10 @@ async fn main() -> anyhow::Result<()> {
         Some(Command::Pair) => cmd::pair::run().await,
         Some(Command::Status) => cmd::status::run().await,
         Some(Command::Unpair) => cmd::unpair::run().await,
+        Some(Command::Sync) => cmd::sync::run().await,
         None => {
             println!(
-                "hangar {} — subcommands: pair | status | unpair",
+                "hangar {} — subcommands: pair | status | unpair | sync",
                 env!("CARGO_PKG_VERSION")
             );
             println!("run `hangar pair` to connect this device.");
