@@ -9,7 +9,7 @@ from app.models.auth import (
     WorkspaceMember,
 )
 from app.models.base import Base
-from app.models.catalog import ProjectStack, ProjectTag, StackItem, Tag
+from app.models.catalog import ProjectGroup, ProjectStack, ProjectTag, StackItem, Tag
 from app.models.integration import Integration, WorkspaceKey
 from app.models.project import (
     ActiveProject,
@@ -33,6 +33,7 @@ __all__ = [
     "ProjectCommand",
     "ProjectContext",
     "ProjectEnvironment",
+    "ProjectGroup",
     "ProjectInfra",
     "ProjectLink",
     "ProjectRepo",

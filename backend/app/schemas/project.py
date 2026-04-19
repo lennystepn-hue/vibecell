@@ -20,6 +20,8 @@ class ProjectListItem(BaseModel):
     color: str | None = None
     pitch: str | None = None
     status: str
+    group_id: str | None = None
+    position: int = 0
 
 
 class ProjectOut(ProjectListItem):

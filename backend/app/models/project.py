@@ -27,6 +27,10 @@ class Project(Base, TimestampMixin):
     legal_entity_id: Mapped[str | None] = mapped_column(String(26))  # FK added in Spec 4
     is_public: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     archived_at: Mapped[datetime | None] = mapped_column(TIMESTAMP(timezone=True))
+    group_id: Mapped[str | None] = mapped_column(
+        String(26), ForeignKey("project_groups.id", ondelete="SET NULL"), index=True
+    )
+    position: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
 
 
 class ActiveProject(Base):
