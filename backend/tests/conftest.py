@@ -8,6 +8,7 @@ from typing import Any
 
 import pytest
 import pytest_asyncio
+from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     AsyncSession,
@@ -161,3 +162,96 @@ async def registered_oauth_client(session: AsyncSession):
     session.add(row)
     await session.flush()
     yield row
+
+
+# ---------------------------------------------------------------------------
+# Shared HTTP client fixtures (used by test_oauth_token.py, test_oauth_revoke.py)
+# ---------------------------------------------------------------------------
+
+@pytest_asyncio.fixture
+async def client(session: AsyncSession) -> AsyncIterator[AsyncClient]:
+    """Unauthenticated AsyncClient — for /oauth/token and /oauth/revoke calls."""
+    from app.main import app
+    from tests._auth_helpers import clear_db_override, override_db
+
+    override_db(session)
+    try:
+        async with AsyncClient(
+            transport=ASGITransport(app=app),
+            base_url="http://t",
+            follow_redirects=False,
+        ) as c:
+            yield c
+    finally:
+        clear_db_override()
+
+
+@pytest_asyncio.fixture
+async def authed_client(session: AsyncSession) -> AsyncIterator[AsyncClient]:
+    """AsyncClient signed in as the shared revoke/token test user."""
+    from app.main import app
+    from tests._auth_helpers import clear_db_override, override_db, sign_in
+
+    override_db(session)
+    try:
+        async with AsyncClient(
+            transport=ASGITransport(app=app),
+            base_url="http://t",
+            follow_redirects=False,
+        ) as c:
+            await sign_in(c, session, "oauth-revoke-test@example.com")
+            yield c
+    finally:
+        clear_db_override()
+
+
+@pytest_asyncio.fixture
+async def user_workspace(session: AsyncSession, authed_client: AsyncClient):
+    """Return the Workspace auto-created for the signed-in revoke test user."""
+    from sqlalchemy import select
+
+    from app.models import User, Workspace, WorkspaceMember
+
+    user = (await session.execute(
+        select(User).where(User.email == "oauth-revoke-test@example.com")
+    )).scalar_one()
+
+    ws = (await session.execute(
+        select(Workspace)
+        .join(WorkspaceMember, WorkspaceMember.workspace_id == Workspace.id)
+        .where(WorkspaceMember.user_id == user.id)
+        .limit(1)
+    )).scalar_one()
+    return ws
+
+
+@pytest_asyncio.fixture
+async def issued_token_pair(authed_client, client, registered_oauth_client, user_workspace):
+    """Drive authorize→grant→token flow and return {access_token, refresh_token, client_id}."""
+    import base64
+    import hashlib
+
+    verifier = "v" + "a" * 42
+    challenge = base64.urlsafe_b64encode(
+        hashlib.sha256(verifier.encode()).digest()
+    ).decode().rstrip("=")
+    cid = registered_oauth_client.client_id
+    redirect = registered_oauth_client.redirect_uris[0]
+
+    await authed_client.get(
+        f"/oauth/authorize?response_type=code&client_id={cid}&redirect_uri={redirect}"
+        f"&code_challenge={challenge}&code_challenge_method=S256&state=fix&scope=vibecell:tools",
+        headers={"accept": "application/json"},
+    )
+    r = await authed_client.post(
+        "/oauth/grant",
+        json={"state": "fix", "workspace_id": user_workspace.id},
+        follow_redirects=False,
+    )
+    code = r.headers["location"].split("code=")[1].split("&")[0]
+    pair = (await client.post("/oauth/token", data={
+        "grant_type": "authorization_code", "code": code, "redirect_uri": redirect,
+        "client_id": cid, "code_verifier": verifier,
+    })).json()
+    pair["client_id"] = cid
+    return pair

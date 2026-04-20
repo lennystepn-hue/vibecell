@@ -359,3 +359,68 @@ async def _token_from_refresh(db: AsyncSession, refresh_token: str | None, clien
         "refresh_token": new_rt,
         "scope": row.scope,
     }
+
+
+# ---------------------------------------------------------------------------
+# Task 1.10 — POST /oauth/revoke (RFC 7009)
+# ---------------------------------------------------------------------------
+from fastapi import Response  # noqa: E402
+
+from app.oauth.tokens import JTIBlacklist, verify_access_token  # noqa: E402
+
+
+@router.post("/revoke")
+async def revoke(
+    token: str = Form(...),
+    token_type_hint: str = Form("access_token"),
+    db: AsyncSession = Depends(get_db),
+) -> Response:
+    # RFC 7009: return 200 regardless of token validity
+    try:
+        if token_type_hint == "refresh_token":
+            await _revoke_refresh(db, token)
+        else:
+            await _revoke_access(db, token)
+    except Exception:  # noqa: BLE001 — intentional broad swallow per RFC
+        pass
+    return Response(status_code=200)
+
+
+async def _revoke_access(db: AsyncSession, token: str) -> None:
+    try:
+        claims = verify_access_token(token)
+    except ValueError:
+        return
+    ttl = max(1, claims.exp - int(datetime.now(timezone.utc).timestamp()))
+    await JTIBlacklist().add(claims.jti, ttl_seconds=ttl)
+    row = (await db.execute(
+        select(OAuthAccessToken).where(OAuthAccessToken.jti == claims.jti)
+    )).scalar_one_or_none()
+    if row:
+        row.revoked_at = datetime.now(timezone.utc)
+
+
+async def _revoke_refresh(db: AsyncSession, token: str) -> None:
+    h = hash_refresh_token(token)
+    row = (await db.execute(
+        select(OAuthRefreshToken).where(OAuthRefreshToken.token_hash == h)
+    )).scalar_one_or_none()
+    if row is None:
+        return
+    now = datetime.now(timezone.utc)
+    row.revoked_at = now
+    # Cascade: revoke all access tokens in same family still valid
+    access_rows = (await db.execute(
+        select(OAuthAccessToken).where(
+            OAuthAccessToken.issued_from_refresh_family == row.family_id,
+            OAuthAccessToken.revoked_at.is_(None),
+            OAuthAccessToken.expires_at > now,
+        )
+    )).scalars().all()
+    for ar in access_rows:
+        ar.revoked_at = now
+        ttl = max(1, int(ar.expires_at.timestamp()) - int(now.timestamp()))
+        await JTIBlacklist().add(ar.jti, ttl_seconds=ttl)
+
+    # Also invalidate the refresh token itself if not yet blacklisted (blocks reuse)
+    # (covered by revoked_at check in _token_from_refresh)
