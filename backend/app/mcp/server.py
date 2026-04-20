@@ -37,8 +37,14 @@ async def mcp_endpoint(
     method = body.get("method")
     params = body.get("params") or {}
 
+    # Temporary debug logging to diagnose claude.ai handshake
+    import logging
+    logging.getLogger("mcp").warning(
+        "MCP %s id=%r params_keys=%s client_id=%s",
+        method, req_id, list(params.keys()) if isinstance(params, dict) else None, ctx.client_id,
+    )
+
     # JSON-RPC notifications (no id) — server MUST NOT respond with a body.
-    # MCP notifications we know about: notifications/initialized, notifications/cancelled, notifications/progress.
     if req_id is None:
         return Response(status_code=202)
 
