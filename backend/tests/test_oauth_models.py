@@ -83,24 +83,30 @@ async def test_refresh_token_hash_unique_constraint(session: AsyncSession) -> No
 
     user_id, workspace_id, client_id = await _seed_base(session)
 
-    token_hash = f"sha_{new_ulid()}"
+    fam1 = new_ulid()
+    fam2 = new_ulid()
+    now = datetime.now(timezone.utc)
     t1 = OAuthRefreshToken(
         id=new_ulid(),
-        token_hash=token_hash,
+        token_hash="sha_same",
+        family_id=fam1,
         client_id=client_id,
         user_id=user_id,
         workspace_id=workspace_id,
         scope="vibecell:tools",
-        expires_at=datetime.now(timezone.utc) + timedelta(days=30),
+        issued_at=now,
+        expires_at=now + timedelta(days=30),
     )
     t2 = OAuthRefreshToken(
         id=new_ulid(),
-        token_hash=token_hash,  # duplicate hash
+        token_hash="sha_same",  # duplicate hash
+        family_id=fam2,
         client_id=client_id,
         user_id=user_id,
         workspace_id=workspace_id,
         scope="vibecell:tools",
-        expires_at=datetime.now(timezone.utc) + timedelta(days=30),
+        issued_at=now,
+        expires_at=now + timedelta(days=30),
     )
     session.add(t1)
     await session.flush()

@@ -68,7 +68,7 @@ class OAuthRefreshToken(Base):
 
     id: Mapped[str] = mapped_column(String(26), primary_key=True)
     token_hash: Mapped[str] = mapped_column(String(64), unique=True, index=True)
-    family_id: Mapped[str | None] = mapped_column(String(26), index=True)
+    family_id: Mapped[str] = mapped_column(String(26), index=True)
     client_id: Mapped[str] = mapped_column(
         String(64), ForeignKey("oauth_clients.client_id"), index=True
     )
@@ -77,7 +77,7 @@ class OAuthRefreshToken(Base):
         String(26), ForeignKey("workspaces.id"), index=True
     )
     scope: Mapped[str] = mapped_column(String(255))
-    issued_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    issued_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     consumed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
