@@ -1,16 +1,24 @@
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
+import { computed, onMounted, ref } from "vue";
 
+import ConnectModal from "@/components/connections/ConnectModal.vue";
 import ProjectCard from "@/components/projects/ProjectCard.vue";
 import QuickAddProject from "@/components/projects/QuickAddProject.vue";
 import EmptyState from "@/components/ui/EmptyState.vue";
 import PrimaryButton from "@/components/ui/PrimaryButton.vue";
+import { useConnectionsStore } from "@/stores/connections";
 import { useProjectsStore } from "@/stores/projects";
 
 const projects = useProjectsStore();
+const connections = useConnectionsStore();
 const quickAddOpen = ref(false);
+const connectOpen = ref(false);
+const hasOAuthClient = computed(() => connections.list.some((c) => c.type === "oauth"));
 
-onMounted(() => projects.fetchList());
+onMounted(() => {
+  projects.fetchList();
+  connections.refresh();
+});
 </script>
 
 <template>
@@ -38,6 +46,27 @@ onMounted(() => projects.fetchList());
       </div>
     </header>
 
+    <section
+      v-if="!connections.loading && !hasOAuthClient"
+      class="glass rounded-lg p-6 mb-8 border border-signal-green/30"
+    >
+      <div class="flex items-center justify-between gap-4">
+        <div>
+          <h2 class="text-body text-fg-primary font-medium">Connect your editor to Vibecell</h2>
+          <p class="text-small text-fg-muted mt-1 max-w-lg">
+            Claude Desktop, Cursor, Zed, and other MCP clients can talk to Vibecell directly.
+            Zero install — sign in, allow, done.
+          </p>
+        </div>
+        <button
+          class="shrink-0 px-4 py-2 rounded-md bg-signal-green text-bg-base text-body font-medium hover:opacity-90 transition-opacity"
+          @click="connectOpen = true"
+        >
+          Connect
+        </button>
+      </div>
+    </section>
+
     <div v-if="projects.loadingList && projects.list.length === 0" class="text-fg-muted">
       <p class="mono-label">loading your projects…</p>
     </div>
@@ -63,5 +92,6 @@ onMounted(() => projects.fetchList());
     </div>
 
     <QuickAddProject :open="quickAddOpen" @close="quickAddOpen = false" />
+    <ConnectModal :open="connectOpen" @close="connectOpen = false" />
   </div>
 </template>

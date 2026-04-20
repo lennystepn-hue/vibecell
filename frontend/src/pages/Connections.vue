@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from "vue";
 
+import ConnectModal from "@/components/connections/ConnectModal.vue";
 import SettingsNav from "@/components/settings/SettingsNav.vue";
 import PrimaryButton from "@/components/ui/PrimaryButton.vue";
 import { useConnectionsStore } from "@/stores/connections";
@@ -9,6 +10,7 @@ import type { Connection } from "@/stores/connections";
 const connections = useConnectionsStore();
 const revokeTarget = ref<Connection | null>(null);
 const revoking = ref(false);
+const connectOpen = ref(false);
 
 onMounted(() => connections.refresh());
 
@@ -92,8 +94,19 @@ async function confirmRevoke() {
             </div>
           </div>
         </div>
+
+        <div class="mt-8">
+          <button
+            class="text-small text-fg-muted hover:text-fg-body transition-colors"
+            @click="connectOpen = true"
+          >
+            + Connect another app
+          </button>
+        </div>
       </div>
     </div>
+
+    <ConnectModal :open="connectOpen" @close="connectOpen = false" />
 
     <!-- Revoke confirm modal -->
     <div

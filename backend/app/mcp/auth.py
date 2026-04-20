@@ -11,6 +11,7 @@ from fastapi import Depends, HTTPException, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db import get_db
+from app.metrics.registry import mcp_auth_failures
 from app.oauth.tokens import JTIBlacklist, verify_access_token
 
 
@@ -34,18 +35,22 @@ async def require_mcp_context(
 ) -> MCPContext:
     header = request.headers.get("authorization", "")
     if not header.lower().startswith("bearer "):
+        mcp_auth_failures.labels(reason="missing_bearer").inc()
         raise HTTPException(status_code=401, detail="missing_bearer", headers=_WWW_AUTH_HEADER)
 
     token = header[7:].strip()
     try:
         claims = verify_access_token(token)
     except ValueError as e:
+        mcp_auth_failures.labels(reason="invalid_token").inc()
         raise HTTPException(status_code=401, detail="invalid_token", headers=_WWW_AUTH_HEADER) from e
 
     if await JTIBlacklist().is_revoked(claims.jti):
+        mcp_auth_failures.labels(reason="revoked_token").inc()
         raise HTTPException(status_code=401, detail="revoked_token", headers=_WWW_AUTH_HEADER)
 
     if "vibecell:tools" not in claims.scope.split():
+        mcp_auth_failures.labels(reason="insufficient_scope").inc()
         raise HTTPException(status_code=403, detail="insufficient_scope", headers=_WWW_AUTH_HEADER)
 
     return MCPContext(

@@ -13,6 +13,7 @@ from pydantic import ValidationError
 from app.mcp.audit import log_tool_call
 from app.mcp.auth import MCPContext, require_mcp_context
 from app.mcp.tools import TOOLS, TOOLS_BY_NAME
+from app.metrics.registry import mcp_tool_calls
 
 
 router = APIRouter()
@@ -83,10 +84,12 @@ async def _dispatch_tool_call(ctx: MCPContext, req_id: Any, params: dict) -> dic
             db=ctx.db, client_id=ctx.client_id, workspace_id=ctx.workspace_id, user_id=ctx.user_id,
             tool_name=name, duration_ms=int((time.monotonic() - t0) * 1000), status="error",
         )
+        mcp_tool_calls.labels(tool_name=name, status="error").inc()
         return _err(req_id, -32603, f"Internal error: {type(exc).__name__}")
 
     await log_tool_call(
         db=ctx.db, client_id=ctx.client_id, workspace_id=ctx.workspace_id, user_id=ctx.user_id,
         tool_name=name, duration_ms=int((time.monotonic() - t0) * 1000), status=status,
     )
+    mcp_tool_calls.labels(tool_name=name, status=status).inc()
     return _ok(req_id, {"content": [{"type": "text", "text": text}]})

@@ -20,6 +20,7 @@ from app.core.db import get_db
 from app.core.deps import AuthContext, require_auth
 from app.core.rate_limit import check_and_consume
 from app.core.ulid import new_ulid
+from app.metrics.registry import oauth_authorize_outcomes, oauth_tokens_issued
 from app.models import Workspace, WorkspaceMember
 from app.oauth import consent
 from app.oauth.models import OAuthAuthCode, OAuthClient
@@ -218,6 +219,8 @@ async def grant(
 
     redirect_url = _build_redirect_location(cs.redirect_uri, code=code, state=cs.state)
 
+    oauth_authorize_outcomes.labels(outcome="granted").inc()
+
     # SPA calls with Accept: application/json — return JSON so the frontend can
     # do window.location.href = data.redirect (avoids opaque-redirect headaches).
     if "application/json" in request.headers.get("accept", ""):
@@ -238,6 +241,8 @@ async def deny(
     await consent.drop(body.state)
 
     redirect_url = _build_redirect_location(cs.redirect_uri, error="access_denied", state=cs.state)
+
+    oauth_authorize_outcomes.labels(outcome="denied").inc()
 
     if "application/json" in request.headers.get("accept", ""):
         return {"redirect": redirect_url}
@@ -350,6 +355,8 @@ async def _token_from_code(
 
     await db.flush()
 
+    oauth_tokens_issued.labels(client_name=client_row.client_name or "unknown").inc()
+
     return {
         "access_token": jwt_str,
         "token_type": "Bearer",
@@ -395,7 +402,15 @@ async def _token_from_refresh(db: AsyncSession, refresh_token: str | None, clien
         expires_at=now + timedelta(seconds=s.oauth_refresh_token_ttl_seconds),
     ))
 
+    client_row = (await db.execute(
+        select(OAuthClient).where(OAuthClient.client_id == row.client_id)
+    )).scalar_one_or_none()
+    client_name = (client_row.client_name if client_row else None) or "unknown"
+
     await db.flush()
+
+    oauth_tokens_issued.labels(client_name=client_name).inc()
+
     return {
         "access_token": jwt_str,
         "token_type": "Bearer",

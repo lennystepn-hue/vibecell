@@ -1,4 +1,8 @@
 # backend/app/main.py
+from contextlib import asynccontextmanager
+from collections.abc import AsyncIterator
+
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from fastapi import FastAPI
 
 from app.api.v1.auth import router as auth_router
@@ -29,12 +33,39 @@ from app.api.v1.connections import router as connections_router
 from app.core.audit import install_audit_listener
 from app.core.middleware import install_session_middleware
 from app.core.problem import install_problem_handler
+from app.metrics.endpoint import router as metrics_router
+from app.jobs.oauth_cleanup import run_once as oauth_cleanup_run_once
+from app.jobs.oauth_cleanup import refresh_active_connections_gauge
+
+_scheduler = AsyncIOScheduler()
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+    _scheduler.add_job(
+        oauth_cleanup_run_once,
+        "cron",
+        hour=3,
+        minute=15,
+        id="oauth_cleanup",
+    )
+    _scheduler.add_job(
+        refresh_active_connections_gauge,
+        "interval",
+        seconds=60,
+        id="active_conn_gauge",
+    )
+    _scheduler.start()
+    yield
+    _scheduler.shutdown(wait=False)
+
 
 app = FastAPI(
     title="Vibecell",
     version="0.1.0",
     openapi_url="/api/v1/openapi.json",
     docs_url="/api/v1/docs",
+    lifespan=lifespan,
 )
 
 install_problem_handler(app)
@@ -69,6 +100,8 @@ app.include_router(oauth_server_router)
 app.include_router(mcp_router)
 # Spec 3.2 — Connections (unified oauth + cli list/revoke)
 app.include_router(connections_router)
+# Spec 3.5 — Observability
+app.include_router(metrics_router)
 
 
 @app.get("/api/v1/healthz")
