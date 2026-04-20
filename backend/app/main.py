@@ -39,6 +39,9 @@ from app.jobs.oauth_cleanup import refresh_active_connections_gauge
 # Spec 4 — Launch-Enabler
 from app.api.v1.billing import router as billing_router
 from app.api.v1.passkey import router as passkey_router
+# Spec 5A — Auto-Signals
+from app.api.v1.health import router as health_router
+from app.jobs.health_cron import schedule_health_jobs
 
 _scheduler = AsyncIOScheduler()
 
@@ -58,6 +61,8 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         seconds=60,
         id="active_conn_gauge",
     )
+    # Spec 5A — Auto-Signals: health probes every 5 min
+    schedule_health_jobs(_scheduler)
     _scheduler.start()
     yield
     _scheduler.shutdown(wait=False)
@@ -108,6 +113,8 @@ app.include_router(metrics_router)
 # Spec 4 — Launch-Enabler
 app.include_router(billing_router)
 app.include_router(passkey_router)
+# Spec 5A — Auto-Signals
+app.include_router(health_router)
 
 
 @app.get("/api/v1/healthz")

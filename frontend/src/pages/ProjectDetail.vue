@@ -16,6 +16,7 @@ import ShipButton from "@/components/projects/ShipButton.vue";
 import ProjectStackEditor from "@/components/projects/ProjectStackEditor.vue";
 import ProjectStatusDropdown from "@/components/projects/ProjectStatusDropdown.vue";
 import ProjectTagsEditor from "@/components/projects/ProjectTagsEditor.vue";
+import ProjectHealthCard from "@/components/projects/ProjectHealthCard.vue";
 import { api } from "@/api/client";
 import { useProjectsStore } from "@/stores/projects";
 import { useToastStore } from "@/stores/toast";
@@ -169,6 +170,10 @@ watch(
           </div>
           <div class="xl:col-span-3">
             <ProjectNotesCard :project="projects.active" />
+          </div>
+          <!-- Spec 5A: Health card (shows not_configured until healthcheck link added) -->
+          <div class="xl:col-span-1">
+            <ProjectHealthCard :slug="projects.active.slug" />
           </div>
         </div>
       </div>
