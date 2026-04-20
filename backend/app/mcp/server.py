@@ -7,7 +7,7 @@ from __future__ import annotations
 import time
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Request, Response
 from pydantic import ValidationError
 
 from app.mcp.audit import log_tool_call
@@ -31,11 +31,16 @@ def _err(id_: int | str | None, code: int, message: str) -> dict:
 async def mcp_endpoint(
     request: Request,
     ctx: Annotated[MCPContext, Depends(require_mcp_context)],
-) -> dict:
+):
     body = await request.json()
     req_id = body.get("id")
     method = body.get("method")
     params = body.get("params") or {}
+
+    # JSON-RPC notifications (no id) — server MUST NOT respond with a body.
+    # MCP notifications we know about: notifications/initialized, notifications/cancelled, notifications/progress.
+    if req_id is None:
+        return Response(status_code=202)
 
     if method == "initialize":
         return _ok(req_id, {
