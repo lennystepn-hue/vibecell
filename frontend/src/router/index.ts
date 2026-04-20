@@ -30,6 +30,12 @@ const router = createRouter({
       component: () => import("@/pages/Legal.vue"),
       meta: { anonymous: true },
     },
+    // Spec 5B — Portfolio-Intel
+    {
+      path: "/portfolio",
+      name: "portfolio",
+      component: () => import("@/pages/Portfolio.vue"),
+    },
     {
       path: "/login",
       name: "login",

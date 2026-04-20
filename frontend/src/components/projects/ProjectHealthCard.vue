@@ -1,11 +1,10 @@
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
 import MonoLabel from "@/components/ui/MonoLabel.vue";
-import { api } from "@/api/client";
 
 const props = defineProps<{ slug: string }>();
 
-type HealthStatus = "up" | "down" | "timeout" | "error" | "unknown" | "not_configured";
+type HealthStatus = "up" | "down" | "timeout" | "error" | "unknown" | "not_configured" | string;
 
 interface HealthSummary {
   project_id: string;

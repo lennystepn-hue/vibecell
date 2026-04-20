@@ -414,5 +414,22 @@ function rowClick() {
         </div>
       </div>
     </Teleport>
+
+    <!-- Spec 5B: Portfolio link -->
+    <div class="border-t border-border-subtle px-1 py-2 shrink-0">
+      <RouterLink
+        to="/portfolio"
+        class="flex items-center gap-2 px-2 py-1.5 rounded-md text-small text-fg-muted hover:text-fg-body hover:bg-bg-elevated transition-colors"
+        active-class="text-fg-primary bg-bg-elevated"
+      >
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="7" height="7" rx="1" />
+          <rect x="14" y="3" width="7" height="7" rx="1" />
+          <rect x="3" y="14" width="7" height="7" rx="1" />
+          <rect x="14" y="14" width="7" height="7" rx="1" />
+        </svg>
+        <span class="font-mono text-[11px] tracking-wide uppercase">Portfolio</span>
+      </RouterLink>
+    </div>
   </aside>
 </template>

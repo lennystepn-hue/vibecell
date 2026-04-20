@@ -42,6 +42,8 @@ from app.api.v1.passkey import router as passkey_router
 # Spec 5A — Auto-Signals
 from app.api.v1.health import router as health_router
 from app.jobs.health_cron import schedule_health_jobs
+# Spec 5B — Portfolio-Intel
+from app.api.v1.portfolio import router as portfolio_router
 
 _scheduler = AsyncIOScheduler()
 
@@ -115,6 +117,8 @@ app.include_router(billing_router)
 app.include_router(passkey_router)
 # Spec 5A — Auto-Signals
 app.include_router(health_router)
+# Spec 5B — Portfolio-Intel
+app.include_router(portfolio_router)
 
 
 @app.get("/api/v1/healthz")
