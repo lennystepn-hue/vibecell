@@ -22,6 +22,7 @@ class ProjectListItem(BaseModel):
     status: str
     group_id: str | None = None
     position: int = 0
+    github_url: str | None = None
 
 
 class ProjectOut(ProjectListItem):

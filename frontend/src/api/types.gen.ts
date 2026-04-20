@@ -1676,6 +1676,8 @@ export interface components {
              * @default 0
              */
             position: number;
+            /** Github Url */
+            github_url?: string | null;
         };
         /** ProjectListPage */
         ProjectListPage: {

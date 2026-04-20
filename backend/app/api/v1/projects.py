@@ -72,10 +72,25 @@ async def list_(
         cursor=cursor,
         limit=limit,
     )
-    return ProjectListPage(
-        items=[ProjectListItem.model_validate(p) for p in items],
-        next_cursor=next_cursor,
-    )
+    # Decorate each with github_url (first github-kind ProjectLink)
+    from app.models import ProjectLink
+    github_urls: dict[str, str] = {}
+    if items:
+        links = (await db.execute(
+            select(ProjectLink).where(
+                ProjectLink.project_id.in_([p.id for p in items]),
+                ProjectLink.kind == "github",
+            )
+        )).scalars().all()
+        for link in links:
+            github_urls.setdefault(link.project_id, link.url)
+
+    out_items = []
+    for p in items:
+        data = ProjectListItem.model_validate(p).model_dump()
+        data["github_url"] = github_urls.get(p.id)
+        out_items.append(ProjectListItem(**data))
+    return ProjectListPage(items=out_items, next_cursor=next_cursor)
 
 
 @router.post("", response_model=ProjectOut, status_code=status.HTTP_201_CREATED)

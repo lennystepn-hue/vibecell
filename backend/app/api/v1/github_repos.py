@@ -59,6 +59,13 @@ def _derive_slug(name: str, taken: set[str]) -> str:
         i += 1
 
 
+def _stack_slug(language: str) -> str:
+    """Normalize a GitHub language name to a StackItem.slug (lowercase, hyphenated)."""
+    import re
+    s = re.sub(r"[^a-z0-9-]", "-", language.lower())
+    return re.sub(r"-+", "-", s).strip("-") or "unknown"
+
+
 @router.post("/import", response_model=ImportResponse)
 async def bulk_import(
     body: ImportRequest,
@@ -67,7 +74,8 @@ async def bulk_import(
 ) -> ImportResponse:
     from sqlalchemy import select
 
-    from app.models import ProjectLink, ProjectRepo
+    from sqlalchemy import select
+    from app.models import ProjectLink, ProjectRepo, ProjectStack, StackItem, Tag, ProjectTag
 
     token = await integ_svc.get_decrypted_token(
         db, workspace_id=auth.active_workspace_id, kind="github",
@@ -122,6 +130,15 @@ async def bulk_import(
                 primary_lang=norm.get("language"),
                 license=norm.get("license_spdx"),
             ))
+            # GitHub link (always) + Homepage (if set)
+            if norm.get("html_url"):
+                db.add(ProjectLink(
+                    id=new_ulid(),
+                    project_id=project.id,
+                    kind="github",
+                    label="GitHub",
+                    url=norm["html_url"],
+                ))
             if norm.get("homepage"):
                 db.add(ProjectLink(
                     id=new_ulid(),
@@ -130,6 +147,44 @@ async def bulk_import(
                     label="Homepage",
                     url=norm["homepage"],
                 ))
+            # Language → StackItem (get or create) + ProjectStack
+            lang = norm.get("language")
+            if lang:
+                lang_slug = _stack_slug(lang)
+                stack_item = (await db.execute(
+                    select(StackItem).where(StackItem.slug == lang_slug)
+                )).scalar_one_or_none()
+                if stack_item is None:
+                    stack_item = StackItem(
+                        id=new_ulid(),
+                        slug=lang_slug,
+                        name=lang,
+                        kind="language",
+                    )
+                    db.add(stack_item)
+                    await db.flush()
+                db.add(ProjectStack(
+                    project_id=project.id,
+                    stack_item_id=stack_item.id,
+                    role="language",
+                ))
+            # Topics → Tags (get or create per workspace) + ProjectTag
+            for topic in (norm.get("topics") or [])[:20]:
+                tag = (await db.execute(
+                    select(Tag).where(
+                        Tag.workspace_id == auth.active_workspace_id,
+                        Tag.name == topic,
+                    )
+                )).scalar_one_or_none()
+                if tag is None:
+                    tag = Tag(
+                        id=new_ulid(),
+                        workspace_id=auth.active_workspace_id,
+                        name=topic,
+                    )
+                    db.add(tag)
+                    await db.flush()
+                db.add(ProjectTag(project_id=project.id, tag_id=tag.id))
             await db.flush()
             existing_slugs.add(desired)
             results.append(ImportResultItem(

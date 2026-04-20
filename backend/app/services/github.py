@@ -121,6 +121,8 @@ def normalize_repo(gh: dict[str, Any]) -> dict[str, Any]:
         "language": gh.get("language"),
         "license_spdx": (gh.get("license") or {}).get("spdx_id") if gh.get("license") else None,
         "homepage": gh.get("homepage"),
+        "html_url": gh.get("html_url") or f"https://github.com/{full_name}",
+        "topics": gh.get("topics") or [],
         "clone_url": gh.get("clone_url") or gh.get("ssh_url") or "",
         "pushed_at": pushed_at,
     }
