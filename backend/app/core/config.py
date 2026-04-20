@@ -24,6 +24,17 @@ class Settings(BaseSettings):
     sentry_dsn: str = Field(default="")
     dev_mode: bool = Field(default=False, description="when true, magic links print to log instead of email")
 
+    # OAuth 2.1 — Remote MCP Server (Spec 3.5)
+    oauth_jwt_secret: str = Field(
+        description="HMAC-SHA256 signing secret for OAuth access tokens. Must be ≥ 64 chars.",
+        min_length=64,
+    )
+    oauth_access_token_ttl_seconds: int = 3600        # 1 hour
+    oauth_refresh_token_ttl_seconds: int = 30 * 86400 # 30 days
+    oauth_auth_code_ttl_seconds: int = 60
+    oauth_max_clients_per_user: int = 50
+    oauth_dcr_orphan_ttl_hours: int = 24
+
 
 @lru_cache(maxsize=1)
 def get_settings() -> Settings:

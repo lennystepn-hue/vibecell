@@ -41,6 +41,7 @@ os.environ.setdefault("HANGAR_RESEND_API_KEY", "test")
 os.environ.setdefault("HANGAR_GITHUB_CLIENT_ID", "test")
 os.environ.setdefault("HANGAR_GITHUB_CLIENT_SECRET", "test")
 os.environ.setdefault("HANGAR_BASE_URL", "http://localhost:3000")
+os.environ.setdefault("HANGAR_OAUTH_JWT_SECRET", "test_jwt_secret_" + "x" * 50)
 
 # Lazy-import so tests that don't need DB don't pay testcontainers startup cost.
 _pg_container: Any = None
