@@ -199,3 +199,163 @@ async def deny(
         url=_build_redirect_location(cs.redirect_uri, error="access_denied", state=cs.state),
         status_code=302,
     )
+
+
+# ---------------------------------------------------------------------------
+# Task 1.9 — POST /oauth/token
+# ---------------------------------------------------------------------------
+import base64  # noqa: E402 — appended block; stdlib, no ordering issue
+import hashlib  # noqa: E402
+
+from fastapi import Form  # noqa: E402
+
+from app.oauth.models import OAuthAccessToken, OAuthRefreshToken  # noqa: E402
+from app.oauth.tokens import (  # noqa: E402
+    OAuthTokenClaims,
+    hash_refresh_token,
+    issue_access_token,
+    issue_refresh_token,
+)
+
+
+@router.post("/token")
+async def token(
+    grant_type: str = Form(...),
+    code: str | None = Form(None),
+    redirect_uri: str | None = Form(None),
+    code_verifier: str | None = Form(None),
+    refresh_token: str | None = Form(None),
+    client_id: str = Form(...),
+    db: AsyncSession = Depends(get_db),
+):
+    allowed, retry_after = await check_and_consume(
+        f"oauth:token:{client_id}", capacity=20, refill_rate=20 / 60,
+    )
+    if not allowed:
+        raise HTTPException(
+            status_code=429,
+            detail={"error": "rate_limited", "retry_after_seconds": retry_after},
+            headers={"Retry-After": str(retry_after)},
+        )
+
+    if grant_type == "authorization_code":
+        return await _token_from_code(db, code, redirect_uri, code_verifier, client_id)
+    if grant_type == "refresh_token":
+        return await _token_from_refresh(db, refresh_token, client_id)
+    raise HTTPException(400, detail={"error": "unsupported_grant_type"})
+
+
+def _verify_pkce(verifier: str, challenge: str) -> bool:
+    digest = hashlib.sha256(verifier.encode()).digest()
+    expected = base64.urlsafe_b64encode(digest).decode().rstrip("=")
+    return secrets.compare_digest(expected, challenge)
+
+
+async def _token_from_code(
+    db: AsyncSession,
+    code: str | None,
+    redirect_uri: str | None,
+    code_verifier: str | None,
+    client_id: str,
+):
+    if not (code and redirect_uri and code_verifier):
+        raise HTTPException(400, detail={"error": "invalid_request"})
+
+    row = (await db.execute(
+        select(OAuthAuthCode).where(OAuthAuthCode.code == code)
+    )).scalar_one_or_none()
+    if row is None or row.consumed_at is not None:
+        raise HTTPException(400, detail={"error": "invalid_grant"})
+    if row.client_id != client_id:
+        raise HTTPException(400, detail={"error": "invalid_grant"})
+    if row.redirect_uri != redirect_uri:
+        raise HTTPException(400, detail={"error": "invalid_grant"})
+    if row.expires_at < datetime.now(timezone.utc):
+        raise HTTPException(400, detail={"error": "invalid_grant"})
+    if not _verify_pkce(code_verifier, row.code_challenge):
+        raise HTTPException(400, detail={"error": "invalid_grant"})
+
+    now = datetime.now(timezone.utc)
+    row.consumed_at = now
+    s = get_settings()
+
+    jwt_str, jti = issue_access_token(OAuthTokenClaims(
+        sub=row.user_id, client_id=row.client_id, workspace_id=row.workspace_id, scope=row.scope,
+    ))
+    family_id = new_ulid()
+    db.add(OAuthAccessToken(
+        id=new_ulid(), jti=jti, client_id=row.client_id, user_id=row.user_id,
+        workspace_id=row.workspace_id, scope=row.scope, issued_from_refresh_family=family_id,
+        issued_at=now, expires_at=now + timedelta(seconds=s.oauth_access_token_ttl_seconds),
+    ))
+
+    rt_value = issue_refresh_token()
+    db.add(OAuthRefreshToken(
+        id=new_ulid(), token_hash=hash_refresh_token(rt_value), family_id=family_id,
+        client_id=row.client_id, user_id=row.user_id, workspace_id=row.workspace_id,
+        scope=row.scope, issued_at=now,
+        expires_at=now + timedelta(seconds=s.oauth_refresh_token_ttl_seconds),
+    ))
+
+    client_row = (await db.execute(
+        select(OAuthClient).where(OAuthClient.client_id == row.client_id)
+    )).scalar_one()
+    if client_row.registered_by_user_id is None:
+        client_row.registered_by_user_id = row.user_id
+    client_row.last_used_at = now
+
+    await db.flush()
+
+    return {
+        "access_token": jwt_str,
+        "token_type": "Bearer",
+        "expires_in": s.oauth_access_token_ttl_seconds,
+        "refresh_token": rt_value,
+        "scope": row.scope,
+    }
+
+
+async def _token_from_refresh(db: AsyncSession, refresh_token: str | None, client_id: str):
+    if not refresh_token:
+        raise HTTPException(400, detail={"error": "invalid_request"})
+
+    h = hash_refresh_token(refresh_token)
+    row = (await db.execute(
+        select(OAuthRefreshToken).where(OAuthRefreshToken.token_hash == h)
+    )).scalar_one_or_none()
+    if row is None or row.consumed_at is not None or row.revoked_at is not None:
+        raise HTTPException(400, detail={"error": "invalid_grant"})
+    if row.client_id != client_id:
+        raise HTTPException(400, detail={"error": "invalid_grant"})
+    if row.expires_at < datetime.now(timezone.utc):
+        raise HTTPException(400, detail={"error": "invalid_grant"})
+
+    now = datetime.now(timezone.utc)
+    row.consumed_at = now
+    s = get_settings()
+
+    jwt_str, jti = issue_access_token(OAuthTokenClaims(
+        sub=row.user_id, client_id=row.client_id, workspace_id=row.workspace_id, scope=row.scope,
+    ))
+    db.add(OAuthAccessToken(
+        id=new_ulid(), jti=jti, client_id=row.client_id, user_id=row.user_id,
+        workspace_id=row.workspace_id, scope=row.scope, issued_from_refresh_family=row.family_id,
+        issued_at=now, expires_at=now + timedelta(seconds=s.oauth_access_token_ttl_seconds),
+    ))
+
+    new_rt = issue_refresh_token()
+    db.add(OAuthRefreshToken(
+        id=new_ulid(), token_hash=hash_refresh_token(new_rt), family_id=row.family_id,
+        client_id=row.client_id, user_id=row.user_id, workspace_id=row.workspace_id,
+        scope=row.scope, issued_at=now,
+        expires_at=now + timedelta(seconds=s.oauth_refresh_token_ttl_seconds),
+    ))
+
+    await db.flush()
+    return {
+        "access_token": jwt_str,
+        "token_type": "Bearer",
+        "expires_in": s.oauth_access_token_ttl_seconds,
+        "refresh_token": new_rt,
+        "scope": row.scope,
+    }
