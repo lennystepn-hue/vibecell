@@ -9,6 +9,26 @@ const router = createRouter({
       path: "/",
       name: "index",
       component: () => import("@/pages/IndexRedirect.vue"),
+      meta: { anonymous: true },
+    },
+    // Spec 4 — public pages
+    {
+      path: "/landing",
+      name: "landing",
+      component: () => import("@/pages/AnonLanding.vue"),
+      meta: { anonymous: true },
+    },
+    {
+      path: "/pricing",
+      name: "pricing",
+      component: () => import("@/pages/Pricing.vue"),
+      meta: { anonymous: true },
+    },
+    {
+      path: "/legal",
+      name: "legal",
+      component: () => import("@/pages/Legal.vue"),
+      meta: { anonymous: true },
     },
     {
       path: "/login",

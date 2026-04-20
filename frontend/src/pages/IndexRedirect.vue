@@ -11,7 +11,8 @@ onMounted(async () => {
   if (!auth.isAuthed && !auth.loading) {
     await auth.refresh();
   }
-  router.replace(auth.isAuthed ? "/p" : "/login");
+  // Spec 4: send unauthed visitors to landing page, authed users to projects
+  router.replace(auth.isAuthed ? "/p" : "/landing");
 });
 </script>
 

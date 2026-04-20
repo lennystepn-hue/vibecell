@@ -36,6 +36,9 @@ from app.core.problem import install_problem_handler
 from app.metrics.endpoint import router as metrics_router
 from app.jobs.oauth_cleanup import run_once as oauth_cleanup_run_once
 from app.jobs.oauth_cleanup import refresh_active_connections_gauge
+# Spec 4 — Launch-Enabler
+from app.api.v1.billing import router as billing_router
+from app.api.v1.passkey import router as passkey_router
 
 _scheduler = AsyncIOScheduler()
 
@@ -102,6 +105,9 @@ app.include_router(mcp_router)
 app.include_router(connections_router)
 # Spec 3.5 — Observability
 app.include_router(metrics_router)
+# Spec 4 — Launch-Enabler
+app.include_router(billing_router)
+app.include_router(passkey_router)
 
 
 @app.get("/api/v1/healthz")
