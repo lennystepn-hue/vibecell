@@ -262,3 +262,39 @@ async def mcp_client(client, issued_token_pair):
     client.headers.update({"Authorization": f"Bearer {issued_token_pair['access_token']}"})
     yield client
     client.headers.pop("Authorization", None)
+
+
+@pytest_asyncio.fixture
+async def user_workspace_with_active_project(session, user_workspace, authed_client):
+    """Seed a 'vibecell' project + mark it active for the user."""
+    from sqlalchemy import select
+
+    from app.core.ulid import new_ulid
+    from app.models import ActiveProject, Project, User
+
+    user = (await session.execute(
+        select(User).where(User.email == "oauth-revoke-test@example.com")
+    )).scalar_one()
+
+    proj = Project(
+        id=new_ulid(),
+        workspace_id=user_workspace.id,
+        slug="vibecell",
+        name="Vibecell",
+        pitch="Test project for MCP",
+        status="live",
+        emoji="◈",
+    )
+    session.add(proj)
+    await session.flush()
+
+    # Mark active — ActiveProject PK is workspace_id; also requires user_id
+    active = ActiveProject(
+        workspace_id=user_workspace.id,
+        user_id=user.id,
+        project_id=proj.id,
+    )
+    session.add(active)
+    await session.flush()
+
+    yield {"workspace": user_workspace, "project": proj}
