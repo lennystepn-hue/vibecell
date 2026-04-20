@@ -1,7 +1,7 @@
 """OAuth token issuance + verification + revocation blacklist.
 
-Access tokens are JWTs (HS256). Refresh tokens are opaque 40-char strings
-("rt_" + 32 random hex chars), stored as sha256 hashes.
+Access tokens are JWTs (HS256). Refresh tokens are opaque 67-char strings
+("rt_" + 64 random hex chars from token_hex(32)), stored as sha256 hashes.
 """
 from __future__ import annotations
 
