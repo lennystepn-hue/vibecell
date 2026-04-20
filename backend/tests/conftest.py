@@ -140,3 +140,24 @@ async def session(engine: AsyncEngine) -> AsyncIterator[AsyncSession]:
         finally:
             await transaction.rollback()
             await connection.close()
+
+
+@pytest_asyncio.fixture
+async def registered_oauth_client(session: AsyncSession):
+    """Seed an OAuthClient row for authorize/grant/deny integration tests."""
+    from datetime import datetime, timezone
+
+    from app.core.ulid import new_ulid
+    from app.oauth.models import OAuthClient
+
+    row = OAuthClient(
+        id=new_ulid(),
+        client_id="dyn_" + new_ulid()[:16],
+        client_name="Test Client",
+        redirect_uris=["http://127.0.0.1:1/cb"],
+        scope="vibecell:tools",
+        created_at=datetime.now(timezone.utc),
+    )
+    session.add(row)
+    await session.flush()
+    yield row
