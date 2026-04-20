@@ -25,6 +25,7 @@ from app.api.v1.workspaces import router as workspaces_router
 from app.oauth.discovery import router as oauth_discovery_router
 from app.oauth.server import router as oauth_server_router
 from app.mcp.server import router as mcp_router
+from app.api.v1.connections import router as connections_router
 from app.core.audit import install_audit_listener
 from app.core.middleware import install_session_middleware
 from app.core.problem import install_problem_handler
@@ -66,6 +67,8 @@ app.include_router(search_router)
 app.include_router(oauth_discovery_router)
 app.include_router(oauth_server_router)
 app.include_router(mcp_router)
+# Spec 3.2 — Connections (unified oauth + cli list/revoke)
+app.include_router(connections_router)
 
 
 @app.get("/api/v1/healthz")
