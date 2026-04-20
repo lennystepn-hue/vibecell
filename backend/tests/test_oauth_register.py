@@ -77,3 +77,31 @@ async def test_register_accepts_https(session: AsyncSession) -> None:
     finally:
         clear_db_override()
     assert resp.status_code == 201
+
+
+async def test_register_rate_limit(session: AsyncSession) -> None:
+    """11th request from the same IP within the burst window should 429."""
+    override_db(session)
+    try:
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://t"
+        ) as client:
+            for i in range(10):
+                resp = await client.post(
+                    "/oauth/register",
+                    json={
+                        "client_name": f"c{i}",
+                        "redirect_uris": ["http://127.0.0.1:1/cb"],
+                    },
+                )
+                assert resp.status_code == 201
+            resp = await client.post(
+                "/oauth/register",
+                json={
+                    "client_name": "c11",
+                    "redirect_uris": ["http://127.0.0.1:1/cb"],
+                },
+            )
+            assert resp.status_code == 429
+    finally:
+        clear_db_override()
