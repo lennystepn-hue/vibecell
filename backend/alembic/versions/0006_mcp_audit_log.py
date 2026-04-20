@@ -9,8 +9,8 @@ from __future__ import annotations
 import sqlalchemy as sa
 from alembic import op
 
-revision = "0006_mcp_audit_log"
-down_revision = "0005_oauth"
+revision = "0006"
+down_revision = "0005"
 branch_labels = None
 depends_on = None
 
