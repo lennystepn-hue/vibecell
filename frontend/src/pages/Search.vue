@@ -2,7 +2,6 @@
 import { computed, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
-import AppLayout from "@/components/app/AppLayout.vue";
 import MonoLabel from "@/components/ui/MonoLabel.vue";
 import { api } from "@/api/client";
 
@@ -123,10 +122,9 @@ const entityLabels: Record<string, string> = {
 </script>
 
 <template>
-  <AppLayout>
-    <div class="max-w-[900px] mx-auto px-8 py-8">
-      <header class="mb-6">
-        <h1 class="text-display text-fg-primary tracking-tight">Search</h1>
+  <div class="max-w-[900px] mx-auto px-8 py-8">
+    <header class="mb-6">
+      <h1 class="text-display text-fg-primary tracking-tight">Search</h1>
         <p class="text-body text-fg-muted mt-1">FTS across projects, sessions, decisions, ideas, and notes.</p>
       </header>
 
@@ -206,10 +204,9 @@ const entityLabels: Record<string, string> = {
               </RouterLink>
             </li>
           </ul>
-        </section>
-      </div>
+      </section>
     </div>
-  </AppLayout>
+  </div>
 </template>
 
 <style>

@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
 
-import AppLayout from "@/components/app/AppLayout.vue";
 import PrimaryButton from "@/components/ui/PrimaryButton.vue";
 import TextArea from "@/components/ui/TextArea.vue";
 import { useIdeasStore, type IdeaStatus } from "@/stores/ideas";
@@ -116,10 +115,9 @@ function projectNameFor(id: string | null | undefined): string | null {
 </script>
 
 <template>
-  <AppLayout>
-    <div class="max-w-[900px] mx-auto px-8 py-8">
-      <header class="mb-6">
-        <h1 class="text-display text-fg-primary tracking-tight">Ideas</h1>
+  <div class="max-w-[900px] mx-auto px-8 py-8">
+    <header class="mb-6">
+      <h1 class="text-display text-fg-primary tracking-tight">Ideas</h1>
         <p class="text-body text-fg-muted mt-1">Workspace inbox · capture now, triage later.</p>
       </header>
 
@@ -227,5 +225,5 @@ function projectNameFor(id: string | null | undefined): string | null {
         </p>
       </div>
     </div>
-  </AppLayout>
+  </div>
 </template>
