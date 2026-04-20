@@ -1,10 +1,11 @@
 """OAuth token issuance + verification + revocation blacklist.
 
-Access tokens are JWTs (HS256). Refresh tokens are opaque 67-char strings
+Access tokens are JWTs (RS256). Refresh tokens are opaque 67-char strings
 ("rt_" + 64 random hex chars from token_hex(32)), stored as sha256 hashes.
 """
 from __future__ import annotations
 
+import base64
 import hashlib
 import secrets
 from dataclasses import dataclass
@@ -31,6 +32,20 @@ class OAuthTokenClaims:
     exp: int = 0
 
 
+def _load_private_key() -> bytes:
+    s = get_settings()
+    if not s.oauth_private_key_b64:
+        raise RuntimeError("HANGAR_OAUTH_PRIVATE_KEY_B64 is not set")
+    return base64.b64decode(s.oauth_private_key_b64)
+
+
+def _load_public_key() -> bytes:
+    s = get_settings()
+    if not s.oauth_public_key_b64:
+        raise RuntimeError("HANGAR_OAUTH_PUBLIC_KEY_B64 is not set")
+    return base64.b64decode(s.oauth_public_key_b64)
+
+
 def issue_access_token(claims: OAuthTokenClaims) -> tuple[str, str]:
     """Return (jwt_string, jti). jti is the ULID used for revocation lookup."""
     s = get_settings()
@@ -47,7 +62,12 @@ def issue_access_token(claims: OAuthTokenClaims) -> tuple[str, str]:
         "exp": now + s.oauth_access_token_ttl_seconds,
         "jti": jti,
     }
-    encoded = jwt.encode(payload, s.oauth_jwt_secret, algorithm="HS256")
+    encoded = jwt.encode(
+        payload,
+        _load_private_key(),
+        algorithm="RS256",
+        headers={"kid": s.oauth_jwt_kid},
+    )
     return encoded, jti
 
 
@@ -55,10 +75,13 @@ def verify_access_token(token: str) -> OAuthTokenClaims:
     s = get_settings()
     try:
         payload = jwt.decode(
-            token, s.oauth_jwt_secret, algorithms=["HS256"],
-            audience=_AUDIENCE, issuer=_ISSUER,
+            token,
+            _load_public_key(),
+            algorithms=["RS256"],
+            audience=_AUDIENCE,
+            issuer=_ISSUER,
             options={"require": ["iss", "aud", "sub", "exp", "iat", "jti", "client_id", "workspace_id", "scope"]},
-            leeway=30,  # fix I-3 — 30s clock-skew tolerance
+            leeway=30,  # 30s clock-skew tolerance
         )
     except jwt.PyJWTError as e:
         raise ValueError("invalid_token") from e

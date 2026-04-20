@@ -26,8 +26,20 @@ class Settings(BaseSettings):
 
     # OAuth 2.1 — Remote MCP Server (Spec 3.5)
     oauth_jwt_secret: str = Field(
-        description="HMAC-SHA256 signing secret for OAuth access tokens. Must be ≥ 64 chars.",
-        min_length=64,
+        description="Legacy HS256 signing secret (unused after RS256 migration). Kept to avoid breaking existing .env files.",
+        default="",
+    )
+    oauth_private_key_b64: str = Field(
+        description="RSA private key (PEM, base64-encoded) for signing OAuth JWTs",
+        default="",
+    )
+    oauth_public_key_b64: str = Field(
+        description="RSA public key (PEM, base64-encoded)",
+        default="",
+    )
+    oauth_jwt_kid: str = Field(
+        description="Key id published in JWKS + JWT header",
+        default="vibecell-k1",
     )
     oauth_access_token_ttl_seconds: int = 3600        # 1 hour
     oauth_refresh_token_ttl_seconds: int = 30 * 86400 # 30 days

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import base64
 import os
 from collections.abc import AsyncIterator, Iterator
 from pathlib import Path
@@ -8,6 +9,8 @@ from typing import Any
 
 import pytest
 import pytest_asyncio
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric import rsa
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
@@ -15,6 +18,35 @@ from sqlalchemy.ext.asyncio import (
     async_sessionmaker,
     create_async_engine,
 )
+
+# --- Set required env vars BEFORE any app module imports Settings. ---
+# Safe defaults so `from app.core.config import get_settings` works at import time.
+# HANGAR_DATABASE_URL is deliberately NOT set here; the `database_url` fixture
+# decides it per-session (testcontainer vs HANGAR_TEST_DATABASE_URL override).
+os.environ.setdefault("HANGAR_MASTER_KEY", "x" * 43)
+os.environ.setdefault("HANGAR_REDIS_URL", "redis://localhost:6379/0")
+os.environ.setdefault("HANGAR_RESEND_API_KEY", "test")
+os.environ.setdefault("HANGAR_GITHUB_CLIENT_ID", "test")
+os.environ.setdefault("HANGAR_GITHUB_CLIENT_SECRET", "test")
+os.environ.setdefault("HANGAR_BASE_URL", "http://localhost:3000")
+
+# Generate a session-scoped RSA keypair for RS256 token signing in tests.
+# Using setdefault so test_oauth_tokens.py (which sets these first) keeps its
+# own keypair when pytest collects it before conftest module-level code runs.
+if "HANGAR_OAUTH_PRIVATE_KEY_B64" not in os.environ:
+    _test_rsa_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+    _test_priv_pem = _test_rsa_key.private_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PrivateFormat.PKCS8,
+        encryption_algorithm=serialization.NoEncryption(),
+    )
+    _test_pub_pem = _test_rsa_key.public_key().public_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PublicFormat.SubjectPublicKeyInfo,
+    )
+    os.environ["HANGAR_OAUTH_PRIVATE_KEY_B64"] = base64.b64encode(_test_priv_pem).decode()
+    os.environ["HANGAR_OAUTH_PUBLIC_KEY_B64"] = base64.b64encode(_test_pub_pem).decode()
+os.environ.setdefault("HANGAR_OAUTH_JWT_KID", "test-kid")
 
 
 @pytest.fixture(autouse=True)
@@ -31,18 +63,6 @@ def _clear_settings_cache() -> Iterator[None]:
     get_settings.cache_clear()
     yield
     get_settings.cache_clear()
-
-# --- Set required env vars BEFORE any app module imports Settings. ---
-# Safe defaults so `from app.core.config import get_settings` works at import time.
-# HANGAR_DATABASE_URL is deliberately NOT set here; the `database_url` fixture
-# decides it per-session (testcontainer vs HANGAR_TEST_DATABASE_URL override).
-os.environ.setdefault("HANGAR_MASTER_KEY", "x" * 43)
-os.environ.setdefault("HANGAR_REDIS_URL", "redis://localhost:6379/0")
-os.environ.setdefault("HANGAR_RESEND_API_KEY", "test")
-os.environ.setdefault("HANGAR_GITHUB_CLIENT_ID", "test")
-os.environ.setdefault("HANGAR_GITHUB_CLIENT_SECRET", "test")
-os.environ.setdefault("HANGAR_BASE_URL", "http://localhost:3000")
-os.environ.setdefault("HANGAR_OAUTH_JWT_SECRET", "test_jwt_secret_" + "x" * 50)
 
 # Lazy-import so tests that don't need DB don't pay testcontainers startup cost.
 _pg_container: Any = None

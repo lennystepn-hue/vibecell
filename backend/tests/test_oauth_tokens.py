@@ -1,12 +1,31 @@
+import base64
 import os
 
 import pytest
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric import rsa
+
+# Generate a per-session RSA keypair for token tests and inject into env
+# BEFORE any app module imports Settings.
+_KEY = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+_PRIV_PEM = _KEY.private_bytes(
+    encoding=serialization.Encoding.PEM,
+    format=serialization.PrivateFormat.PKCS8,
+    encryption_algorithm=serialization.NoEncryption(),
+)
+_PUB_PEM = _KEY.public_key().public_bytes(
+    encoding=serialization.Encoding.PEM,
+    format=serialization.PublicFormat.SubjectPublicKeyInfo,
+)
+os.environ.setdefault("HANGAR_OAUTH_PRIVATE_KEY_B64", base64.b64encode(_PRIV_PEM).decode())
+os.environ.setdefault("HANGAR_OAUTH_PUBLIC_KEY_B64", base64.b64encode(_PUB_PEM).decode())
+os.environ.setdefault("HANGAR_OAUTH_JWT_KID", "test-kid")
 
 # Provide a dummy DB URL so get_settings() validates in tests that don't use
 # the session-scoped `engine` fixture (which normally injects this var).
 os.environ.setdefault("HANGAR_DATABASE_URL", "postgresql+asyncpg://u:p@localhost:5432/test")
 
-from app.oauth.tokens import (
+from app.oauth.tokens import (  # noqa: E402
     JTIBlacklist,
     OAuthTokenClaims,
     hash_refresh_token,
@@ -64,29 +83,32 @@ def test_issue_refresh_token_is_opaque_and_hashable() -> None:
     assert len(h) == 64  # sha256 hex
 
 
-def test_verify_rejects_token_signed_with_wrong_secret(monkeypatch) -> None:
-    """Token signed with a different secret must fail verification."""
-    import jwt
-    from app.core.config import get_settings
+def test_verify_rejects_token_signed_with_wrong_key() -> None:
+    """Token signed with a different RSA key must fail verification."""
+    import jwt as pyjwt
 
-    # Issue a "token" directly with a different secret (simulates a different authority)
+    # Generate a different keypair
+    other_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+    other_priv = other_key.private_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PrivateFormat.PKCS8,
+        encryption_algorithm=serialization.NoEncryption(),
+    )
     payload = {
         "iss": "https://vibecell.dev",
         "aud": "https://vibecell.dev/mcp",
         "sub": "01USR", "client_id": "c", "workspace_id": "w", "scope": "vibecell:tools",
         "iat": 0, "exp": 9999999999, "jti": "j",
     }
-    tok = jwt.encode(payload, "different_secret_" + "x" * 50, algorithm="HS256")
+    tok = pyjwt.encode(payload, other_priv, algorithm="RS256")
     with pytest.raises(ValueError):
         verify_access_token(tok)
 
 
-def test_verify_rejects_missing_required_claim(monkeypatch) -> None:
+def test_verify_rejects_missing_required_claim() -> None:
     """Token missing a required claim (e.g. workspace_id) must fail."""
-    import jwt
-    from app.core.config import get_settings
+    import jwt as pyjwt
 
-    s = get_settings()
     payload = {
         "iss": "https://vibecell.dev",
         "aud": "https://vibecell.dev/mcp",
@@ -94,7 +116,7 @@ def test_verify_rejects_missing_required_claim(monkeypatch) -> None:
         # NO workspace_id
         "iat": 0, "exp": 9999999999, "jti": "j",
     }
-    tok = jwt.encode(payload, s.oauth_jwt_secret, algorithm="HS256")
+    tok = pyjwt.encode(payload, _PRIV_PEM, algorithm="RS256")
     with pytest.raises(ValueError):
         verify_access_token(tok)
 
