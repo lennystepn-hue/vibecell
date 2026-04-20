@@ -25,14 +25,14 @@ async def _seed_base(session: AsyncSession) -> tuple[str, str, str]:
     await session.flush()
 
     workspace = Workspace(
-        slug=f"ws-{new_ulid()[:10]}",
+        slug=f"ws-{new_ulid()}",
         name="Test WS",
         owner_id=user.id,
     )
     session.add(workspace)
     await session.flush()
 
-    client_id = f"dyn_{new_ulid()[:10]}"
+    client_id = f"dyn_{new_ulid()}"
     client = OAuthClient(
         id=new_ulid(),
         client_id=client_id,
