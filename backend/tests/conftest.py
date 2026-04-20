@@ -255,3 +255,10 @@ async def issued_token_pair(authed_client, client, registered_oauth_client, user
     })).json()
     pair["client_id"] = cid
     return pair
+
+
+@pytest_asyncio.fixture
+async def mcp_client(client, issued_token_pair):
+    client.headers.update({"Authorization": f"Bearer {issued_token_pair['access_token']}"})
+    yield client
+    client.headers.pop("Authorization", None)
