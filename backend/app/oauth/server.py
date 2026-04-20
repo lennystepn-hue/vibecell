@@ -60,6 +60,7 @@ async def register(
     )
     db.add(row)
     await db.flush()
+    await db.commit()
 
     return RegisterResponse(
         client_id=client_id,
@@ -215,6 +216,7 @@ async def grant(
         expires_at=now + timedelta(seconds=get_settings().oauth_auth_code_ttl_seconds),
     ))
     await db.flush()
+    await db.commit()
     await consent.drop(body.state)
 
     redirect_url = _build_redirect_location(cs.redirect_uri, code=code, state=cs.state)
@@ -354,6 +356,7 @@ async def _token_from_code(
     client_row.last_used_at = now
 
     await db.flush()
+    await db.commit()
 
     oauth_tokens_issued.labels(client_name=client_row.client_name or "unknown").inc()
 
@@ -408,6 +411,7 @@ async def _token_from_refresh(db: AsyncSession, refresh_token: str | None, clien
     client_name = (client_row.client_name if client_row else None) or "unknown"
 
     await db.flush()
+    await db.commit()
 
     oauth_tokens_issued.labels(client_name=client_name).inc()
 

@@ -80,10 +80,12 @@ async def _dispatch_tool_call(ctx: MCPContext, req_id: Any, params: dict) -> dic
         text = await tool.handler(args_model, ctx)
         status = "ok"
     except Exception as exc:  # noqa: BLE001
+        await ctx.db.rollback()
         await log_tool_call(
             db=ctx.db, client_id=ctx.client_id, workspace_id=ctx.workspace_id, user_id=ctx.user_id,
             tool_name=name, duration_ms=int((time.monotonic() - t0) * 1000), status="error",
         )
+        await ctx.db.commit()
         mcp_tool_calls.labels(tool_name=name, status="error").inc()
         return _err(req_id, -32603, f"Internal error: {type(exc).__name__}")
 
@@ -91,5 +93,6 @@ async def _dispatch_tool_call(ctx: MCPContext, req_id: Any, params: dict) -> dic
         db=ctx.db, client_id=ctx.client_id, workspace_id=ctx.workspace_id, user_id=ctx.user_id,
         tool_name=name, duration_ms=int((time.monotonic() - t0) * 1000), status=status,
     )
+    await ctx.db.commit()
     mcp_tool_calls.labels(tool_name=name, status=status).inc()
     return _ok(req_id, {"content": [{"type": "text", "text": text}]})

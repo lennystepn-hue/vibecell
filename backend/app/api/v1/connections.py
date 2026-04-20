@@ -32,4 +32,5 @@ async def revoke_connection(
         raise HTTPException(400, "invalid_kind")
     svc = ConnectionsService(db)
     await svc.revoke(kind, connection_id)
+    await db.commit()
     return Response(status_code=204)
