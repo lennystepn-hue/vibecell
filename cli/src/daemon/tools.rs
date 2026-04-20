@@ -1,11 +1,8 @@
 //! MCP tool specs + dispatcher. 18 tools covering the core read/write surface
-//! Claude Code needs to drive Hangar during a coding session.
+//! Claude Code needs to drive Vibecell during a coding session.
 //!
-//! Spec 2 Bundle B (this commit) replaces the previous stubs for
-//! log_session / decision / idea / note_append with real POSTs to the new
-//! backend endpoints, and adds `hangar.ship`. The pre-existing `hangar.search`
-//! is repurposed from a project-substring search to a federated FTS call
-//! against `/api/v1/search`.
+//! Tool namespace is `vibecell.*` (user-visible). CLI binary stays `hangar`
+//! (internal codename) to avoid breaking existing keychain/config paths.
 
 use anyhow::{bail, Context, Result};
 use serde_json::{json, Value};
@@ -19,17 +16,17 @@ use crate::daemon::mcp::AppState;
 pub fn tool_specs() -> Value {
     json!([
         {
-            "name": "hangar.ping",
+            "name": "vibecell.ping",
             "description": "Health check. Returns ok=true + version + active project slug.",
             "inputSchema": {"type": "object", "properties": {}, "required": []}
         },
         {
-            "name": "hangar.active",
+            "name": "vibecell.active",
             "description": "Return the currently-active project's full aggregate (name, pitch, status, context, stack, links, commands, etc). Always call this at session start.",
             "inputSchema": {"type": "object", "properties": {}, "required": []}
         },
         {
-            "name": "hangar.list",
+            "name": "vibecell.list",
             "description": "List projects in the active workspace. Optional filters: status, tag, q (full-text).",
             "inputSchema": {
                 "type": "object",
@@ -41,7 +38,7 @@ pub fn tool_specs() -> Value {
             }
         },
         {
-            "name": "hangar.get",
+            "name": "vibecell.get",
             "description": "Return the full aggregate for a single project by slug.",
             "inputSchema": {
                 "type": "object",
@@ -50,7 +47,7 @@ pub fn tool_specs() -> Value {
             }
         },
         {
-            "name": "hangar.brief",
+            "name": "vibecell.brief",
             "description": "Generate a human-readable resurrection brief for a project (name, pitch, status, current focus, next step, suggested first move). Defaults to active project.",
             "inputSchema": {
                 "type": "object",
@@ -58,7 +55,7 @@ pub fn tool_specs() -> Value {
             }
         },
         {
-            "name": "hangar.search",
+            "name": "vibecell.search",
             "description": "Federated full-text search across the workspace: projects, sessions, decisions, ideas, notes. Returns ranked hits with snippets.",
             "inputSchema": {
                 "type": "object",
@@ -70,7 +67,7 @@ pub fn tool_specs() -> Value {
             }
         },
         {
-            "name": "hangar.recent_projects",
+            "name": "vibecell.recent_projects",
             "description": "Return up to n projects (default 5) ordered by sidebar position (proxy for recently-touched until sessions land).",
             "inputSchema": {
                 "type": "object",
@@ -78,8 +75,8 @@ pub fn tool_specs() -> Value {
             }
         },
         {
-            "name": "hangar.switch",
-            "description": "Switch the active project. Subsequent calls to hangar.active / hangar.brief default to this slug.",
+            "name": "vibecell.switch",
+            "description": "Switch the active project. Subsequent calls to vibecell.active / vibecell.brief default to this slug.",
             "inputSchema": {
                 "type": "object",
                 "properties": {"slug": {"type": "string"}},
@@ -87,7 +84,7 @@ pub fn tool_specs() -> Value {
             }
         },
         {
-            "name": "hangar.log_session",
+            "name": "vibecell.log_session",
             "description": "Log a coding session: summary + optional files_touched + commits + next_step. Writes to the sessions table with source='skill'.",
             "inputSchema": {
                 "type": "object",
@@ -101,7 +98,7 @@ pub fn tool_specs() -> Value {
             }
         },
         {
-            "name": "hangar.update_context",
+            "name": "vibecell.update_context",
             "description": "Patch the active project's context fields (current_focus, next_step, user_wants, open_questions, known_issues, blocked_by).",
             "inputSchema": {
                 "type": "object",
@@ -116,7 +113,7 @@ pub fn tool_specs() -> Value {
             }
         },
         {
-            "name": "hangar.decision",
+            "name": "vibecell.decision",
             "description": "Record an architectural decision (ADR-lite) on the active project: title, context, decision, consequences, reconsider_if.",
             "inputSchema": {
                 "type": "object",
@@ -131,7 +128,7 @@ pub fn tool_specs() -> Value {
             }
         },
         {
-            "name": "hangar.idea",
+            "name": "vibecell.idea",
             "description": "Capture an idea. If `project` slug is supplied, files it against that project; otherwise goes to the workspace inbox.",
             "inputSchema": {
                 "type": "object",
@@ -143,7 +140,7 @@ pub fn tool_specs() -> Value {
             }
         },
         {
-            "name": "hangar.note_append",
+            "name": "vibecell.note_append",
             "description": "Append a markdown block to the active project's notes, separated by a timestamped divider.",
             "inputSchema": {
                 "type": "object",
@@ -152,7 +149,7 @@ pub fn tool_specs() -> Value {
             }
         },
         {
-            "name": "hangar.ship",
+            "name": "vibecell.ship",
             "description": "Record a ship event for the active project: version, summary, changelog_md (markdown). Auto-creates a lifecycle_event.",
             "inputSchema": {
                 "type": "object",
@@ -164,7 +161,7 @@ pub fn tool_specs() -> Value {
             }
         },
         {
-            "name": "hangar.status",
+            "name": "vibecell.status",
             "description": "Set the active project's status (idea | building | live | paused | shipped | archived | dead).",
             "inputSchema": {
                 "type": "object",
@@ -173,7 +170,7 @@ pub fn tool_specs() -> Value {
             }
         },
         {
-            "name": "hangar.run",
+            "name": "vibecell.run",
             "description": "Execute a saved project command. Resolves @label placeholders from the project's secret store (inline_encrypted via backend, op:// via 1Password CLI, bw:// via Bitwarden CLI). Returns exit code + last 4KB of stdout/stderr. 5-minute timeout.",
             "inputSchema": {
                 "type": "object",
@@ -185,7 +182,7 @@ pub fn tool_specs() -> Value {
             }
         },
         {
-            "name": "hangar.claude_md",
+            "name": "vibecell.claude_md",
             "description": "Generate a CLAUDE.md-ready markdown brief for a project: stack, infra, current state, links, commands. Pure read — no network besides the project fetch. Defaults to active project.",
             "inputSchema": {
                 "type": "object",
@@ -193,7 +190,7 @@ pub fn tool_specs() -> Value {
             }
         },
         {
-            "name": "hangar.handover",
+            "name": "vibecell.handover",
             "description": "Return a longer onboarding / resurrection brief as prose — what the project is, where it stands, what the user was about to do, suggested first move. Defaults to active project.",
             "inputSchema": {
                 "type": "object",
@@ -209,24 +206,24 @@ pub fn tool_specs() -> Value {
 
 pub async fn dispatch(state: &AppState, name: &str, args: &Value) -> Result<String> {
     match name {
-        "hangar.ping" => ping(state).await,
-        "hangar.active" => active(state).await,
-        "hangar.list" => list(state, args).await,
-        "hangar.get" => get_project(state, args).await,
-        "hangar.brief" => brief(state, args).await,
-        "hangar.search" => search(state, args).await,
-        "hangar.recent_projects" => recent_projects(state, args).await,
-        "hangar.switch" => switch(state, args).await,
-        "hangar.log_session" => log_session(state, args).await,
-        "hangar.update_context" => update_context(state, args).await,
-        "hangar.decision" => decision(state, args).await,
-        "hangar.idea" => idea(state, args).await,
-        "hangar.note_append" => note_append(state, args).await,
-        "hangar.ship" => ship(state, args).await,
-        "hangar.status" => set_status(state, args).await,
-        "hangar.run" => run_tool(state, args).await,
-        "hangar.claude_md" => claude_md(state, args).await,
-        "hangar.handover" => handover(state, args).await,
+        "vibecell.ping" => ping(state).await,
+        "vibecell.active" => active(state).await,
+        "vibecell.list" => list(state, args).await,
+        "vibecell.get" => get_project(state, args).await,
+        "vibecell.brief" => brief(state, args).await,
+        "vibecell.search" => search(state, args).await,
+        "vibecell.recent_projects" => recent_projects(state, args).await,
+        "vibecell.switch" => switch(state, args).await,
+        "vibecell.log_session" => log_session(state, args).await,
+        "vibecell.update_context" => update_context(state, args).await,
+        "vibecell.decision" => decision(state, args).await,
+        "vibecell.idea" => idea(state, args).await,
+        "vibecell.note_append" => note_append(state, args).await,
+        "vibecell.ship" => ship(state, args).await,
+        "vibecell.status" => set_status(state, args).await,
+        "vibecell.run" => run_tool(state, args).await,
+        "vibecell.claude_md" => claude_md(state, args).await,
+        "vibecell.handover" => handover(state, args).await,
         _ => bail!("unknown tool: {name}"),
     }
 }
@@ -253,7 +250,7 @@ async fn resolve_slug(state: &AppState, args: &Value) -> Result<String> {
 /// Active slug — prefer cached, fall back to scanning `/api/v1/me` or just
 /// the first project. Spec 1 does not expose `GET /active-project`, so we
 /// approximate: single-user workspaces almost always have 1 project; for more
-/// we check the cache's `active_project` row (written by hangar.switch).
+/// we check the cache's `active_project` row (written by vibecell.switch).
 async fn active_slug_from_cloud(_state: &AppState) -> Result<String> {
     let conn = crate::cache::open()?;
     if let Some(slug) = crate::cache::get_active_slug(&conn)? {
@@ -265,7 +262,7 @@ async fn active_slug_from_cloud(_state: &AppState) -> Result<String> {
     if let Some(first) = projects.into_iter().next() {
         return Ok(first.slug);
     }
-    bail!("no active project — call hangar.switch(slug) or hangar sync first")
+    bail!("no active project — call vibecell.switch(slug) or `hangar sync` first")
 }
 
 // ---------------------------------------------------------------------------
@@ -349,7 +346,7 @@ async fn brief(state: &AppState, args: &Value) -> Result<String> {
     } else if current_focus != "(unset)" {
         format!("Continue current focus: {current_focus}")
     } else {
-        "Run hangar.update_context to capture what you want to do next.".to_string()
+        "Run vibecell.update_context to capture what you want to do next.".to_string()
     };
 
     let brief = format!(
@@ -391,7 +388,7 @@ async fn recent_projects(state: &AppState, args: &Value) -> Result<String> {
 async fn switch(state: &AppState, args: &Value) -> Result<String> {
     let slug = arg_str_required(args, "slug")?;
     let out = state.cloud.switch_project(slug).await?;
-    // Mirror into local cache so hangar.active / hangar.ping see the change.
+    // Mirror into local cache so vibecell.active / vibecell.ping see the change.
     if let Ok(conn) = crate::cache::open() {
         let ws_id = state
             .cloud
@@ -506,7 +503,7 @@ async fn set_status(state: &AppState, args: &Value) -> Result<String> {
 }
 
 // ---------------------------------------------------------------------------
-// hangar.run — piped output + secret resolution (Bundle 2)
+// vibecell.run — piped output + secret resolution (Bundle 2)
 // ---------------------------------------------------------------------------
 
 async fn run_tool(state: &AppState, args: &Value) -> Result<String> {
@@ -523,7 +520,7 @@ async fn run_tool(state: &AppState, args: &Value) -> Result<String> {
 }
 
 // ---------------------------------------------------------------------------
-// hangar.claude_md — generate CLAUDE.md for a project (HANGAR.md §15.1)
+// vibecell.claude_md — generate CLAUDE.md for a project (HANGAR.md §15.1)
 // ---------------------------------------------------------------------------
 
 async fn claude_md(state: &AppState, args: &Value) -> Result<String> {
@@ -712,7 +709,7 @@ pub(crate) fn render_claude_md(full: &Value) -> String {
 }
 
 // ---------------------------------------------------------------------------
-// hangar.handover — prose onboarding brief (HANGAR.md §15.4)
+// vibecell.handover — prose onboarding brief (HANGAR.md §15.4)
 // ---------------------------------------------------------------------------
 
 async fn handover(state: &AppState, args: &Value) -> Result<String> {
@@ -824,9 +821,9 @@ pub(crate) fn render_handover(full: &Value) -> String {
     } else if !current_focus.is_empty() {
         format!("continue current focus ({current_focus})")
     } else if commands_count > 0 {
-        "browse saved commands with `hangar run <label>` to recall what this project does, then call `hangar.update_context` to set a focus before coding".to_string()
+        "browse saved commands with `hangar run <label>` to recall what this project does, then call `vibecell.update_context` to set a focus before coding".to_string()
     } else {
-        "call `hangar.update_context` to set current_focus + next_step, then start a concrete task"
+        "call `vibecell.update_context` to set current_focus + next_step, then start a concrete task"
             .to_string()
     };
     p.push_str(&suggestion);
@@ -848,14 +845,14 @@ mod tests {
             .filter_map(|t| t.get("name").and_then(|v| v.as_str()))
             .collect();
         // Spec 2 new additions.
-        assert!(names.contains(&"hangar.ship"));
+        assert!(names.contains(&"vibecell.ship"));
         // Existing write tools still present (no removals).
         for required in [
-            "hangar.log_session",
-            "hangar.decision",
-            "hangar.idea",
-            "hangar.note_append",
-            "hangar.search",
+            "vibecell.log_session",
+            "vibecell.decision",
+            "vibecell.idea",
+            "vibecell.note_append",
+            "vibecell.search",
         ] {
             assert!(names.contains(&required), "missing {required}");
         }

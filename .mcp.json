@@ -1,6 +1,6 @@
 {
   "mcpServers": {
-    "hangar": {
+    "vibecell": {
       "type": "http",
       "url": "http://127.0.0.1:7421/mcp/v1",
       "headers": {

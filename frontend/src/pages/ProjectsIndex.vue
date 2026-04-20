@@ -44,7 +44,7 @@ onMounted(() => projects.fetchList());
 
     <EmptyState
       v-else-if="projects.list.length === 0"
-      title="Your hangar is empty."
+      title="Your workspace is empty."
       subtitle="Pull in your repos from GitHub or add the first one manually — either works."
     >
       <template #actions>

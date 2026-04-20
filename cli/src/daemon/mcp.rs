@@ -70,7 +70,7 @@ async fn auth_middleware(
 
 async fn server_info() -> Json<Value> {
     Json(json!({
-        "name": "hangar",
+        "name": "vibecell",
         "version": env!("CARGO_PKG_VERSION"),
         "protocolVersion": "2024-11-05"
     }))

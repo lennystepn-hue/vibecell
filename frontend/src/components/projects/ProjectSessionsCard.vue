@@ -145,7 +145,7 @@ function commitsArr(s: SessionOut): unknown[] {
 
     <div v-if="sessions.loading && count === 0" class="text-small text-fg-muted">loading…</div>
     <div v-else-if="count === 0" class="text-small text-fg-muted italic">
-      No sessions logged yet. Claude will auto-log via <code class="font-mono text-fg-body">hangar.log_session</code> — or add one manually.
+      No sessions logged yet. Claude will auto-log via <code class="font-mono text-fg-body">vibecell.log_session</code> — or add one manually.
     </div>
 
     <ul v-else class="space-y-0.5">

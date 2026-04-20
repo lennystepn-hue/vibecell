@@ -1,7 +1,7 @@
 //! `hangar skill` — Claude skill manager.
 //!
 //! `print`   — fetch SKILL.md from the backend and dump to stdout (unchanged).
-//! `install` — copy SKILL.md into `~/.claude/skills/hangar/SKILL.md` so Claude
+//! `install` — copy SKILL.md into `~/.claude/skills/vibecell/SKILL.md` so Claude
 //!             auto-loads Vibecell context on every session.
 //! `update`  — refresh an installed skill if the remote content changed.
 
@@ -15,7 +15,7 @@ use crate::config;
 pub enum SkillCommand {
     /// Fetch the Claude skill markdown from the backend and print to stdout.
     Print,
-    /// Install SKILL.md into `~/.claude/skills/hangar/SKILL.md`.
+    /// Install SKILL.md into `~/.claude/skills/vibecell/SKILL.md`.
     Install {
         /// Overwrite an existing skill file that differs from the remote copy.
         #[arg(long)]
@@ -45,7 +45,7 @@ pub(crate) fn claude_skill_path() -> Result<PathBuf> {
     Ok(home
         .join(".claude")
         .join("skills")
-        .join("hangar")
+        .join("vibecell")
         .join("SKILL.md"))
 }
 

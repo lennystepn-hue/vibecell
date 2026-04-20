@@ -203,7 +203,7 @@ async fn spawn_shell(command: &str) -> Result<std::process::ExitStatus> {
 }
 
 // ---------------------------------------------------------------------------
-// Capture variant — used by the MCP `hangar.run` tool, returns tails + code.
+// Capture variant — used by the MCP `vibecell.run` tool, returns tails + code.
 // ---------------------------------------------------------------------------
 
 #[allow(dead_code)] // surfaced through MCP (commit 6)
