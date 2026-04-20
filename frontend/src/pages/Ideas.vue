@@ -225,5 +225,4 @@ function projectNameFor(id: string | null | undefined): string | null {
         </p>
       </div>
     </div>
-  </div>
 </template>
