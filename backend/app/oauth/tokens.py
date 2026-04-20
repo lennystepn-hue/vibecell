@@ -55,11 +55,10 @@ def verify_access_token(token: str) -> OAuthTokenClaims:
     s = get_settings()
     try:
         payload = jwt.decode(
-            token,
-            s.oauth_jwt_secret,
-            algorithms=["HS256"],
-            audience=_AUDIENCE,
-            issuer=_ISSUER,
+            token, s.oauth_jwt_secret, algorithms=["HS256"],
+            audience=_AUDIENCE, issuer=_ISSUER,
+            options={"require": ["iss", "aud", "sub", "exp", "iat", "jti", "client_id", "workspace_id", "scope"]},
+            leeway=30,  # fix I-3 — 30s clock-skew tolerance
         )
     except jwt.PyJWTError as e:
         raise ValueError("invalid_token") from e
@@ -91,8 +90,11 @@ class JTIBlacklist:
     _PREFIX = "oauth:revoked_jti:"
 
     async def add(self, jti: str, ttl_seconds: int) -> None:
+        if ttl_seconds <= 0:
+            # Token is already expired — revocation would expire instantly. No-op is safe.
+            return
         r = await get_redis()
-        await r.set(f"{self._PREFIX}{jti}", "1", ex=max(1, ttl_seconds))
+        await r.set(f"{self._PREFIX}{jti}", "1", ex=ttl_seconds)
 
     async def is_revoked(self, jti: str) -> bool:
         r = await get_redis()
