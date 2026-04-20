@@ -135,6 +135,22 @@ async def handle_active(args: Any, ctx: MCPContext) -> str:  # noqa: ARG001
     return json.dumps(full)
 
 
+async def _github_url_map(db, projects) -> dict[str, str]:
+    """Return {project_id: github_url} for the given projects (from kind='github' ProjectLink)."""
+    if not projects:
+        return {}
+    links = (await db.execute(
+        select(ProjectLink).where(
+            ProjectLink.project_id.in_([p.id for p in projects]),
+            ProjectLink.kind == "github",
+        )
+    )).scalars().all()
+    out: dict[str, str] = {}
+    for link in links:
+        out.setdefault(link.project_id, link.url)
+    return out
+
+
 async def handle_list(args: Any, ctx: MCPContext) -> str:
     """List projects in the workspace with optional status/tag/q filters."""
     items, _ = await list_projects(
@@ -145,7 +161,12 @@ async def handle_list(args: Any, ctx: MCPContext) -> str:
         q=getattr(args, "q", None),
         limit=200,
     )
-    out = [ProjectListItem.model_validate(p).model_dump(mode="json") for p in items]
+    github_urls = await _github_url_map(ctx.db, items)
+    out = []
+    for p in items:
+        data = ProjectListItem.model_validate(p).model_dump(mode="json")
+        data["github_url"] = github_urls.get(p.id)
+        out.append(data)
     return json.dumps(out)
 
 
@@ -185,7 +206,13 @@ async def handle_recent(args: Any, ctx: MCPContext) -> str:
         workspace_id=ctx.workspace_id,
         limit=max(n, 1),
     )
-    out = [ProjectListItem.model_validate(p).model_dump(mode="json") for p in items[:n]]
+    trimmed = items[:n]
+    github_urls = await _github_url_map(ctx.db, trimmed)
+    out = []
+    for p in trimmed:
+        data = ProjectListItem.model_validate(p).model_dump(mode="json")
+        data["github_url"] = github_urls.get(p.id)
+        out.append(data)
     return json.dumps(out)
 
 

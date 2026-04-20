@@ -27,6 +27,7 @@ def _err(id_: int | str | None, code: int, message: str) -> dict:
     return {"jsonrpc": "2.0", "id": id_, "error": {"code": code, "message": message}}
 
 
+@router.post("/")
 @router.post("/mcp")
 async def mcp_endpoint(
     request: Request,
@@ -36,13 +37,6 @@ async def mcp_endpoint(
     req_id = body.get("id")
     method = body.get("method")
     params = body.get("params") or {}
-
-    # Temporary debug logging to diagnose claude.ai handshake
-    import logging
-    logging.getLogger("mcp").warning(
-        "MCP %s id=%r params_keys=%s client_id=%s",
-        method, req_id, list(params.keys()) if isinstance(params, dict) else None, ctx.client_id,
-    )
 
     # JSON-RPC notifications (no id) — server MUST NOT respond with a body.
     if req_id is None:

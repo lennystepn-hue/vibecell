@@ -271,6 +271,7 @@ from app.oauth.tokens import (  # noqa: E402
 
 @router.post("/token")
 async def token(
+    request: Request,
     grant_type: str = Form(...),
     code: str | None = Form(None),
     redirect_uri: str | None = Form(None),
