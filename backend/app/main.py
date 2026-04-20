@@ -22,6 +22,7 @@ from app.api.v1.ships import router as ships_router
 from app.api.v1.stack_items import router as stack_items_router
 from app.api.v1.tags import router as tags_router
 from app.api.v1.workspaces import router as workspaces_router
+from app.oauth.discovery import router as oauth_discovery_router
 from app.core.audit import install_audit_listener
 from app.core.middleware import install_session_middleware
 from app.core.problem import install_problem_handler
@@ -59,6 +60,8 @@ app.include_router(launches_router)
 app.include_router(lifecycle_router)
 app.include_router(notes_router)
 app.include_router(search_router)
+# Spec 3 — OAuth / MCP
+app.include_router(oauth_discovery_router)
 
 
 @app.get("/api/v1/healthz")
