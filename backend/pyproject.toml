@@ -23,6 +23,7 @@ dependencies = [
   "pyjwt>=2.12.1",
   "prometheus-client>=0.25.0",
   "apscheduler>=3.11.2",
+  "anthropic>=0.96.0",
 ]
 
 [dependency-groups]

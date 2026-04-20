@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db import get_db
 from app.core.deps import AuthContext, require_auth
-from app.models import Project
+from app.models import Project, ProjectInfra, ProjectStack, StackItem
 from app.schemas.integration import (
     GitHubRepoOut,
     ImportRequest,
@@ -17,6 +17,7 @@ from app.schemas.integration import (
 )
 from app.services import github as github_svc
 from app.services import integration as integ_svc
+from app.services.enrichment import enrich_from_repo, fetch_repo_context
 from app.services.project import create_project
 
 router = APIRouter(prefix="/api/v1/integrations/github", tags=["integrations"])
@@ -74,8 +75,7 @@ async def bulk_import(
 ) -> ImportResponse:
     from sqlalchemy import select
 
-    from sqlalchemy import select
-    from app.models import ProjectLink, ProjectRepo, ProjectStack, StackItem, Tag, ProjectTag
+    from app.models import ProjectLink, ProjectRepo, Tag, ProjectTag
 
     token = await integ_svc.get_decrypted_token(
         db, workspace_id=auth.active_workspace_id, kind="github",
@@ -185,6 +185,107 @@ async def bulk_import(
                     db.add(tag)
                     await db.flush()
                 db.add(ProjectTag(project_id=project.id, tag_id=tag.id))
+
+            # AI enrichment — Spec 3.6
+            try:
+                fetched = await fetch_repo_context(
+                    token, item.owner, item.name, norm["default_branch"],
+                )
+                enriched = await enrich_from_repo(
+                    name=norm["name"],
+                    description=norm.get("description"),
+                    language=norm.get("language"),
+                    topics=norm.get("topics") or [],
+                    fetched_files=fetched,
+                )
+
+                # Apply pitch if LLM produced a better one AND project currently has none/thin
+                if enriched.pitch and (not project.pitch or len(project.pitch or "") < 20):
+                    project.pitch = enriched.pitch[:2000]
+
+                # Apply tags (dedupe against existing topic-derived tags)
+                for tag_name in (enriched.tags or [])[:8]:
+                    if not tag_name:
+                        continue
+                    tag_name = tag_name.lower()[:100]
+                    existing_tag = (await db.execute(
+                        select(Tag).where(
+                            Tag.workspace_id == auth.active_workspace_id,
+                            Tag.name == tag_name,
+                        )
+                    )).scalar_one_or_none()
+                    if existing_tag is None:
+                        existing_tag = Tag(
+                            id=new_ulid(),
+                            workspace_id=auth.active_workspace_id,
+                            name=tag_name,
+                        )
+                        db.add(existing_tag)
+                        await db.flush()
+                    already_linked = (await db.execute(
+                        select(ProjectTag).where(
+                            ProjectTag.project_id == project.id,
+                            ProjectTag.tag_id == existing_tag.id,
+                        )
+                    )).scalar_one_or_none()
+                    if not already_linked:
+                        db.add(ProjectTag(project_id=project.id, tag_id=existing_tag.id))
+
+                # Apply stack items (dedupe)
+                for si in (enriched.stack or [])[:10]:
+                    slug = (si.get("slug") or "").lower().strip()
+                    name_ = si.get("name") or slug.title()
+                    kind = si.get("kind") or "library"
+                    role = si.get("role")
+                    if not slug:
+                        continue
+                    existing_si = (await db.execute(
+                        select(StackItem).where(StackItem.slug == slug)
+                    )).scalar_one_or_none()
+                    if existing_si is None:
+                        existing_si = StackItem(
+                            id=new_ulid(),
+                            slug=slug[:100],
+                            name=name_[:200],
+                            kind=kind[:30],
+                        )
+                        db.add(existing_si)
+                        await db.flush()
+                    already_linked_s = (await db.execute(
+                        select(ProjectStack).where(
+                            ProjectStack.project_id == project.id,
+                            ProjectStack.stack_item_id == existing_si.id,
+                        )
+                    )).scalar_one_or_none()
+                    if not already_linked_s:
+                        db.add(ProjectStack(
+                            project_id=project.id,
+                            stack_item_id=existing_si.id,
+                            role=role[:20] if role else None,
+                        ))
+
+                # Apply infra hints (only if none recorded yet)
+                if enriched.infra:
+                    existing_infra = (await db.execute(
+                        select(ProjectInfra).where(ProjectInfra.project_id == project.id)
+                    )).scalar_one_or_none()
+                    if existing_infra is None:
+                        db.add(ProjectInfra(
+                            project_id=project.id,
+                            server_alias=enriched.infra.get("server_alias"),
+                            domain_primary=None,
+                            db_host=enriched.infra.get("db"),
+                            dns_provider=enriched.infra.get("dns_provider"),
+                            cdn=enriched.infra.get("cdn"),
+                            object_storage=enriched.infra.get("object_storage"),
+                        ))
+            except Exception as enrich_err:
+                import logging
+                logging.getLogger(__name__).warning(
+                    "enrichment error (non-fatal) for %s/%s: %s",
+                    item.owner, item.name, enrich_err,
+                )
+
             await db.flush()
             existing_slugs.add(desired)
             results.append(ImportResultItem(

@@ -47,6 +47,9 @@ class Settings(BaseSettings):
     oauth_max_clients_per_user: int = 50
     oauth_dcr_orphan_ttl_hours: int = 24
 
+    # AI enrichment — Spec 3.6
+    anthropic_api_key: str = Field(default="", description="For AI enrichment during GitHub import")
+
 
 @lru_cache(maxsize=1)
 def get_settings() -> Settings:
