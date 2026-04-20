@@ -58,6 +58,12 @@ const router = createRouter({
       component: () => import("@/pages/SettingsIntegrations.vue"),
     },
     {
+      path: "/settings/connections",
+      name: "settings-connections",
+      component: () => import("@/pages/Connections.vue"),
+      meta: { requiresAuth: true },
+    },
+    {
       path: "/cli/pair",
       name: "cli-pair",
       component: () => import("@/pages/CliPair.vue"),
