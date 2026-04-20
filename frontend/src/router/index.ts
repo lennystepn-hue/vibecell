@@ -69,6 +69,12 @@ const router = createRouter({
       component: () => import("@/pages/CliPair.vue"),
     },
     {
+      path: "/oauth/consent",
+      name: "oauth-consent",
+      component: () => import("@/pages/OAuthConsent.vue"),
+      meta: { requiresAuth: true },
+    },
+    {
       path: "/:catchAll(.*)*",
       name: "not-found",
       component: () => import("@/pages/NotFound.vue"),

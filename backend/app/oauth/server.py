@@ -126,25 +126,61 @@ async def authorize(
         user_id=user_id,
     ))
 
-    # For Phase 1, return JSON for programmatic callers. Phase 3 replaces this with HTML.
+    # Programmatic callers (Accept: application/json) get JSON directly.
+    # Browser callers are redirected to the SPA consent page.
+    accept = request.headers.get("accept", "")
+    if "application/json" in accept:
+        workspaces = (await db.execute(
+            select(Workspace).join(WorkspaceMember, WorkspaceMember.workspace_id == Workspace.id).where(
+                WorkspaceMember.user_id == user_id
+            )
+        )).scalars().all()
+        return {
+            "client_id": client_row.client_id,
+            "client_name": client_row.client_name,
+            "redirect_uri": redirect_uri,
+            "scope": scope,
+            "state": state,
+            "workspaces": [{"id": w.id, "slug": w.slug, "name": w.name} for w in workspaces],
+        }
+
+    # Browser: redirect to the SPA consent page
+    return RedirectResponse(url=f"/oauth/consent?state={quote(state, safe='')}", status_code=302)
+
+
+@router.get("/consent-context")
+async def consent_context(
+    state: str = Query(...),
+    db: AsyncSession = Depends(get_db),
+):
+    """Return stashed consent context as JSON for the SPA consent page."""
+    cs = await consent.fetch(state)
+    if cs is None:
+        raise HTTPException(404, "state_not_found")
+
     workspaces = (await db.execute(
         select(Workspace).join(WorkspaceMember, WorkspaceMember.workspace_id == Workspace.id).where(
-            WorkspaceMember.user_id == user_id
+            WorkspaceMember.user_id == cs.user_id
         )
     )).scalars().all()
 
+    client_row = (await db.execute(
+        select(OAuthClient).where(OAuthClient.client_id == cs.client_id)
+    )).scalar_one_or_none()
+
     return {
-        "client_id": client_row.client_id,
-        "client_name": client_row.client_name,
-        "redirect_uri": redirect_uri,
-        "scope": scope,
-        "state": state,
+        "client_id": cs.client_id,
+        "client_name": client_row.client_name if client_row else None,
+        "redirect_uri": cs.redirect_uri,
+        "scope": cs.scope,
+        "state": cs.state,
         "workspaces": [{"id": w.id, "slug": w.slug, "name": w.name} for w in workspaces],
     }
 
 
 @router.post("/grant")
 async def grant(
+    request: Request,
     body: GrantRequest,
     auth: Annotated[AuthContext, Depends(require_auth)],
     db: AsyncSession = Depends(get_db),
@@ -180,14 +216,19 @@ async def grant(
     await db.flush()
     await consent.drop(body.state)
 
-    return RedirectResponse(
-        url=_build_redirect_location(cs.redirect_uri, code=code, state=cs.state),
-        status_code=302,
-    )
+    redirect_url = _build_redirect_location(cs.redirect_uri, code=code, state=cs.state)
+
+    # SPA calls with Accept: application/json — return JSON so the frontend can
+    # do window.location.href = data.redirect (avoids opaque-redirect headaches).
+    if "application/json" in request.headers.get("accept", ""):
+        return {"redirect": redirect_url}
+
+    return RedirectResponse(url=redirect_url, status_code=302)
 
 
 @router.post("/deny")
 async def deny(
+    request: Request,
     body: GrantRequest,
     auth: Annotated[AuthContext, Depends(require_auth)],
 ):
@@ -195,10 +236,13 @@ async def deny(
     if cs is None or cs.user_id != auth.user.id:
         raise HTTPException(400, "invalid_state")
     await consent.drop(body.state)
-    return RedirectResponse(
-        url=_build_redirect_location(cs.redirect_uri, error="access_denied", state=cs.state),
-        status_code=302,
-    )
+
+    redirect_url = _build_redirect_location(cs.redirect_uri, error="access_denied", state=cs.state)
+
+    if "application/json" in request.headers.get("accept", ""):
+        return {"redirect": redirect_url}
+
+    return RedirectResponse(url=redirect_url, status_code=302)
 
 
 # ---------------------------------------------------------------------------
