@@ -266,3 +266,35 @@ async def handle_secret_list(args: Any, ctx: MCPContext) -> str:
         for r in rows
     ]
     return json.dumps(out)
+
+
+async def handle_secret_get_value(args: Any, ctx: MCPContext) -> str:
+    """Retrieve plaintext value. For inline_encrypted: decrypts. For references (op/bw/ssh): returns path."""
+    project_slug: str | None = getattr(args, "project", None)
+    if project_slug:
+        project = await get_project(ctx.db, workspace_id=ctx.workspace_id, slug=project_slug)
+    else:
+        project = await _get_active_project(ctx)
+
+    row = await secret_svc.get_secret(ctx.db, project=project, label=args.label)
+    if row is None:
+        return json.dumps({"error": "not_found", "label": args.label})
+
+    if row.kind == "inline_encrypted":
+        value = await secret_svc.get_decrypted_value(
+            ctx.db, project=project, label=args.label, workspace_id=ctx.workspace_id,
+        )
+        return json.dumps({
+            "label": row.label,
+            "kind": row.kind,
+            "value": value,
+            "note": "PLAINTEXT — do not echo in user-visible chat. Use silently in tool calls/commands.",
+        })
+
+    # Reference kinds — return the path, caller must resolve locally
+    return json.dumps({
+        "label": row.label,
+        "kind": row.kind,
+        "reference": row.reference,
+        "note": f"This is a {row.kind} reference. The value lives in the user's {row.kind} vault — not retrievable server-side. Use the path with `op read` / `bw get` / etc. on the user's machine.",
+    })

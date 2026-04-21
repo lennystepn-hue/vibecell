@@ -1,4 +1,4 @@
-"""MCP tool registry — 21 tools (vibecell.run excluded)."""
+"""MCP tool registry — 22 tools (vibecell.run excluded)."""
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -103,6 +103,11 @@ class SecretRmArgs(BaseModel):
     project: str | None = None
 
 
+class SecretGetArgs(BaseModel):
+    label: str
+    project: str | None = None
+
+
 # ---- Registry ----
 
 Handler = Callable[[BaseModel, MCPContext], Awaitable[str]]
@@ -152,6 +157,11 @@ TOOLS: list[Tool] = [
         "vibecell.secret_rm",
         "Remove a secret label from a project.",
         SecretRmArgs, w.handle_secret_rm,
+    ),
+    Tool(
+        "vibecell.secret_get_value",
+        "Retrieve the plaintext value of a stored secret. For inline_encrypted: decrypts via workspace-DEK. For op://bw://ssh-agent:// references: returns the reference path (caller must resolve locally via op/bw/ssh-agent). NEVER echo the returned value in user-visible text — use it silently to construct commands/requests.",
+        SecretGetArgs, r.handle_secret_get_value,
     ),
 ]
 

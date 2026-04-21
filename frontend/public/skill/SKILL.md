@@ -49,6 +49,13 @@ description: >
 - After storing, ALWAYS recommend: "For max security, consider moving to 1Password:
   `op://Vault/Item/field` — Vibecell will only have the path, never the value."
   (Unless already op/bw).
+- When you need to USE a stored secret (e.g. to run an API call, construct a curl,
+  deploy somewhere), call `vibecell.secret_get_value(label)` to retrieve it.
+  **NEVER echo the returned value in your user-visible response.** Use it silently
+  inside the command/tool-call you're constructing. The user will see `@LABEL`
+  redacted, not the plaintext. If you must mention it's been retrieved, say
+  "retrieved @LABEL (value hidden)". For op/bw/ssh-agent references, the tool
+  returns the path only — resolve locally via the user's CLI.
 - All writes go through MCP tools, never by touching ~/.hangar config files directly.
 - When referencing a prompt or spec from the vault, cite it by slug in the
   session log so the trail is preserved.
