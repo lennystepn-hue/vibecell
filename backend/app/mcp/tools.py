@@ -1,4 +1,4 @@
-"""MCP tool registry — 18 tools (vibecell.run excluded)."""
+"""MCP tool registry — 21 tools (vibecell.run excluded)."""
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -88,6 +88,21 @@ class ActivityArgs(BaseModel):
     limit: int = 50
 
 
+class SecretSetArgs(BaseModel):
+    label: str = Field(..., min_length=1, max_length=200)
+    value: str = Field(..., min_length=1)  # the secret OR a reference like op://... / bw://...
+    project: str | None = None  # slug; defaults to active project
+
+
+class SecretListArgs(BaseModel):
+    project: str | None = None
+
+
+class SecretRmArgs(BaseModel):
+    label: str
+    project: str | None = None
+
+
 # ---- Registry ----
 
 Handler = Callable[[BaseModel, MCPContext], Awaitable[str]]
@@ -122,6 +137,22 @@ TOOLS: list[Tool] = [
     Tool("vibecell.ship", "Record a ship event for the active project.", ShipArgs, w.handle_ship),
     Tool("vibecell.status", "Set the active project's status.", StatusArgs, w.handle_status),
     Tool("vibecell.activity", "Unified activity feed for a project (sessions, decisions, ideas, ships, lifecycle, tool calls). Defaults to active project.", ActivityArgs, r.handle_activity),
+    # Secrets
+    Tool(
+        "vibecell.secret_set",
+        "Store a secret (auto-detects kind from value prefix: op:// / bw:// / ssh-agent:// / env:// → reference-only; otherwise → inline_encrypted with DEK). Never log the value.",
+        SecretSetArgs, w.handle_secret_set,
+    ),
+    Tool(
+        "vibecell.secret_list",
+        "List labels + kinds + masked references for a project's secrets. Never returns values.",
+        SecretListArgs, r.handle_secret_list,
+    ),
+    Tool(
+        "vibecell.secret_rm",
+        "Remove a secret label from a project.",
+        SecretRmArgs, w.handle_secret_rm,
+    ),
 ]
 
 TOOLS_BY_NAME: dict[str, Tool] = {t.name: t for t in TOOLS}

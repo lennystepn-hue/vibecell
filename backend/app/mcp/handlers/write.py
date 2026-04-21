@@ -6,8 +6,23 @@ from datetime import UTC, datetime
 
 from app.mcp.auth import MCPContext
 from app.mcp.handlers.read import _get_active_project, _resolve_project  # noqa: PLC2701
+from app.services import secret as secret_svc
 
 _VALID_STATUSES = {"idea", "building", "live", "paused", "shipped", "archived", "dead"}
+
+
+# ---------------------------------------------------------------------------
+# Secret helpers
+# ---------------------------------------------------------------------------
+
+def _detect_kind(value: str) -> str:
+    v = value.strip()
+    if v.startswith("op://"): return "op"
+    if v.startswith("bw://"): return "bw"
+    if v.startswith("ssh-agent://"): return "ssh_agent"
+    if v.startswith("env://"): return "env_path"
+    if v.startswith("keychain://"): return "keychain"
+    return "inline_encrypted"
 
 
 # ---------------------------------------------------------------------------
@@ -177,3 +192,61 @@ async def handle_status(args, ctx: MCPContext) -> str:
     project = await _get_active_project(ctx)
     await update_project(ctx.db, project=project, status=status)
     return json.dumps({"slug": project.slug, "status": args.status})
+
+
+async def handle_secret_set(args, ctx: MCPContext) -> str:
+    """Upsert a secret for the project. Auto-detects kind from value prefix."""
+    # Resolve project (args.project is a slug; falls back to active)
+    from app.mcp.handlers.read import _get_active_project as _get_active  # noqa: PLC2701
+    from sqlalchemy import select
+    from app.models import Project
+    from app.services.project import get_project
+
+    project_slug: str | None = getattr(args, "project", None)
+    if project_slug:
+        project = await get_project(ctx.db, workspace_id=ctx.workspace_id, slug=project_slug)
+    else:
+        project = await _get_active(ctx)
+
+    kind = _detect_kind(args.value)
+
+    # Upsert: if label already exists, remove it first
+    existing = await secret_svc.get_secret(ctx.db, project, args.label)
+    if existing is not None:
+        await secret_svc.remove_secret(ctx.db, project, args.label)
+
+    ref = await secret_svc.add_secret(
+        ctx.db,
+        project,
+        label=args.label,
+        kind=kind,
+        reference=args.value,
+        workspace_id=ctx.workspace_id,
+    )
+
+    # ONLY return metadata — never the value
+    return json.dumps({
+        "ok": True,
+        "label": ref.label,
+        "kind": kind,
+        "project": project.slug,
+        "note": (
+            "Value is encrypted at rest (inline) or stored as reference (op/bw/ssh)."
+            if kind == "inline_encrypted"
+            else "Reference stored; value never touches Vibecell."
+        ),
+    })
+
+
+async def handle_secret_rm(args, ctx: MCPContext) -> str:
+    """Remove a secret label from a project."""
+    from app.services.project import get_project
+
+    project_slug: str | None = getattr(args, "project", None)
+    if project_slug:
+        project = await get_project(ctx.db, workspace_id=ctx.workspace_id, slug=project_slug)
+    else:
+        project = await _get_active_project(ctx)
+
+    await secret_svc.remove_secret(ctx.db, project, args.label)
+    return json.dumps({"ok": True, "label": args.label, "project": project.slug})

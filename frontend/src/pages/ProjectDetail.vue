@@ -18,6 +18,7 @@ import ProjectStackEditor from "@/components/projects/ProjectStackEditor.vue";
 import ProjectTagsEditor from "@/components/projects/ProjectTagsEditor.vue";
 import ProjectHealthCard from "@/components/projects/ProjectHealthCard.vue";
 import ProjectActivityTimeline from "@/components/projects/ProjectActivityTimeline.vue";
+import ProjectSecretsCard from "@/components/projects/ProjectSecretsCard.vue";
 import CopyableValue from "@/components/ui/CopyableValue.vue";
 import StatusPill from "@/components/ui/StatusPill.vue";
 import { api } from "@/api/client";
@@ -194,6 +195,9 @@ watch(
           </div>
           <ProjectEnvironmentsCard :project="projects.active" class="w-full" />
         </div>
+
+        <!-- Row 3.5: Secrets (full-width for clarity) -->
+        <ProjectSecretsCard :project="projects.active" class="mb-4" />
 
         <!-- Row 4+: deep-work cards (collapsible, full width) -->
         <ProjectSessionsCard :project="projects.active" class="mb-4" />

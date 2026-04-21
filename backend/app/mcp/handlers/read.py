@@ -30,6 +30,7 @@ from app.schemas.project import (
 )
 from app.schemas.tag import TagOut
 from app.services import project_children as children_svc
+from app.services import secret as secret_svc
 from app.services.activity import fetch_activity
 from app.services.project import get_project, list_projects
 from app.services.search import union_search
@@ -237,3 +238,31 @@ async def handle_activity(args: Any, ctx: MCPContext) -> str:
     limit: int = getattr(args, "limit", 50)
     events = await fetch_activity(ctx.db, project=project, limit=limit)
     return json.dumps(events)
+
+
+def _mask_secret(value: str | None, kind: str) -> str:
+    """Return the reference path for non-inline kinds; mask inline encrypted values."""
+    if kind != "inline_encrypted" and value:
+        return value
+    return "******"
+
+
+async def handle_secret_list(args: Any, ctx: MCPContext) -> str:
+    """List labels + kinds + masked references for a project's secrets. Never returns values."""
+    project_slug: str | None = getattr(args, "project", None)
+    if project_slug:
+        project = await get_project(ctx.db, workspace_id=ctx.workspace_id, slug=project_slug)
+    else:
+        project = await _get_active_project(ctx)
+
+    rows = await secret_svc.list_secrets(ctx.db, project=project)
+    out = [
+        {
+            "label": r.label,
+            "kind": r.kind,
+            "reference": _mask_secret(r.reference, r.kind),
+            "created_at": r.created_at.isoformat() if r.created_at else None,
+        }
+        for r in rows
+    ]
+    return json.dumps(out)

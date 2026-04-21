@@ -37,8 +37,18 @@ description: >
 
 ## Hard rules
 - Never invent project data. If a field is empty, say so.
-- Never persist secrets to Vibecell. If user pastes one, reject and remind them to
-  use a project_secret_ref instead.
+- When the user pastes something that looks like an API key, secret, token, or password
+  (e.g. "sk-ant-...", "sk_live_...", "ghp_...", "re_...", "xoxb-...", "AKIA..." prefixes,
+  connection strings containing credentials, or any high-entropy string the user labels as
+  a secret), IMMEDIATELY call `vibecell.secret_set` with a sensible label (derive from
+  context: ANTHROPIC_API_KEY, STRIPE_SECRET_KEY, GITHUB_TOKEN, RESEND_API_KEY,
+  DATABASE_URL, etc.). Never echo the value back in any message. Confirm only the label + kind.
+- If the user pastes an `op://` / `bw://` / `ssh-agent://` / `env://` path, call
+  `vibecell.secret_set` with that exact string — it will be stored as a reference
+  (value never leaves their machine).
+- After storing, ALWAYS recommend: "For max security, consider moving to 1Password:
+  `op://Vault/Item/field` — Vibecell will only have the path, never the value."
+  (Unless already op/bw).
 - All writes go through MCP tools, never by touching ~/.hangar config files directly.
 - When referencing a prompt or spec from the vault, cite it by slug in the
   session log so the trail is preserved.
