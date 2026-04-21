@@ -17,6 +17,19 @@ const props = defineProps<{ project: Project }>();
 const sessions = useSessionsStore();
 const toast = useToastStore();
 
+// Card-level collapsible state (default: expanded)
+const cardExpanded = ref<boolean>(
+  typeof localStorage !== "undefined"
+    ? localStorage.getItem(`vc:card-expanded:sessions:${props.project.slug}`) !== "false"
+    : true,
+);
+function toggleCard() {
+  cardExpanded.value = !cardExpanded.value;
+  if (typeof localStorage !== "undefined") {
+    localStorage.setItem(`vc:card-expanded:sessions:${props.project.slug}`, cardExpanded.value ? "true" : "false");
+  }
+}
+
 const expanded = ref<Record<string, boolean>>({});
 const modalOpen = ref(false);
 const submitting = ref(false);
@@ -132,17 +145,28 @@ function commitsArr(s: SessionOut): unknown[] {
 
 <template>
   <section class="glass rounded-lg p-5">
-    <header class="flex items-center justify-between mb-4">
-      <MonoLabel>sessions
-        <span class="ml-2 opacity-60">({{ count }})</span>
-      </MonoLabel>
+    <header
+      class="flex items-center justify-between cursor-pointer select-none"
+      :class="{ 'mb-4': cardExpanded }"
+      @click="toggleCard"
+    >
+      <div class="flex items-center gap-2">
+        <span
+          class="font-mono text-fg-subtle transition-transform duration-fast"
+          :class="{ 'rotate-90': cardExpanded }"
+          aria-hidden="true"
+        >▸</span>
+        <h3 class="mono-label text-fg-muted">//sessions <span class="opacity-60">({{ count }})</span></h3>
+      </div>
       <button
+        v-if="cardExpanded"
         type="button"
         class="mono-label hover:text-fg-body transition-colors"
-        @click="openModal"
+        @click.stop="openModal"
       >+ log session</button>
     </header>
 
+    <div v-if="cardExpanded">
     <div v-if="sessions.loading && count === 0" class="text-small text-fg-muted">loading…</div>
     <div v-else-if="count === 0" class="text-small text-fg-muted italic">
       No sessions logged yet. Claude will auto-log via <code class="font-mono text-fg-body">vibecell.log_session</code> — or add one manually.
@@ -233,5 +257,6 @@ function commitsArr(s: SessionOut): unknown[] {
         </div>
       </form>
     </Modal>
+    </div><!-- /cardExpanded -->
   </section>
 </template>

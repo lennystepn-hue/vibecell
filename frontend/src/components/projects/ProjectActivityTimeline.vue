@@ -101,7 +101,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <section class="glass rounded-lg p-4">
+  <section class="glass rounded-lg p-5">
     <header
       class="flex items-center justify-between cursor-pointer select-none"
       :class="{ 'mb-3': expanded }"

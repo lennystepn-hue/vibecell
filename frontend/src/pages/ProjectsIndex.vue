@@ -22,7 +22,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="max-w-[1200px] mx-auto px-6 py-8">
+  <div class="max-w-[1400px] mx-auto px-6 py-8">
     <header class="flex items-baseline justify-between mb-8">
       <div>
         <h1 class="text-display text-fg-primary tracking-tight">Projects</h1>

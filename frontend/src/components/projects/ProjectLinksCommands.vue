@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, nextTick } from "vue";
 
+import CopyableValue from "@/components/ui/CopyableValue.vue";
 import MonoLabel from "@/components/ui/MonoLabel.vue";
 import { api } from "@/api/client";
 import { useProjectsStore } from "@/stores/projects";
@@ -146,10 +147,10 @@ async function deleteCommand(cmdId: string) {
       <ul v-if="project.links.length > 0" class="space-y-2">
         <li v-for="l in project.links" :key="l.id" class="flex items-center gap-3 group">
           <span class="mono-label shrink-0 w-[92px] text-right truncate">{{ l.kind || "link" }}</span>
-          <a :href="l.url" target="_blank" rel="noopener" class="link text-body min-w-0 flex-1 truncate">
-            {{ l.label || l.url }}
-            <span class="text-fg-subtle ml-1" aria-hidden="true">↗</span>
-          </a>
+          <div class="min-w-0 flex-1 flex items-center gap-2">
+            <CopyableValue :value="l.url" :display="l.label || l.url" mono small class="text-fg-body min-w-0" />
+            <a :href="l.url" target="_blank" rel="noopener" class="shrink-0 text-fg-subtle hover:text-fg-body transition-colors" aria-label="Open link" title="Open in new tab">↗</a>
+          </div>
           <button
             type="button"
             class="opacity-0 group-hover:opacity-100 text-fg-muted hover:text-signal-red transition-all shrink-0"

@@ -2,7 +2,6 @@
 import { useDebounceFn } from "@vueuse/core";
 import { computed, onMounted, ref, watch } from "vue";
 
-import MonoLabel from "@/components/ui/MonoLabel.vue";
 import { useNotesStore } from "@/stores/notes";
 import type { components } from "@/api/types.gen";
 
@@ -10,6 +9,19 @@ type Project = components["schemas"]["ProjectFullOut"];
 
 const props = defineProps<{ project: Project }>();
 const notes = useNotesStore();
+
+// Card-level collapsible state (default: collapsed)
+const cardExpanded = ref<boolean>(
+  typeof localStorage !== "undefined"
+    ? localStorage.getItem(`vc:card-expanded:notes:${props.project.slug}`) === "true"
+    : false,
+);
+function toggleCard() {
+  cardExpanded.value = !cardExpanded.value;
+  if (typeof localStorage !== "undefined") {
+    localStorage.setItem(`vc:card-expanded:notes:${props.project.slug}`, cardExpanded.value ? "true" : "false");
+  }
+}
 
 const localValue = ref("");
 const dirty = ref(false);
@@ -63,17 +75,30 @@ const statusLabel = computed(() => {
 
 <template>
   <section class="glass rounded-lg p-5">
-    <header class="flex items-center justify-between mb-3">
-      <MonoLabel>notes (markdown)</MonoLabel>
-      <span class="mono-label opacity-60">{{ statusLabel }}</span>
+    <header
+      class="flex items-center justify-between cursor-pointer select-none"
+      :class="{ 'mb-3': cardExpanded }"
+      @click="toggleCard"
+    >
+      <div class="flex items-center gap-2">
+        <span
+          class="font-mono text-fg-subtle transition-transform duration-fast"
+          :class="{ 'rotate-90': cardExpanded }"
+          aria-hidden="true"
+        >▸</span>
+        <h3 class="mono-label text-fg-muted">//notes (markdown)</h3>
+      </div>
+      <span v-if="cardExpanded" class="mono-label opacity-60">{{ statusLabel }}</span>
     </header>
-    <textarea
-      :value="localValue"
-      placeholder="Free-form markdown. Auto-saves on pause + blur."
-      rows="12"
-      class="w-full px-3 py-2 rounded-md font-mono text-small bg-bg-surface/60 border border-border text-fg-primary placeholder:text-fg-subtle resize-y"
-      @input="onInput"
-      @blur="onBlur"
-    />
+    <div v-if="cardExpanded">
+      <textarea
+        :value="localValue"
+        placeholder="Free-form markdown. Auto-saves on pause + blur."
+        rows="12"
+        class="w-full px-3 py-2 rounded-md font-mono text-small bg-bg-surface/60 border border-border text-fg-primary placeholder:text-fg-subtle resize-y"
+        @input="onInput"
+        @blur="onBlur"
+      />
+    </div>
   </section>
 </template>

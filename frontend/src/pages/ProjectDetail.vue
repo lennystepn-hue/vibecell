@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from "vue";
+import { onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
 import ProjectTelemetryRail from "@/components/app/ProjectTelemetryRail.vue";
@@ -8,16 +8,18 @@ import ProjectContextEditor from "@/components/projects/ProjectContextEditor.vue
 import ProjectFocusCard from "@/components/projects/ProjectFocusCard.vue";
 import ProjectInfraCard from "@/components/projects/ProjectInfraCard.vue";
 import ProjectDecisionsCard from "@/components/projects/ProjectDecisionsCard.vue";
+import ProjectEnvironmentsCard from "@/components/projects/ProjectEnvironmentsCard.vue";
 import ProjectLaunchesCard from "@/components/projects/ProjectLaunchesCard.vue";
 import ProjectLinksCommands from "@/components/projects/ProjectLinksCommands.vue";
 import ProjectNotesCard from "@/components/projects/ProjectNotesCard.vue";
 import ProjectSessionsCard from "@/components/projects/ProjectSessionsCard.vue";
 import ShipButton from "@/components/projects/ShipButton.vue";
 import ProjectStackEditor from "@/components/projects/ProjectStackEditor.vue";
-import ProjectStatusDropdown from "@/components/projects/ProjectStatusDropdown.vue";
 import ProjectTagsEditor from "@/components/projects/ProjectTagsEditor.vue";
 import ProjectHealthCard from "@/components/projects/ProjectHealthCard.vue";
 import ProjectActivityTimeline from "@/components/projects/ProjectActivityTimeline.vue";
+import CopyableValue from "@/components/ui/CopyableValue.vue";
+import StatusPill from "@/components/ui/StatusPill.vue";
 import { api } from "@/api/client";
 import { useProjectsStore } from "@/stores/projects";
 import { useToastStore } from "@/stores/toast";
@@ -32,7 +34,7 @@ function fmtDate(iso: string | null | undefined): string {
   return new Date(iso).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
 }
 
-function fmtRelative(iso: string | null | undefined): string {
+function fmtRel(iso: string | null | undefined): string {
   if (!iso) return "—";
   const diffMs = Date.now() - new Date(iso).getTime();
   const mins = Math.floor(diffMs / 60000);
@@ -44,15 +46,6 @@ function fmtRelative(iso: string | null | undefined): string {
   if (days < 30) return `${days}d ago`;
   return fmtDate(iso);
 }
-
-const projectMeta = computed(() => {
-  const p = projects.active;
-  if (!p) return null;
-  const created = fmtDate((p as any).created_at);
-  const updated = fmtRelative((p as any).updated_at);
-  const state = (p as any).archived_at ? "Archived" : "Active";
-  return { created, updated, state, isArchived: !!(p as any).archived_at };
-});
 
 const editingContext = ref(false);
 const confirmingDelete = ref(false);
@@ -110,44 +103,42 @@ watch(
         <p class="mono-label">loading project…</p>
       </div>
 
-      <div v-else-if="projects.active" class="max-w-[1100px] px-8 py-8 mx-auto">
-        <header class="flex items-start gap-4 mb-6">
-          <span class="text-[44px] leading-none" aria-hidden="true">
-            {{ projects.active.emoji || "📦" }}
-          </span>
-          <div class="flex-1 min-w-0">
-            <div class="flex items-center gap-3 flex-wrap">
-              <h1 class="text-display text-fg-primary tracking-tight">{{ projects.active.name }}</h1>
-              <ProjectStatusDropdown :project="projects.active" />
+      <div v-else-if="projects.active" class="max-w-[1400px] px-8 py-8 mx-auto">
+
+        <!-- Hero -->
+        <header class="mb-6">
+          <div class="flex items-start justify-between gap-6">
+            <div class="flex items-start gap-4 min-w-0">
+              <span class="text-[44px] leading-none" aria-hidden="true">{{ projects.active.emoji || "📦" }}</span>
+              <div class="min-w-0">
+                <div class="flex items-baseline gap-3 flex-wrap">
+                  <h1 class="text-display text-fg-primary tracking-tight truncate">{{ projects.active.name }}</h1>
+                  <StatusPill :status="projects.active.status as never" />
+                  <CopyableValue :value="projects.active.slug" mono small class="text-fg-subtle" />
+                </div>
+                <p v-if="projects.active.pitch" class="text-body text-fg-muted mt-1 max-w-3xl">{{ projects.active.pitch }}</p>
+                <div class="flex items-center gap-3 mt-3 text-small text-fg-subtle flex-wrap">
+                  <span v-if="(projects.active as any).created_at" class="mono-label">Created {{ fmtDate((projects.active as any).created_at) }}</span>
+                  <span v-if="(projects.active as any).updated_at" class="mono-label">Updated {{ fmtRel((projects.active as any).updated_at) }}</span>
+                  <span v-if="(projects.active as any).archived_at" class="mono-label text-signal-amber">Archived</span>
+                  <span v-else class="mono-label text-signal-green">Active</span>
+                </div>
+              </div>
             </div>
-            <p v-if="projects.active.pitch" class="text-body text-fg-muted mt-2 max-w-3xl">
-              {{ projects.active.pitch }}
-            </p>
-            <p v-else class="mono-label mt-2 opacity-50">// no pitch set</p>
-            <!-- Metadata strip -->
-            <p v-if="projectMeta" class="mono-label mt-2 opacity-60 flex items-center gap-2 flex-wrap">
-              <span>Created {{ projectMeta.created }}</span>
-              <span class="opacity-40">·</span>
-              <span>Updated {{ projectMeta.updated }}</span>
-              <span class="opacity-40">·</span>
-              <span :style="{ color: projectMeta.isArchived ? 'var(--signal-amber, #f59e0b)' : 'var(--signal-green)' }">
-                {{ projectMeta.state }}
-              </span>
-            </p>
-          </div>
-          <div v-if="!editingContext" class="flex flex-col items-end gap-2 self-start">
-            <ShipButton :project="projects.active" />
-            <button
-              type="button"
-              class="mono-label hover:text-fg-body transition-colors"
-              @click="editingContext = true"
-            >✎ edit context</button>
-            <button
-              type="button"
-              class="mono-label transition-colors"
-              :class="confirmingDelete ? 'text-signal-red' : 'hover:text-signal-red text-fg-subtle'"
-              @click="confirmingDelete = true"
-            >🗑 delete project</button>
+            <!-- Top-right actions -->
+            <div class="flex items-center gap-2 shrink-0">
+              <ShipButton :project="projects.active" />
+              <button
+                type="button"
+                class="mono-label text-fg-muted hover:text-fg-body transition-colors"
+                @click="editingContext = true"
+              >✎ edit</button>
+              <button
+                type="button"
+                class="mono-label text-fg-muted hover:text-signal-red transition-colors"
+                @click="confirmingDelete = true"
+              >🗑 delete</button>
+            </div>
           </div>
         </header>
 
@@ -180,44 +171,39 @@ watch(
           >{{ deleting ? "Deleting…" : "Yes, delete" }}</button>
         </div>
 
-        <div class="grid grid-cols-1 xl:grid-cols-3 gap-4">
-          <div class="xl:col-span-2">
-            <ProjectContextEditor
-              v-if="editingContext"
-              :project="projects.active"
-              @close="editingContext = false"
-            />
-            <ProjectFocusCard v-else :project="projects.active" />
+        <!-- Row 1: Focus (2 cols) + Health (1 col) -->
+        <div class="grid grid-cols-1 xl:grid-cols-3 gap-4 mb-4 items-stretch">
+          <div class="xl:col-span-2 flex">
+            <ProjectContextEditor v-if="editingContext" :project="projects.active" class="w-full" @close="editingContext = false" />
+            <ProjectFocusCard v-else :project="projects.active" class="w-full" />
           </div>
-          <ProjectStackEditor :project="projects.active" />
-          <div class="xl:col-span-2">
-            <ProjectInfraCard :project="projects.active" />
-          </div>
-          <ProjectTagsEditor :project="projects.active" />
-          <div class="xl:col-span-3">
-            <ProjectLinksCommands :project="projects.active" />
-          </div>
-          <div class="xl:col-span-3">
-            <ProjectSessionsCard :project="projects.active" />
-          </div>
-          <div class="xl:col-span-3">
-            <ProjectDecisionsCard :project="projects.active" />
-          </div>
-          <div class="xl:col-span-3">
-            <ProjectLaunchesCard :project="projects.active" />
-          </div>
-          <div class="xl:col-span-3">
-            <ProjectNotesCard :project="projects.active" />
-          </div>
-          <!-- Spec 5A: Health card (shows not_configured until healthcheck link added) -->
-          <div class="xl:col-span-1">
-            <ProjectHealthCard :slug="projects.active.slug" />
-          </div>
-          <!-- Activity timeline — bottom of page, collapsible -->
-          <div class="xl:col-span-3">
-            <ProjectActivityTimeline :project-slug="projects.active.slug" />
-          </div>
+          <ProjectHealthCard :slug="projects.active.slug" class="w-full" />
         </div>
+
+        <!-- Row 2: Infra + Stack + Tags (3 cols) -->
+        <div class="grid grid-cols-1 xl:grid-cols-3 gap-4 mb-4 items-stretch">
+          <ProjectInfraCard :project="projects.active" class="w-full" />
+          <ProjectStackEditor :project="projects.active" class="w-full" />
+          <ProjectTagsEditor :project="projects.active" class="w-full" />
+        </div>
+
+        <!-- Row 3: Links + Environments (2+1 cols) -->
+        <div class="grid grid-cols-1 xl:grid-cols-3 gap-4 mb-4 items-stretch">
+          <div class="xl:col-span-2">
+            <ProjectLinksCommands :project="projects.active" class="w-full" />
+          </div>
+          <ProjectEnvironmentsCard :project="projects.active" class="w-full" />
+        </div>
+
+        <!-- Row 4+: deep-work cards (collapsible, full width) -->
+        <ProjectSessionsCard :project="projects.active" class="mb-4" />
+        <ProjectDecisionsCard :project="projects.active" class="mb-4" />
+        <ProjectLaunchesCard :project="projects.active" class="mb-4" />
+        <ProjectNotesCard :project="projects.active" class="mb-4" />
+
+        <!-- Activity timeline at bottom -->
+        <ProjectActivityTimeline :project-slug="projects.active.slug" />
+
       </div>
 
       <div v-else class="flex items-center justify-center h-full">
