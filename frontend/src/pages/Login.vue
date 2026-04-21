@@ -1,11 +1,20 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { onMounted, ref } from "vue";
+import { useRouter } from "vue-router";
 
 import InputField from "@/components/ui/InputField.vue";
 import PrimaryButton from "@/components/ui/PrimaryButton.vue";
 import { useAuthStore } from "@/stores/auth";
 
 const auth = useAuthStore();
+const router = useRouter();
+
+// If the user is already signed in (session cookie still valid), the login
+// form is pointless — bounce straight to the dashboard. Covers the case
+// where someone bookmarks /login or clicks "Sign in →" on a stale tab.
+onMounted(() => {
+  if (auth.isAuthed) router.replace("/p");
+});
 
 const email = ref("");
 const submitting = ref(false);

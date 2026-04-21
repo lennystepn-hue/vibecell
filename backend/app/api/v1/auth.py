@@ -61,7 +61,9 @@ async def verify(
 ) -> RedirectResponse:
     session_id = await verify_magic_link(db, raw_token=token)
     await db.commit()
-    response = RedirectResponse(url="/", status_code=303)
+    # Freshly-authenticated users land on the dashboard, not the marketing
+    # landing page. / now serves the anon marketing page for everyone.
+    response = RedirectResponse(url="/p", status_code=303)
     response.set_cookie(
         value=session_id,
         **session_cookie_attrs(),  # type: ignore[arg-type]

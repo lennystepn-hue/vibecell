@@ -50,7 +50,7 @@ function close(e?: MouseEvent) {
 async function signOut() {
   await auth.logout();
   open.value = false;
-  router.push("/landing");
+  router.push("/");
 }
 
 function goDashboard() {

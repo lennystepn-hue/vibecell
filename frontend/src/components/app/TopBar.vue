@@ -17,7 +17,7 @@ const palette = useCommandPaletteStore();
   >
     <template v-if="auth.isAuthed && auth.activeWorkspace">
       <RouterLink
-        to="/"
+        to="/p"
         class="flex items-center gap-2 min-w-0 hover:opacity-80 transition-opacity"
         aria-label="Back to projects"
       >
@@ -46,10 +46,9 @@ const palette = useCommandPaletteStore();
 
     <nav v-if="auth.isAuthed" class="ml-6 flex items-center gap-4 text-small">
       <RouterLink
-        to="/"
+        to="/p"
         class="mono-label hover:text-fg-body transition-colors"
         active-class="text-fg-primary"
-        :class="{ 'text-fg-primary': route.path === '/' }"
       >projects</RouterLink>
       <RouterLink
         to="/ideas"

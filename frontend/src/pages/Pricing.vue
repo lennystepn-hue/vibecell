@@ -80,7 +80,7 @@ const faqs = [
     <!-- ─── Nav ──────────────────────────────────────────────────────────── -->
     <header class="flex items-center justify-between px-6 py-4"
       style="border-bottom: 1px solid rgba(138,180,255,0.08)">
-      <router-link to="/landing" class="flex items-center gap-2.5">
+      <router-link to="/" class="flex items-center gap-2.5">
         <span class="font-mono" style="font-size: 18px; color: #5cc8a4">◈</span>
         <span class="font-mono text-[11px] tracking-[0.15em] uppercase" style="color: #5e7088">Vibecell</span>
       </router-link>
@@ -278,7 +278,7 @@ const faqs = [
     <!-- ─── Footer ───────────────────────────────────────────────────────── -->
     <footer class="px-6 py-8" style="border-top: 1px solid rgba(138,180,255,0.08)">
       <div class="max-w-5xl mx-auto flex items-center justify-between" style="font-size: 12px; color: #5e7088">
-        <router-link to="/landing" class="font-mono hover:text-fg-muted transition-colors flex items-center gap-2">
+        <router-link to="/" class="font-mono hover:text-fg-muted transition-colors flex items-center gap-2">
           <span style="color: #5cc8a4">◈</span> Vibecell
         </router-link>
         <div class="flex gap-6">

@@ -14,7 +14,6 @@ const bareLayoutRoutes = new Set([
   "legal",
   "login",
   "auth-verify",
-  "index",  // IndexRedirect flashes briefly — no need for chrome
 ]);
 
 const isBare = computed(() => bareLayoutRoutes.has(String(route.name ?? "")));

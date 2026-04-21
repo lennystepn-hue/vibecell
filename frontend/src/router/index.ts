@@ -5,17 +5,13 @@ import { useAuthStore } from "@/stores/auth";
 const router = createRouter({
   history: createWebHistory(),
   routes: [
+    // Public marketing landing lives at the root so vibecell.dev serves it
+    // directly. /landing is kept as an alias for old links/bookmarks.
     {
       path: "/",
-      name: "index",
-      component: () => import("@/pages/IndexRedirect.vue"),
-      meta: { anonymous: true },
-    },
-    // Spec 4 — public pages
-    {
-      path: "/landing",
       name: "landing",
       component: () => import("@/pages/AnonLanding.vue"),
+      alias: "/landing",
       meta: { anonymous: true },
     },
     {
@@ -118,14 +114,21 @@ const router = createRouter({
   ],
 });
 
+// Hydrate on the first navigation of the tab so public routes (landing,
+// pricing, legal) can render logged-in UI (avatar, "Open dashboard" CTAs)
+// when the session cookie is already valid. Prior to this, a refresh on
+// /landing left the auth store empty forever and the page looked anonymous
+// even though /api/v1/me would have succeeded.
+let _hydrated = false;
+
 router.beforeEach(async (to) => {
   const auth = useAuthStore();
-  // Hydrate on first navigation if we don't have state.
-  if (auth.user === null && !auth.loading && to.meta.anonymous !== true) {
+  if (!_hydrated && !auth.loading) {
+    _hydrated = true;
     await auth.refresh();
   }
-  if (!auth.isAuthed && to.meta.anonymous !== true && to.name !== "index") {
-    return { name: "login" };
+  if (!auth.isAuthed && to.meta.anonymous !== true) {
+    return { name: "login", query: { next: to.fullPath } };
   }
   return true;
 });
