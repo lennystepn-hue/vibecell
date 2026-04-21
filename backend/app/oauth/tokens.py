@@ -18,7 +18,8 @@ from app.core.redis import get_redis
 from app.core.ulid import new_ulid
 
 _ISSUER = "https://vibecell.dev"
-_AUDIENCE = "https://vibecell.dev/mcp"
+_DEFAULT_AUDIENCE = "https://vibecell.dev"  # base URL — matches what users enter in clients
+_ACCEPTED_AUDIENCES = {"https://vibecell.dev", "https://vibecell.dev/mcp"}
 
 
 @dataclass(frozen=True, slots=True)
@@ -27,6 +28,7 @@ class OAuthTokenClaims:
     client_id: str
     workspace_id: str
     scope: str
+    audience: str | None = None  # Override default aud (from RFC 8707 resource param)
     jti: str | None = None
     iat: int = 0
     exp: int = 0
@@ -51,9 +53,10 @@ def issue_access_token(claims: OAuthTokenClaims) -> tuple[str, str]:
     s = get_settings()
     jti = new_ulid()
     now = int(datetime.now(timezone.utc).timestamp())
+    aud = claims.audience or _DEFAULT_AUDIENCE
     payload = {
         "iss": _ISSUER,
-        "aud": _AUDIENCE,
+        "aud": aud,
         "sub": claims.sub,
         "client_id": claims.client_id,
         "workspace_id": claims.workspace_id,
@@ -66,19 +69,19 @@ def issue_access_token(claims: OAuthTokenClaims) -> tuple[str, str]:
         payload,
         _load_private_key(),
         algorithm="RS256",
-        headers={"kid": s.oauth_jwt_kid},
+        headers={"kid": s.oauth_jwt_kid, "typ": "at+jwt"},
     )
     return encoded, jti
 
 
 def verify_access_token(token: str) -> OAuthTokenClaims:
-    s = get_settings()
+    """Verify an access token. Accepts either canonical audience value."""
     try:
         payload = jwt.decode(
             token,
             _load_public_key(),
             algorithms=["RS256"],
-            audience=_AUDIENCE,
+            audience=list(_ACCEPTED_AUDIENCES),
             issuer=_ISSUER,
             options={"require": ["iss", "aud", "sub", "exp", "iat", "jti", "client_id", "workspace_id", "scope"]},
             leeway=30,  # 30s clock-skew tolerance
@@ -90,6 +93,7 @@ def verify_access_token(token: str) -> OAuthTokenClaims:
         client_id=payload["client_id"],
         workspace_id=payload["workspace_id"],
         scope=payload["scope"],
+        audience=payload.get("aud"),
         jti=payload["jti"],
         iat=payload["iat"],
         exp=payload["exp"],

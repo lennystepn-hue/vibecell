@@ -39,7 +39,7 @@ async def authorization_server_metadata() -> dict:
         "token_endpoint_auth_methods_supported": ["none", "client_secret_basic"],
         "scopes_supported": ["vibecell:tools"],
         "jwks_uri": f"{_BASE}/.well-known/jwks.json",
-        "id_token_signing_alg_values_supported": ["RS256"],
+        "service_documentation": f"{_BASE}/docs/connect/index.md",
     }
 
 
