@@ -6,6 +6,7 @@ import ProjectTelemetryRail from "@/components/app/ProjectTelemetryRail.vue";
 import SidebarProjects from "@/components/app/SidebarProjects.vue";
 import ProjectContextEditor from "@/components/projects/ProjectContextEditor.vue";
 import ProjectFocusCard from "@/components/projects/ProjectFocusCard.vue";
+import { computed } from "vue";
 import ProjectInfraCard from "@/components/projects/ProjectInfraCard.vue";
 import ProjectDecisionsCard from "@/components/projects/ProjectDecisionsCard.vue";
 import ProjectLaunchesCard from "@/components/projects/ProjectLaunchesCard.vue";
@@ -25,6 +26,33 @@ const route = useRoute();
 const router = useRouter();
 const projects = useProjectsStore();
 const toast = useToastStore();
+
+function fmtDate(iso: string | null | undefined): string {
+  if (!iso) return "—";
+  return new Date(iso).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+}
+
+function fmtRelative(iso: string | null | undefined): string {
+  if (!iso) return "—";
+  const diffMs = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diffMs / 60000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  const days = Math.floor(hrs / 24);
+  if (days < 30) return `${days}d ago`;
+  return fmtDate(iso);
+}
+
+const projectMeta = computed(() => {
+  const p = projects.active;
+  if (!p) return null;
+  const created = fmtDate((p as any).created_at);
+  const updated = fmtRelative((p as any).updated_at);
+  const state = (p as any).archived_at ? "Archived" : "Active";
+  return { created, updated, state, isArchived: !!(p as any).archived_at };
+});
 
 const editingContext = ref(false);
 const confirmingDelete = ref(false);
@@ -96,6 +124,16 @@ watch(
               {{ projects.active.pitch }}
             </p>
             <p v-else class="mono-label mt-2 opacity-50">// no pitch set</p>
+            <!-- Metadata strip -->
+            <p v-if="projectMeta" class="mono-label mt-2 opacity-60 flex items-center gap-2 flex-wrap">
+              <span>Created {{ projectMeta.created }}</span>
+              <span class="opacity-40">·</span>
+              <span>Updated {{ projectMeta.updated }}</span>
+              <span class="opacity-40">·</span>
+              <span :style="{ color: projectMeta.isArchived ? 'var(--signal-amber, #f59e0b)' : 'var(--signal-green)' }">
+                {{ projectMeta.state }}
+              </span>
+            </p>
           </div>
           <div v-if="!editingContext" class="flex flex-col items-end gap-2 self-start">
             <ShipButton :project="projects.active" />

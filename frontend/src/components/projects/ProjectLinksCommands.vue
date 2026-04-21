@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, nextTick } from "vue";
 
 import MonoLabel from "@/components/ui/MonoLabel.vue";
 import { api } from "@/api/client";
@@ -19,6 +19,18 @@ const linkUrl = ref("");
 const linkKind = ref("");
 const linkLabel = ref("");
 const addingLink = ref(false);
+const showLinkForm = ref(false);
+const linkUrlRef = ref<HTMLInputElement | null>(null);
+
+function openLinkForm() {
+  showLinkForm.value = true;
+  nextTick(() => linkUrlRef.value?.focus());
+}
+
+function cancelLinkForm() {
+  showLinkForm.value = false;
+  linkUrl.value = linkKind.value = linkLabel.value = "";
+}
 
 async function addLink() {
   if (!linkUrl.value.trim()) return;
@@ -37,6 +49,7 @@ async function addLink() {
     return;
   }
   linkUrl.value = linkKind.value = linkLabel.value = "";
+  showLinkForm.value = false;
   await projects.fetchProject(props.project.slug);
 }
 
@@ -56,6 +69,19 @@ const cmdLabel = ref("");
 const cmdCommand = ref("");
 const cmdRunIn = ref<"terminal" | "background">("terminal");
 const addingCmd = ref(false);
+const showCmdForm = ref(false);
+const cmdLabelRef = ref<HTMLInputElement | null>(null);
+
+function openCmdForm() {
+  showCmdForm.value = true;
+  nextTick(() => cmdLabelRef.value?.focus());
+}
+
+function cancelCmdForm() {
+  showCmdForm.value = false;
+  cmdLabel.value = cmdCommand.value = "";
+  cmdRunIn.value = "terminal";
+}
 
 async function addCommand() {
   if (!cmdLabel.value.trim() || !cmdCommand.value.trim()) return;
@@ -76,6 +102,7 @@ async function addCommand() {
   }
   cmdLabel.value = cmdCommand.value = "";
   cmdRunIn.value = "terminal";
+  showCmdForm.value = false;
   await projects.fetchProject(props.project.slug);
 }
 
@@ -115,24 +142,27 @@ async function deleteCommand(cmdId: string) {
     </div>
 
     <div v-if="tab === 'links'" class="p-5 space-y-4">
+      <!-- Bug 2 fix: shrink-0 w-[92px] on kind column, min-w-0 flex-1 on value column -->
       <ul v-if="project.links.length > 0" class="space-y-2">
         <li v-for="l in project.links" :key="l.id" class="flex items-center gap-3 group">
-          <span class="mono-label w-14 shrink-0 text-right">{{ l.kind || "link" }}</span>
-          <a :href="l.url" target="_blank" rel="noopener" class="link text-body flex-1 truncate">
+          <span class="mono-label shrink-0 w-[92px] text-right truncate">{{ l.kind || "link" }}</span>
+          <a :href="l.url" target="_blank" rel="noopener" class="link text-body min-w-0 flex-1 truncate">
             {{ l.label || l.url }}
             <span class="text-fg-subtle ml-1" aria-hidden="true">↗</span>
           </a>
           <button
             type="button"
-            class="opacity-0 group-hover:opacity-100 text-fg-muted hover:text-signal-red transition-all"
+            class="opacity-0 group-hover:opacity-100 text-fg-muted hover:text-signal-red transition-all shrink-0"
             aria-label="Delete link"
             @click="deleteLink(l.id)"
           >✕</button>
         </li>
       </ul>
 
+      <!-- Inline add form (shown on demand) -->
       <form
-        class="flex gap-2 pt-2 border-t border-border-subtle"
+        v-if="showLinkForm"
+        class="flex flex-wrap gap-2 pt-2 border-t border-border-subtle"
         @submit.prevent="addLink"
       >
         <input
@@ -140,18 +170,22 @@ async function deleteCommand(cmdId: string) {
           type="text"
           placeholder="kind"
           class="w-20 h-9 px-2 rounded-md font-mono text-small bg-bg-surface/60 border border-border text-fg-body placeholder:text-fg-subtle"
+          @keydown.esc="cancelLinkForm"
         />
         <input
           v-model="linkLabel"
           type="text"
           placeholder="label (opt)"
           class="w-32 h-9 px-2 rounded-md font-sans text-small bg-bg-surface/60 border border-border text-fg-body placeholder:text-fg-subtle"
+          @keydown.esc="cancelLinkForm"
         />
         <input
+          ref="linkUrlRef"
           v-model="linkUrl"
           type="url"
           placeholder="https://…"
           class="flex-1 h-9 px-2 rounded-md font-sans text-small bg-bg-surface/60 border border-border text-fg-body placeholder:text-fg-subtle"
+          @keydown.esc="cancelLinkForm"
         />
         <button
           type="submit"
@@ -160,6 +194,14 @@ async function deleteCommand(cmdId: string) {
           :style="{ background: 'var(--signal-green)', color: 'var(--bg-body-to)' }"
         >add</button>
       </form>
+
+      <!-- Trigger button -->
+      <button
+        v-else
+        type="button"
+        class="mono-label text-fg-subtle hover:text-fg-body transition-colors"
+        @click="openLinkForm"
+      >+ add link</button>
     </div>
 
     <div v-else class="p-5 space-y-4">
@@ -183,13 +225,20 @@ async function deleteCommand(cmdId: string) {
         </li>
       </ul>
 
-      <form class="space-y-2 pt-2 border-t border-border-subtle" @submit.prevent="addCommand">
+      <!-- Inline add form (shown on demand) -->
+      <form
+        v-if="showCmdForm"
+        class="space-y-2 pt-2 border-t border-border-subtle"
+        @submit.prevent="addCommand"
+      >
         <div class="flex gap-2">
           <input
+            ref="cmdLabelRef"
             v-model="cmdLabel"
             type="text"
             placeholder="label (e.g. Deploy)"
             class="flex-1 h-9 px-2 rounded-md font-sans text-small bg-bg-surface/60 border border-border text-fg-body placeholder:text-fg-subtle"
+            @keydown.esc="cancelCmdForm"
           />
           <select
             v-model="cmdRunIn"
@@ -205,6 +254,7 @@ async function deleteCommand(cmdId: string) {
             type="text"
             placeholder="$ command to run"
             class="flex-1 h-9 px-2 rounded-md font-mono text-small bg-bg-surface/60 border border-border text-fg-body placeholder:text-fg-subtle"
+            @keydown.esc="cancelCmdForm"
           />
           <button
             type="submit"
@@ -214,6 +264,14 @@ async function deleteCommand(cmdId: string) {
           >add</button>
         </div>
       </form>
+
+      <!-- Trigger button -->
+      <button
+        v-else
+        type="button"
+        class="mono-label text-fg-subtle hover:text-fg-body transition-colors"
+        @click="openCmdForm"
+      >+ add command</button>
 
       <p class="mono-label opacity-50">// execution lands in the CLI phase (spec 3)</p>
     </div>

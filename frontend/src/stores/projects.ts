@@ -32,6 +32,13 @@ export const useProjectsStore = defineStore("projects", () => {
         params: { path: { slug } },
       });
       active.value = data ?? null;
+      // Keep the list item in sync so status pills on cards update reactively
+      if (data) {
+        const idx = list.value.findIndex((p) => p.slug === slug);
+        if (idx !== -1) {
+          list.value[idx] = { ...list.value[idx], status: data.status };
+        }
+      }
     } finally {
       loadingActive.value = false;
     }

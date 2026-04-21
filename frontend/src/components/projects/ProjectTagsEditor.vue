@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, nextTick } from "vue";
 
 import MonoLabel from "@/components/ui/MonoLabel.vue";
 import { api } from "@/api/client";
@@ -13,6 +13,18 @@ const projects = useProjectsStore();
 const toast = useToastStore();
 
 const newTag = ref("");
+const adding = ref(false);
+const inputRef = ref<HTMLInputElement | null>(null);
+
+function openAdding() {
+  adding.value = true;
+  nextTick(() => inputRef.value?.focus());
+}
+
+function cancelAdding() {
+  adding.value = false;
+  newTag.value = "";
+}
 
 async function addTag() {
   const name = newTag.value.trim();
@@ -26,6 +38,7 @@ async function addTag() {
     return;
   }
   newTag.value = "";
+  adding.value = false;
   await projects.fetchProject(props.project.slug);
 }
 
@@ -66,12 +79,15 @@ async function removeTag(tagId: string) {
       </span>
     </div>
 
-    <form class="flex gap-2 mt-3" @submit.prevent="addTag">
+    <!-- Inline add row (shown only when adding) -->
+    <form v-if="adding" class="flex gap-2 mt-3" @submit.prevent="addTag">
       <input
+        ref="inputRef"
         v-model="newTag"
         type="text"
-        placeholder="+ tag"
+        placeholder="tag name"
         class="flex-1 h-9 px-3 rounded-md font-sans text-small bg-bg-surface/60 border border-border text-fg-body placeholder:text-fg-subtle"
+        @keydown.esc="cancelAdding"
       />
       <button
         type="submit"
@@ -80,5 +96,13 @@ async function removeTag(tagId: string) {
         :style="{ background: 'var(--signal-green)', color: 'var(--bg-body-to)' }"
       >add</button>
     </form>
+
+    <!-- Trigger button (hidden when adding) -->
+    <button
+      v-else
+      type="button"
+      class="mt-3 mono-label text-fg-subtle hover:text-fg-body transition-colors"
+      @click="openAdding"
+    >+ add tag</button>
   </section>
 </template>

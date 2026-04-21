@@ -97,8 +97,18 @@ async def generate_snapshot(workspace_id: str, db: AsyncSession) -> dict[str, An
                     "last_activity_at": last_ts.isoformat() if last_ts else None,
                 })
 
-    # --- Activity by week (rolling 12 weeks, ships) ---
+    # --- Activity by week (rolling 12 weeks, all event types) ---
     twelve_weeks_ago = generated_at - timedelta(weeks=12)
+
+    # Collect (project_id, week_str, count) from each source, then merge
+    weekly_counts: dict[tuple[str, str], int] = {}
+
+    def _merge_rows(rows: list, pid_idx: int = 0, week_idx: int = 1, cnt_idx: int = 2) -> None:
+        for row in rows:
+            key = (row[pid_idx], row[week_idx])
+            weekly_counts[key] = weekly_counts.get(key, 0) + row[cnt_idx]
+
+    # Ships
     ship_rows = (await db.execute(
         select(
             Ship.project_id,
@@ -109,15 +119,48 @@ async def generate_snapshot(workspace_id: str, db: AsyncSession) -> dict[str, An
         .where(Ship.shipped_at >= twelve_weeks_ago)
         .group_by(Ship.project_id, text("iso_week"))
     )).all()
+    _merge_rows(ship_rows)
+
+    # Sessions (started_at)
+    session_rows = (await db.execute(
+        select(
+            Session.project_id,
+            func.to_char(Session.started_at, "IYYY-IW").label("iso_week"),
+            func.count(Session.id).label("event_count"),
+        )
+        .where(Session.project_id.in_(project_ids))
+        .where(Session.started_at >= twelve_weeks_ago)
+        .group_by(Session.project_id, text("iso_week"))
+    )).all()
+    _merge_rows(session_rows)
+
+    # Decisions (created_at)
+    decision_rows = (await db.execute(
+        select(
+            Decision.project_id,
+            func.to_char(Decision.created_at, "IYYY-IW").label("iso_week"),
+            func.count(Decision.id).label("event_count"),
+        )
+        .where(Decision.project_id.in_(project_ids))
+        .where(Decision.created_at >= twelve_weeks_ago)
+        .group_by(Decision.project_id, text("iso_week"))
+    )).all()
+    _merge_rows(decision_rows)
 
     activity_by_week = [
         {
-            "project_id": row[0],
-            "week": f"{row[1][:4]}-W{row[1][5:]}",
-            "event_count": row[2],
+            "project_id": pid,
+            "week": f"{iso_week[:4]}-W{iso_week[5:]}",
+            "event_count": count,
         }
-        for row in ship_rows
+        for (pid, iso_week), count in weekly_counts.items()
     ]
+
+    # Build a id→{slug,name} lookup so the frontend can label heatmap rows
+    project_names = {
+        pid: {"slug": info["slug"], "name": info["name"]}
+        for pid, info in project_map.items()
+    }
 
     snapshot: dict[str, Any] = {
         "workspace_id": workspace_id,
@@ -128,6 +171,7 @@ async def generate_snapshot(workspace_id: str, db: AsyncSession) -> dict[str, An
         ),
         "stagnant_projects": stagnant,
         "activity_by_week": activity_by_week,
+        "project_names": project_names,
         "recommendations": [],
         "dependency_alerts": [],
     }

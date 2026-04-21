@@ -31,7 +31,7 @@ onMounted(async () => {
     if (res.ok) {
       health.value = await res.json();
     } else if (res.status === 501) {
-      health.value = { project_id: "", status: "unknown", message: "Health monitoring not yet active." };
+      health.value = { project_id: "", status: "not_configured", message: "" };
     } else {
       fetchError.value = `Error ${res.status}`;
     }
@@ -134,7 +134,10 @@ function formatPct(pct: number | undefined): string {
       </div>
 
       <!-- Message for unknown/pending state -->
-      <p v-if="health.message && health.status === 'unknown'" class="text-small text-fg-muted italic">
+      <p v-if="health.status === 'unknown'" class="text-small text-fg-muted italic">
+        No probes yet — healthcheck will run within 5 minutes.
+      </p>
+      <p v-else-if="health.message && !['up','down','timeout','error'].includes(health.status)" class="text-small text-fg-muted italic">
         {{ health.message }}
       </p>
     </div>

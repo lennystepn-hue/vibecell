@@ -21,6 +21,11 @@ interface StagnantProject {
   last_activity_at: string | null;
 }
 
+interface ProjectNameEntry {
+  slug: string;
+  name: string;
+}
+
 interface PortfolioSnapshot {
   workspace_id: string;
   generated_at: string;
@@ -28,6 +33,7 @@ interface PortfolioSnapshot {
   active_project_count: number;
   stagnant_projects: StagnantProject[];
   activity_by_week: ActivityCell[];
+  project_names?: Record<string, ProjectNameEntry>;
   recommendations: unknown[];
   dependency_alerts: unknown[];
 }
@@ -129,11 +135,22 @@ function shortWeek(week: string): string {
 
 /** Get project name from snapshot data (fallback to slug). */
 function projectLabel(pid: string): string {
-  // We only have data from the activity cells — no name in heatmap data
-  // Use stagnant projects data as well to resolve names
   if (!snapshot.value) return pid.slice(0, 8);
+  // Prefer the project_names map (added in portfolio_intel fix)
+  const entry = snapshot.value.project_names?.[pid];
+  if (entry) return entry.name ?? entry.slug;
+  // Fallback: stagnant_projects list
   const sp = snapshot.value.stagnant_projects.find(p => p.project_id === pid);
   return sp?.name ?? sp?.slug ?? pid.slice(0, 8);
+}
+
+/** Get project slug for router-links (never raw ULID). */
+function projectSlug(pid: string): string {
+  if (!snapshot.value) return pid;
+  const entry = snapshot.value.project_names?.[pid];
+  if (entry?.slug) return entry.slug;
+  const sp = snapshot.value.stagnant_projects.find(p => p.project_id === pid);
+  return sp?.slug ?? pid;
 }
 </script>
 
@@ -251,7 +268,7 @@ function projectLabel(pid: string): string {
               >
                 <!-- Project name -->
                 <router-link
-                  :to="`/p/${pid}`"
+                  :to="`/p/${projectSlug(pid)}`"
                   class="text-small text-fg-muted hover:text-fg-body transition-colors truncate pr-2 font-mono text-[11px]"
                   :title="projectLabel(pid)"
                 >

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from "vue";
+import { computed, ref, watch, nextTick } from "vue";
 
 import MonoLabel from "@/components/ui/MonoLabel.vue";
 import { api } from "@/api/client";
@@ -18,9 +18,22 @@ const query = ref("");
 const results = ref<StackItem[]>([]);
 const highlightedIndex = ref(0);
 const searching = ref(false);
+const adding = ref(false);
+const inputRef = ref<HTMLInputElement | null>(null);
 
 const attachedSlugs = computed(() => new Set(props.project.stack.map((s) => s.stack_item_slug)));
 const filteredResults = computed(() => results.value.filter((r) => !attachedSlugs.value.has(r.slug)));
+
+function openAdding() {
+  adding.value = true;
+  nextTick(() => inputRef.value?.focus());
+}
+
+function cancelAdding() {
+  adding.value = false;
+  query.value = "";
+  results.value = [];
+}
 
 let searchTimer: ReturnType<typeof setTimeout> | null = null;
 watch(query, (q) => {
@@ -51,6 +64,7 @@ async function attach(item: StackItem) {
   }
   query.value = "";
   results.value = [];
+  adding.value = false;
   await projects.fetchProject(props.project.slug);
 }
 
@@ -87,12 +101,15 @@ async function detach(slug: string) {
       </span>
     </div>
 
-    <div class="relative mt-3">
+    <!-- Inline add row (shown only when adding) -->
+    <div v-if="adding" class="relative mt-3">
       <input
+        ref="inputRef"
         v-model="query"
         type="text"
-        placeholder="+ add framework, service, model…"
+        placeholder="framework, service, model…"
         class="w-full h-9 px-3 rounded-md font-sans text-small bg-bg-surface/60 border border-border text-fg-body placeholder:text-fg-subtle"
+        @keydown.esc="cancelAdding"
       />
       <div
         v-if="filteredResults.length > 0"
@@ -115,5 +132,13 @@ async function detach(slug: string) {
         </button>
       </div>
     </div>
+
+    <!-- Trigger button (hidden when adding) -->
+    <button
+      v-else
+      type="button"
+      class="mt-3 mono-label text-fg-subtle hover:text-fg-body transition-colors"
+      @click="openAdding"
+    >+ add stack item</button>
   </section>
 </template>

@@ -29,6 +29,8 @@ class ProjectOut(ProjectListItem):
     # Full project detail, without children (children arrive in Phase 6).
     is_public: int
     archived_at: str | None = None
+    created_at: str | None = None
+    updated_at: str | None = None
 
 
 class ProjectListPage(BaseModel):
