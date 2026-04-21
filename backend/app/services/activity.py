@@ -29,6 +29,7 @@ async def fetch_activity(
             "title": (s.summary or "")[:160],
             "body": s.summary,
             "meta": {
+                "id": s.id,
                 "next_step": s.next_step,
                 "files_touched": s.files_touched or [],
                 "commit_count": len(commits),
@@ -47,7 +48,11 @@ async def fetch_activity(
             "at": d.created_at.isoformat() if d.created_at else None,
             "title": d.title,
             "body": d.decision,
-            "meta": {"consequences": d.consequences, "reconsider_if": d.reconsider_if},
+            "meta": {
+                "id": d.id,
+                "consequences": d.consequences,
+                "reconsider_if": d.reconsider_if,
+            },
         })
 
     # Ideas (project-scoped) — Idea uses captured_at, not created_at

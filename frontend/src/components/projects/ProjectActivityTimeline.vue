@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { computed, onUnmounted, ref, watch } from "vue";
+import { RouterLink } from "vue-router";
+void RouterLink;  // tell the template compiler RouterLink is in scope for dynamic :is usage
 
 interface ActivityEvent {
   type: "session" | "decision" | "idea" | "ship" | "lifecycle" | "note" | "tool_call";
@@ -68,6 +70,14 @@ function colorFor(type: string) {
     note: "text-fg-muted",
     tool_call: "text-fg-subtle",
   } as any)[type] ?? "text-fg-muted";
+}
+
+function linkFor(e: ActivityEvent): string | null {
+  const id = e.meta?.id;
+  if (!id) return null;
+  if (e.type === "session") return `/p/${props.projectSlug}/sessions/${id}`;
+  if (e.type === "decision") return `/p/${props.projectSlug}/decisions/${id}`;
+  return null;
 }
 
 // Collapse consecutive tool_call events with the same tool name into a single row
@@ -140,13 +150,16 @@ onUnmounted(() => {
       v-else
       class="space-y-0 relative pl-4 before:content-[''] before:absolute before:left-1 before:top-1 before:bottom-1 before:w-px before:bg-border"
     >
-      <li
+      <component
+        :is="linkFor(e) ? 'RouterLink' : 'li'"
         v-for="(e, idx) in collapsed"
         :key="idx"
-        class="relative py-2.5 flex items-start gap-3"
+        :to="linkFor(e) || undefined"
+        class="relative py-2.5 flex items-start gap-3 rounded-md -mx-2 px-2 transition-colors"
+        :class="linkFor(e) ? 'cursor-pointer hover:bg-white/[0.03]' : ''"
       >
         <span
-          class="absolute -left-3 top-3 w-2.5 h-2.5 rounded-full bg-bg-surface border border-border flex items-center justify-center font-mono text-[9px]"
+          class="absolute -left-1 top-3 w-2.5 h-2.5 rounded-full bg-bg-surface border border-border flex items-center justify-center font-mono text-[9px]"
           :class="colorFor(e.type)"
         >{{ iconFor(e.type) }}</span>
         <div class="flex-1 min-w-0">
@@ -163,7 +176,7 @@ onUnmounted(() => {
             class="text-small text-fg-muted mt-1 line-clamp-2"
           >{{ e.body }}</p>
         </div>
-      </li>
+      </component>
     </ol>
     </div>
   </section>

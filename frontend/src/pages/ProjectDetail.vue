@@ -2,6 +2,7 @@
 import { onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
+import LivePulse from "@/components/app/LivePulse.vue";
 import ProjectTelemetryRail from "@/components/app/ProjectTelemetryRail.vue";
 import SidebarProjects from "@/components/app/SidebarProjects.vue";
 import ProjectContextEditor from "@/components/projects/ProjectContextEditor.vue";
@@ -18,6 +19,7 @@ import ProjectStackEditor from "@/components/projects/ProjectStackEditor.vue";
 import ProjectTagsEditor from "@/components/projects/ProjectTagsEditor.vue";
 import ProjectHealthCard from "@/components/projects/ProjectHealthCard.vue";
 import ProjectActivityTimeline from "@/components/projects/ProjectActivityTimeline.vue";
+import ProjectOverviewChips from "@/components/projects/ProjectOverviewChips.vue";
 import ProjectSecretsCard from "@/components/projects/ProjectSecretsCard.vue";
 import CopyableValue from "@/components/ui/CopyableValue.vue";
 import StatusPill from "@/components/ui/StatusPill.vue";
@@ -116,6 +118,7 @@ watch(
                   <h1 class="text-display text-fg-primary tracking-tight truncate">{{ projects.active.name }}</h1>
                   <StatusPill :status="projects.active.status as never" />
                   <CopyableValue :value="projects.active.slug" mono small class="text-fg-subtle" />
+                  <LivePulse :slug="projects.active.slug" variant="pill" />
                 </div>
                 <p v-if="projects.active.pitch" class="text-body text-fg-muted mt-1 max-w-3xl">{{ projects.active.pitch }}</p>
                 <div class="flex items-center gap-3 mt-3 text-small text-fg-subtle flex-wrap">
@@ -124,6 +127,7 @@ watch(
                   <span v-if="(projects.active as any).archived_at" class="mono-label text-signal-amber">Archived</span>
                   <span v-else class="mono-label text-signal-green">Active</span>
                 </div>
+                <ProjectOverviewChips :slug="projects.active.slug" class="mt-3" />
               </div>
             </div>
             <!-- Top-right actions -->

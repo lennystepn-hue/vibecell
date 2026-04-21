@@ -38,6 +38,18 @@ async def create(body: DecisionIn, ctx: CtxDep, db: DbDep) -> DecisionOut:
     return DecisionOut.model_validate(row)
 
 
+@router.get("/{decision_id}", response_model=DecisionOut)
+async def get_(
+    decision_id: Annotated[str, Path(min_length=26, max_length=26)],
+    ctx: CtxDep,
+    db: DbDep,
+) -> DecisionOut:
+    row = await decision_svc.get_decision(
+        db, project=ctx.project, decision_id=decision_id
+    )
+    return DecisionOut.model_validate(row)
+
+
 @router.delete("/{decision_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete(
     decision_id: Annotated[str, Path(min_length=26, max_length=26)],

@@ -55,6 +55,16 @@ async def create(body: SessionIn, ctx: CtxDep, db: DbDep) -> SessionOut:
     return SessionOut.model_validate(row)
 
 
+@router.get("/{session_id}", response_model=SessionOut)
+async def get_(
+    session_id: Annotated[str, Path(min_length=26, max_length=26)],
+    ctx: CtxDep,
+    db: DbDep,
+) -> SessionOut:
+    row = await session_svc.get_session(db, project=ctx.project, session_id=session_id)
+    return SessionOut.model_validate(row)
+
+
 @router.patch("/{session_id}", response_model=SessionOut)
 async def patch(
     session_id: Annotated[str, Path(min_length=26, max_length=26)],

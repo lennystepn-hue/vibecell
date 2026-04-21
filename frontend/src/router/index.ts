@@ -59,6 +59,16 @@ const router = createRouter({
       component: () => import("@/pages/ProjectDetail.vue"),
     },
     {
+      path: "/p/:slug/sessions/:id",
+      name: "session-detail",
+      component: () => import("@/pages/SessionDetail.vue"),
+    },
+    {
+      path: "/p/:slug/decisions/:id",
+      name: "decision-detail",
+      component: () => import("@/pages/DecisionDetail.vue"),
+    },
+    {
       path: "/import/github",
       name: "import-github",
       component: () => import("@/pages/ImportGitHub.vue"),
