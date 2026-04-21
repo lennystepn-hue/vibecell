@@ -1,21 +1,21 @@
 """Portfolio API — cross-project intelligence snapshot.
 
-Spec 5B — Portfolio-Intel.
-GET /api/v1/portfolio/snapshot — returns the latest portfolio snapshot for the
-active workspace. Generates on-demand if missing or >1h stale.
+Spec 5B.1 — Portfolio-Intel.
+GET /api/v1/portfolio/snapshot — returns cached snapshot (10 min TTL).
+?refresh=true bypasses cache and regenerates.
 """
 from __future__ import annotations
 
 import logging
-from typing import Annotated, Any
+from typing import Annotated
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Query
 from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db import get_db
 from app.core.deps import AuthContext, require_auth
-from app.services.portfolio_intel import generate_snapshot
+from app.services.portfolio_intel import get_or_generate
 
 logger = logging.getLogger(__name__)
 
@@ -26,30 +26,19 @@ AuthDep = Annotated[AuthContext, Depends(require_auth)]
 
 
 @router.get("/snapshot")
-async def get_snapshot(ctx: AuthDep, db: DbDep) -> JSONResponse:
+async def get_snapshot(
+    ctx: AuthDep,
+    db: DbDep,
+    refresh: bool = Query(default=False, description="Force cache bypass and regenerate snapshot"),
+) -> JSONResponse:
     """Return the latest portfolio snapshot for the active workspace.
 
-    Generates a fresh snapshot on-demand (no cache yet).
-    Full implementation will cache in portfolio_snapshot table and only
-    regenerate when >1h stale.
-
-    The snapshot includes:
-    - project_count, active_project_count
-    - stagnant_projects (no activity >30d)
-    - activity_by_week (rolling 12w, colored heatmap data)
-    - recommendations (Phase 5B.3, currently empty)
-    - dependency_alerts (Phase 5B.2, currently empty)
+    Reads from portfolio_snapshot cache if the latest row is <10 minutes old.
+    Pass ?refresh=true to skip the cache.
     """
-    try:
-        snapshot = await generate_snapshot(workspace_id=ctx.active_workspace_id)
-        return JSONResponse(content=snapshot)
-    except Exception as exc:
-        logger.exception("portfolio.get_snapshot failed: %s", exc)
-        return JSONResponse(
-            status_code=status.HTTP_501_NOT_IMPLEMENTED,
-            content={
-                "error": "snapshot_generation_failed",
-                "detail": str(exc),
-                "hint": "Full portfolio intelligence deferred to Spec 5B.1",
-            },
-        )
+    snapshot = await get_or_generate(
+        workspace_id=ctx.active_workspace_id,
+        db=db,
+        force=refresh,
+    )
+    return JSONResponse(content=snapshot)
