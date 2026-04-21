@@ -11,6 +11,16 @@ interface SecretRow {
   kind: string;
   reference: string;  // either masked ****** for inline, or the op:// path for references
   created_at: string | null;
+  last_used_at: string | null;
+}
+
+function relative(iso: string | null): string {
+  if (!iso) return "";
+  const ms = Date.now() - new Date(iso).getTime();
+  if (ms < 60_000) return "just now";
+  if (ms < 3_600_000) return `${Math.floor(ms / 60_000)}m ago`;
+  if (ms < 86_400_000) return `${Math.floor(ms / 3_600_000)}h ago`;
+  return `${Math.floor(ms / 86_400_000)}d ago`;
 }
 
 const secrets = ref<SecretRow[]>([]);
@@ -125,6 +135,11 @@ async function remove(label: string) {
             <CopyableValue v-if="s.kind !== 'inline_encrypted'" :value="s.reference" mono small />
             <span v-else class="text-small text-fg-subtle font-mono">******</span>
           </span>
+          <span
+            v-if="s.last_used_at"
+            class="text-[10px] font-mono text-signal-green shrink-0"
+            :title="`Last retrieved by Claude on ${new Date(s.last_used_at).toLocaleString()}`"
+          >used {{ relative(s.last_used_at) }}</span>
           <button
             class="text-small text-fg-subtle hover:text-signal-red transition-colors"
             @click="remove(s.label)"

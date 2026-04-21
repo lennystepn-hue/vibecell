@@ -13,6 +13,8 @@ values are just locators and safe to persist in clear.
 """
 from __future__ import annotations
 
+from datetime import UTC, datetime
+
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -117,14 +119,30 @@ async def get_decrypted_value(
             ),
         )
     dek = await _dek_for_workspace(db, workspace_id)
-    return decrypt_with_dek(row.reference, dek=dek)
+    value = decrypt_with_dek(row.reference, dek=dek)
+    # Record usage so the UI can show "@LABEL used Xm ago".
+    row.last_used_at = datetime.now(UTC)
+    await db.flush()
+    return value
 
 
-def to_out(row: ProjectSecretRef) -> dict[str, str]:
+async def touch_last_used(
+    db: AsyncSession, project: Project, label: str,
+) -> None:
+    """Mark a secret as just-used even if the caller didn't decrypt
+    (e.g. when returning an op:// path to Claude)."""
+    row = await get_secret(db, project, label)
+    if row is not None:
+        row.last_used_at = datetime.now(UTC)
+        await db.flush()
+
+
+def to_out(row: ProjectSecretRef) -> dict[str, str | None]:
     """Shape a row for SecretOut, masking inline ciphertext."""
     return {
         "id": row.id,
         "label": row.label,
         "kind": row.kind,
         "reference": MASKED_REFERENCE if row.kind == INLINE_KIND else row.reference,
+        "last_used_at": row.last_used_at.isoformat() if row.last_used_at else None,
     }

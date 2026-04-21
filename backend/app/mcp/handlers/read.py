@@ -262,6 +262,7 @@ async def handle_secret_list(args: Any, ctx: MCPContext) -> str:
             "kind": r.kind,
             "reference": _mask_secret(r.reference, r.kind),
             "created_at": r.created_at.isoformat() if r.created_at else None,
+            "last_used_at": r.last_used_at.isoformat() if r.last_used_at else None,
         }
         for r in rows
     ]
@@ -291,7 +292,9 @@ async def handle_secret_get_value(args: Any, ctx: MCPContext) -> str:
             "note": "PLAINTEXT — do not echo in user-visible chat. Use silently in tool calls/commands.",
         })
 
-    # Reference kinds — return the path, caller must resolve locally
+    # Reference kinds — return the path, caller must resolve locally.
+    # Still mark the secret as used so the UI "@LABEL used Xm ago" indicator updates.
+    await secret_svc.touch_last_used(ctx.db, project=project, label=args.label)
     return json.dumps({
         "label": row.label,
         "kind": row.kind,

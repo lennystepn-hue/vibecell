@@ -18,6 +18,7 @@ class SecretOut(BaseModel):
     label: str
     kind: str
     reference: str
+    last_used_at: str | None = None
 
 
 class SecretIn(BaseModel):
