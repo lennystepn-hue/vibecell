@@ -1,0 +1,12 @@
+[Unit]
+Description=Run hangar-backup.service daily at 03:00
+
+[Timer]
+# Every day at 03:00 server time, with persistence so a missed run
+# (power outage, reboot) fires on next boot.
+OnCalendar=*-*-* 03:00:00
+Persistent=true
+Unit=hangar-backup.service
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,13 @@
+[Unit]
+Description=Hangar nightly Postgres backup
+Documentation=file:///srv/hangar/ops/backup.sh
+Requires=docker.service
+After=docker.service
+
+[Service]
+Type=oneshot
+User=root
+WorkingDirectory=/srv/hangar
+ExecStart=/bin/bash /srv/hangar/ops/backup.sh
+StandardOutput=append:/var/log/hangar-backup.log
+StandardError=append:/var/log/hangar-backup.log
