@@ -31,6 +31,11 @@ from app.models.ship_loop import (
     Session,
     Ship,
 )
+from app.models.signals import (
+    PortfolioSnapshot,
+    ProjectHealthEvent,
+    ProjectHealthSummary,
+)
 
 __all__ = [
     "ActiveProject",
@@ -44,11 +49,14 @@ __all__ = [
     "LifecycleEvent",
     "MagicLinkToken",
     "Note",
+    "PortfolioSnapshot",
     "Project",
     "ProjectCommand",
     "ProjectContext",
     "ProjectEnvironment",
     "ProjectGroup",
+    "ProjectHealthEvent",
+    "ProjectHealthSummary",
     "ProjectInfra",
     "ProjectLink",
     "ProjectRepo",
