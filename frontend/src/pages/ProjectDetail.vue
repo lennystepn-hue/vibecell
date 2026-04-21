@@ -17,6 +17,7 @@ import ProjectStackEditor from "@/components/projects/ProjectStackEditor.vue";
 import ProjectStatusDropdown from "@/components/projects/ProjectStatusDropdown.vue";
 import ProjectTagsEditor from "@/components/projects/ProjectTagsEditor.vue";
 import ProjectHealthCard from "@/components/projects/ProjectHealthCard.vue";
+import ProjectActivityTimeline from "@/components/projects/ProjectActivityTimeline.vue";
 import { api } from "@/api/client";
 import { useProjectsStore } from "@/stores/projects";
 import { useToastStore } from "@/stores/toast";

@@ -1,4 +1,4 @@
-"""MCP tool registry — 17 tools (vibecell.run excluded)."""
+"""MCP tool registry — 18 tools (vibecell.run excluded)."""
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -83,6 +83,11 @@ class StatusArgs(BaseModel):
     status: str
 
 
+class ActivityArgs(BaseModel):
+    slug: str | None = None
+    limit: int = 50
+
+
 # ---- Registry ----
 
 Handler = Callable[[BaseModel, MCPContext], Awaitable[str]]
@@ -116,6 +121,7 @@ TOOLS: list[Tool] = [
     Tool("vibecell.note_append", "Append a markdown block to the active project's notes.", NoteAppendArgs, w.handle_note_append),
     Tool("vibecell.ship", "Record a ship event for the active project.", ShipArgs, w.handle_ship),
     Tool("vibecell.status", "Set the active project's status.", StatusArgs, w.handle_status),
+    Tool("vibecell.activity", "Unified activity feed for a project (sessions, decisions, ideas, ships, lifecycle, tool calls). Defaults to active project.", ActivityArgs, r.handle_activity),
 ]
 
 TOOLS_BY_NAME: dict[str, Tool] = {t.name: t for t in TOOLS}

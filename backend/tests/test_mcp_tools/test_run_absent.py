@@ -1,8 +1,8 @@
 from app.mcp.tools import TOOLS, TOOLS_BY_NAME
 
 
-def test_exactly_17_tools_registered() -> None:
-    assert len(TOOLS) == 17
+def test_exactly_18_tools_registered() -> None:
+    assert len(TOOLS) == 18
 
 
 def test_vibecell_run_is_absent() -> None:
@@ -17,7 +17,7 @@ def test_all_expected_tools_present() -> None:
         "vibecell.brief", "vibecell.search", "vibecell.recent_projects", "vibecell.switch",
         "vibecell.log_session", "vibecell.update_context", "vibecell.decision",
         "vibecell.idea", "vibecell.note_append", "vibecell.ship", "vibecell.status",
-        "vibecell.claude_md", "vibecell.handover",
+        "vibecell.claude_md", "vibecell.handover", "vibecell.activity",
     }
     actual = {t.name for t in TOOLS}
     assert actual == expected

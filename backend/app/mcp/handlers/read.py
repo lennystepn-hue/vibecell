@@ -30,6 +30,7 @@ from app.schemas.project import (
 )
 from app.schemas.tag import TagOut
 from app.services import project_children as children_svc
+from app.services.activity import fetch_activity
 from app.services.project import get_project, list_projects
 from app.services.search import union_search
 
@@ -228,3 +229,11 @@ async def handle_handover(args: Any, ctx: MCPContext) -> str:
     project = await _resolve_project(args, ctx)
     full = await _build_full_dict(project, ctx.db)
     return render_handover(full)
+
+
+async def handle_activity(args: Any, ctx: MCPContext) -> str:
+    """Unified activity feed for a project (sessions, decisions, ideas, ships, lifecycle, tool calls)."""
+    project = await _resolve_project(args, ctx)
+    limit: int = getattr(args, "limit", 50)
+    events = await fetch_activity(ctx.db, project=project, limit=limit)
+    return json.dumps(events)
