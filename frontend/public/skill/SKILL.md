@@ -30,7 +30,14 @@ description: >
 - Summarize what was done in 1-3 sentences.
 - Infer next_step from unfinished work.
 - vibecell.log_session({ summary, files_touched, commits, next_step }).
-- If next_step changed, vibecell.update_context({ next_step }).
+  - This call AUTOMATICALLY syncs current_focus (derived from the summary's
+    first sentence) and next_step onto the project context — no second
+    update_context call needed for the common case.
+  - Pass `current_focus` explicitly only when the session-level summary
+    doesn't capture the high-level focus (e.g. the summary describes a small
+    fix but you've actually shifted onto a larger thread).
+- Use vibecell.update_context for fields log_session doesn't touch
+  (user_wants, open_questions, known_issues, blocked_by).
 - If user said "ship it" -> vibecell.ship({ version, summary }) -> walk through the
   generated changelog and tweet drafts for approval.
 - Confirm: "Logged. Next: <next_step>."

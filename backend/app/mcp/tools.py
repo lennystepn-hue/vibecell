@@ -45,6 +45,7 @@ class LogSessionArgs(BaseModel):
     files_touched: list[str] = Field(default_factory=list)
     commits: list[dict] = Field(default_factory=list)
     next_step: str | None = None
+    current_focus: str | None = None  # optional override; default auto-derived from summary
 
 
 class UpdateContextArgs(BaseModel):

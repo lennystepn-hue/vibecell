@@ -53,8 +53,34 @@ async def handle_switch(args, ctx: MCPContext) -> str:
     return json.dumps({"active_slug": args.slug})
 
 
+def _auto_focus_from_summary(summary: str, cap: int = 280) -> str:
+    """Derive a tidy current_focus snippet from a session summary.
+
+    Takes the first sentence (up to the first period followed by space/newline/EOF),
+    strips whitespace, and caps length. Falls back to truncating the whole summary
+    if no sentence boundary is found.
+    """
+    s = (summary or "").strip()
+    if not s:
+        return ""
+    # Find first ". " or "\n" — whichever comes first
+    candidates = [i for i in (s.find(". "), s.find("\n")) if i > 0]
+    cut = min(candidates) if candidates else -1
+    head = s[:cut].strip() if cut > 0 else s
+    if len(head) > cap:
+        head = head[: cap - 1].rstrip() + "…"
+    return head
+
+
 async def handle_log_session(args, ctx: MCPContext) -> str:
-    """Log a coding session against the active project."""
+    """Log a coding session and sync project context.
+
+    Also updates the active project's current_focus (auto-derived from the
+    summary unless args.current_focus is explicitly set) and next_step (if
+    args.next_step is set). This keeps the session log and the project-level
+    "what am I working on" view in sync without a second tool call.
+    """
+    from app.services import project_children as children_svc
     from app.services.session_svc import create_session
 
     project = await _get_active_project(ctx)
@@ -70,10 +96,24 @@ async def handle_log_session(args, ctx: MCPContext) -> str:
         next_step=getattr(args, "next_step", None),
         source="skill",
     )
+
+    # Auto-sync project context so current_focus never goes stale between sessions.
+    explicit_focus = getattr(args, "current_focus", None)
+    new_focus = explicit_focus if explicit_focus is not None else _auto_focus_from_summary(args.summary)
+    ctx_updates: dict[str, str] = {}
+    if new_focus:
+        ctx_updates["current_focus"] = new_focus
+    next_step = getattr(args, "next_step", None)
+    if next_step:
+        ctx_updates["next_step"] = next_step
+    if ctx_updates:
+        await children_svc.upsert_context(ctx.db, project, **ctx_updates)
+
     return json.dumps({
         "id": session.id,
         "summary": session.summary,
         "next_step": session.next_step,
+        "current_focus": ctx_updates.get("current_focus"),
     })
 
 
