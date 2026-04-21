@@ -1,12 +1,11 @@
 <script setup lang="ts">
-import { onMounted, ref, watch } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
 import ProjectTelemetryRail from "@/components/app/ProjectTelemetryRail.vue";
 import SidebarProjects from "@/components/app/SidebarProjects.vue";
 import ProjectContextEditor from "@/components/projects/ProjectContextEditor.vue";
 import ProjectFocusCard from "@/components/projects/ProjectFocusCard.vue";
-import { computed } from "vue";
 import ProjectInfraCard from "@/components/projects/ProjectInfraCard.vue";
 import ProjectDecisionsCard from "@/components/projects/ProjectDecisionsCard.vue";
 import ProjectLaunchesCard from "@/components/projects/ProjectLaunchesCard.vue";
@@ -178,6 +177,11 @@ watch(
             :disabled="deleting"
             @click="doDelete"
           >{{ deleting ? "Deleting…" : "Yes, delete" }}</button>
+        </div>
+
+        <!-- Activity timeline — full width, live feed -->
+        <div class="mb-4">
+          <ProjectActivityTimeline :project-slug="projects.active.slug" />
         </div>
 
         <div class="grid grid-cols-1 xl:grid-cols-3 gap-4">
