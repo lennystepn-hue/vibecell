@@ -1,18 +1,25 @@
 <script setup lang="ts">
 import { RouterLink } from "vue-router";
 
+import LivePulse from "@/components/app/LivePulse.vue";
 import StatusPill from "@/components/ui/StatusPill.vue";
+import { usePresenceStore } from "@/stores/presence";
 import type { components } from "@/api/types.gen";
 
 type Project = components["schemas"]["ProjectListItem"];
 
-defineProps<{ project: Project }>();
+const props = defineProps<{ project: Project }>();
+const presence = usePresenceStore();
+const liveClass = () => (presence.isLive(props.project.slug)
+  ? "ring-1 ring-signal-green/40 shadow-[0_0_18px_rgba(92,200,164,0.15)]"
+  : "");
 </script>
 
 <template>
   <RouterLink
     :to="`/p/${project.slug}`"
     class="group block glass rounded-lg p-4 transition-all duration-fast ease-out hover:bg-bg-surface-hi hover:border-border-strong relative"
+    :class="liveClass()"
   >
     <div class="flex items-start gap-3 mb-2">
       <span
@@ -42,9 +49,13 @@ defineProps<{ project: Project }>();
             </a>
           </div>
           <!-- Status pill, right side, never overlapped -->
-          <StatusPill :status="project.status as never" class="shrink-0" />
+          <div class="flex items-center gap-2 shrink-0">
+            <LivePulse :slug="project.slug" variant="dot" />
+            <StatusPill :status="project.status as never" />
+          </div>
         </div>
         <p class="mono text-small text-fg-subtle truncate mt-0.5">{{ project.slug }}</p>
+        <LivePulse :slug="project.slug" variant="pill" class="mt-1" />
       </div>
     </div>
     <p v-if="project.pitch" class="text-small text-fg-muted line-clamp-2 mt-3">

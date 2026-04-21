@@ -14,6 +14,7 @@ from app.mcp.audit import log_tool_call
 from app.mcp.auth import MCPContext, require_mcp_context
 from app.mcp.tools import TOOLS, TOOLS_BY_NAME
 from app.metrics.registry import mcp_tool_calls
+from app.services import presence as presence_svc
 
 
 router = APIRouter()
@@ -100,4 +101,38 @@ async def _dispatch_tool_call(ctx: MCPContext, req_id: Any, params: dict) -> dic
     )
     await ctx.db.commit()
     mcp_tool_calls.labels(tool_name=name, status=status).inc()
+
+    # Best-effort presence ping — which project did this tool actually touch?
+    # Use explicit args.slug / args.project if present, else the currently-active
+    # project. Failures here must never break the tool-call response.
+    try:
+        touched_slug = (
+            getattr(args_model, "slug", None)
+            or getattr(args_model, "project", None)
+            or await _active_project_slug(ctx)
+        )
+        if touched_slug:
+            await presence_svc.mark_live(
+                workspace_id=ctx.workspace_id,
+                project_slug=touched_slug,
+                tool_name=name,
+                session_id=ctx.client_id,
+            )
+    except Exception:  # noqa: BLE001 — presence is advisory, never fail a tool call
+        pass
+
     return _ok(req_id, {"content": [{"type": "text", "text": text}]})
+
+
+async def _active_project_slug(ctx: MCPContext) -> str | None:
+    """Look up the active project's slug for this workspace, if any."""
+    from sqlalchemy import select
+
+    from app.models import ActiveProject, Project
+
+    row = (await ctx.db.execute(
+        select(Project.slug)
+        .join(ActiveProject, ActiveProject.project_id == Project.id)
+        .where(ActiveProject.workspace_id == ctx.workspace_id)
+    )).scalar_one_or_none()
+    return row

@@ -16,6 +16,7 @@ from app.schemas.workspace import (
     WorkspaceOut,
     WorkspaceUpdate,
 )
+from app.services import presence as presence_svc
 from app.services.workspace import create_workspace
 
 router = APIRouter(prefix="/api/v1/workspaces", tags=["workspaces"])
@@ -67,3 +68,20 @@ async def update(
     await db.commit()
     await db.refresh(ctx.workspace)
     return WorkspaceOut.model_validate(ctx.workspace)
+
+
+@router.get("/me/presence")
+async def my_presence(
+    auth: Annotated[AuthContext, Depends(require_auth)],
+) -> dict:
+    """Which projects in my active workspace is Claude live on right now?
+
+    Presence is ephemeral (Redis, 2-minute TTL). A project is "live" if any
+    MCP tool call touched it within the last 120 seconds. Poll this endpoint
+    every few seconds from the dashboard to show pulsing live indicators.
+    """
+    ws_id = auth.active_workspace_id
+    if ws_id is None:
+        return {"entries": []}
+    entries = await presence_svc.get_live(ws_id)
+    return {"entries": entries}

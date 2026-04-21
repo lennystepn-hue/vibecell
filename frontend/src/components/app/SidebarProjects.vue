@@ -2,8 +2,10 @@
 import { computed, onMounted, ref } from "vue";
 import { RouterLink, useRoute } from "vue-router";
 
+import LivePulse from "@/components/app/LivePulse.vue";
 import SignalDot from "@/components/ui/SignalDot.vue";
 import { useGroupsStore } from "@/stores/groups";
+import { usePresenceStore } from "@/stores/presence";
 import { useProjectsStore } from "@/stores/projects";
 import type { components } from "@/api/types.gen";
 
@@ -12,6 +14,11 @@ type Project = components["schemas"]["ProjectListItem"];
 const route = useRoute();
 const projects = useProjectsStore();
 const groups = useGroupsStore();
+const presence = usePresenceStore();
+// Reference `presence` to ensure the store is instantiated even if sidebar
+// mounts before App.vue's watcher fires. The actual reactivity flows through
+// LivePulse component reads.
+void presence;
 
 onMounted(async () => {
   if (projects.list.length === 0) await projects.fetchList();
@@ -211,6 +218,7 @@ function rowClick() {
               aria-hidden="true"
             >{{ p.emoji || "📦" }}</span>
             <span class="truncate flex-1">{{ p.slug }}</span>
+            <LivePulse :slug="p.slug" variant="dot" dense />
             <SignalDot :tone="toneFor(p.status)" :glow="false" />
           </RouterLink>
         </div>
@@ -267,6 +275,7 @@ function rowClick() {
               aria-hidden="true"
             >{{ p.emoji || "📦" }}</span>
             <span class="truncate flex-1">{{ p.slug }}</span>
+            <LivePulse :slug="p.slug" variant="dot" dense />
             <SignalDot :tone="toneFor(p.status)" :glow="false" />
           </RouterLink>
           <p
