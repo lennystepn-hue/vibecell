@@ -180,11 +180,6 @@ watch(
           >{{ deleting ? "Deleting…" : "Yes, delete" }}</button>
         </div>
 
-        <!-- Activity timeline — full width, live feed -->
-        <div class="mb-4">
-          <ProjectActivityTimeline :project-slug="projects.active.slug" />
-        </div>
-
         <div class="grid grid-cols-1 xl:grid-cols-3 gap-4">
           <div class="xl:col-span-2">
             <ProjectContextEditor
@@ -217,6 +212,10 @@ watch(
           <!-- Spec 5A: Health card (shows not_configured until healthcheck link added) -->
           <div class="xl:col-span-1">
             <ProjectHealthCard :slug="projects.active.slug" />
+          </div>
+          <!-- Activity timeline — bottom of page, collapsible -->
+          <div class="xl:col-span-3">
+            <ProjectActivityTimeline :project-slug="projects.active.slug" />
           </div>
         </div>
       </div>

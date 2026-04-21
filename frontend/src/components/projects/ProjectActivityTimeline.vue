@@ -13,7 +13,19 @@ const props = defineProps<{ projectSlug: string }>();
 
 const events = ref<ActivityEvent[]>([]);
 const loading = ref(false);
+const expanded = ref<boolean>(
+  typeof localStorage !== "undefined"
+    ? localStorage.getItem(`vc:activity-expanded:${props.projectSlug}`) !== "false"
+    : true,
+);
 let pollId: ReturnType<typeof setInterval> | null = null;
+
+function toggle() {
+  expanded.value = !expanded.value;
+  if (typeof localStorage !== "undefined") {
+    localStorage.setItem(`vc:activity-expanded:${props.projectSlug}`, expanded.value ? "true" : "false");
+  }
+}
 
 async function load() {
   loading.value = true;
@@ -90,11 +102,23 @@ onUnmounted(() => {
 
 <template>
   <section class="glass rounded-lg p-4">
-    <header class="flex items-center justify-between mb-3">
-      <h3 class="mono-label text-fg-muted">//activity</h3>
+    <header
+      class="flex items-center justify-between cursor-pointer select-none"
+      :class="{ 'mb-3': expanded }"
+      @click="toggle"
+    >
+      <div class="flex items-center gap-2">
+        <span
+          class="font-mono text-fg-subtle transition-transform duration-fast"
+          :class="{ 'rotate-90': expanded }"
+          aria-hidden="true"
+        >▸</span>
+        <h3 class="mono-label text-fg-muted">//activity</h3>
+      </div>
       <span class="text-small text-fg-subtle">{{ events.length }} events · live</span>
     </header>
 
+    <div v-if="expanded">
     <div v-if="loading && events.length === 0" class="text-fg-subtle mono-label text-small">
       loading…
     </div>
@@ -131,5 +155,6 @@ onUnmounted(() => {
         </div>
       </li>
     </ol>
+    </div>
   </section>
 </template>
