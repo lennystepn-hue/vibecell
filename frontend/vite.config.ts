@@ -18,6 +18,16 @@ export default defineConfig({
       },
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          three: ["three"],
+        },
+      },
+    },
+    chunkSizeWarningLimit: 600,
+  },
   // @ts-expect-error vitest 2.x augments vite 5's UserConfig; project uses vite 6
   test: {
     environment: "jsdom",
