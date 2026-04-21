@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
+import { ref, watch } from "vue";
 
 import CopyableValue from "@/components/ui/CopyableValue.vue";
 import PrimaryButton from "@/components/ui/PrimaryButton.vue";
@@ -19,25 +19,44 @@ const adding = ref(false);
 const newLabel = ref("");
 const newValue = ref("");
 
-const expanded = ref<boolean>(
-  typeof localStorage !== "undefined"
-    ? localStorage.getItem(`vc:card-expanded:secrets:${props.project.slug}`) !== "false"
-    : true,
-);
+const expanded = ref<boolean>(true);
 function toggle() {
   expanded.value = !expanded.value;
-  localStorage.setItem(`vc:card-expanded:secrets:${props.project.slug}`, expanded.value ? "true" : "false");
+  if (typeof localStorage !== "undefined") {
+    localStorage.setItem(`vc:card-expanded:secrets:${props.project.slug}`, expanded.value ? "true" : "false");
+  }
 }
 
 async function load() {
+  const slug = props.project.slug;
   loading.value = true;
+  // Clear immediately so stale data from the previous project never flashes.
+  secrets.value = [];
   try {
-    const r = await fetch(`/api/v1/projects/${props.project.slug}/secrets`, { credentials: "include" });
-    if (r.ok) secrets.value = await r.json();
+    const r = await fetch(`/api/v1/projects/${slug}/secrets`, { credentials: "include" });
+    if (r.ok && slug === props.project.slug) {
+      // Guard: only commit the response if we're still on the same project
+      // (avoids race when navigating projects fast).
+      secrets.value = await r.json();
+    }
   } finally {
-    loading.value = false;
+    if (slug === props.project.slug) loading.value = false;
   }
 }
+
+// Re-load whenever the project slug changes (Vue may reuse the component
+// across /projects/:slug navigations — without this watch, secrets from
+// the previous project would remain visible on the next project's page).
+watch(
+  () => props.project.slug,
+  (slug) => {
+    if (typeof localStorage !== "undefined") {
+      expanded.value = localStorage.getItem(`vc:card-expanded:secrets:${slug}`) !== "false";
+    }
+    load();
+  },
+  { immediate: true },
+);
 
 function kindBadge(k: string): { label: string; color: string; title: string } {
   switch (k) {
@@ -79,7 +98,6 @@ async function remove(label: string) {
   await load();
 }
 
-onMounted(() => load());
 </script>
 
 <template>

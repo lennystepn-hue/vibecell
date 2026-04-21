@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
+import { ref, watch } from "vue";
 import MonoLabel from "@/components/ui/MonoLabel.vue";
 
 const props = defineProps<{ slug: string }>();
@@ -22,12 +22,13 @@ const health = ref<HealthSummary | null>(null);
 const loading = ref(true);
 const fetchError = ref<string | null>(null);
 
-onMounted(async () => {
+async function load(slug: string) {
+  loading.value = true;
+  fetchError.value = null;
+  health.value = null;  // clear stale data before the new fetch resolves
   try {
-    // Use raw fetch since the typed client may not have this endpoint yet
-    const res = await fetch(`/api/v1/projects/${props.slug}/health`, {
-      credentials: "include",
-    });
+    const res = await fetch(`/api/v1/projects/${slug}/health`, { credentials: "include" });
+    if (slug !== props.slug) return;  // stale response — user already moved to another project
     if (res.ok) {
       health.value = await res.json();
     } else if (res.status === 501) {
@@ -36,11 +37,15 @@ onMounted(async () => {
       fetchError.value = `Error ${res.status}`;
     }
   } catch (e) {
-    fetchError.value = "Failed to load health data";
+    if (slug === props.slug) fetchError.value = "Failed to load health data";
   } finally {
-    loading.value = false;
+    if (slug === props.slug) loading.value = false;
   }
-});
+}
+
+// Re-fetch whenever the slug prop changes so cached state from the previous
+// project never bleeds into the next one.
+watch(() => props.slug, (slug) => void load(slug), { immediate: true });
 
 function trafficLightColor(status: HealthStatus): string {
   switch (status) {

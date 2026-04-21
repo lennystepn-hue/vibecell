@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref } from "vue";
+import { computed, onUnmounted, ref, watch } from "vue";
 
 interface ActivityEvent {
   type: "session" | "decision" | "idea" | "ship" | "lifecycle" | "note" | "tool_call";
@@ -13,11 +13,7 @@ const props = defineProps<{ projectSlug: string }>();
 
 const events = ref<ActivityEvent[]>([]);
 const loading = ref(false);
-const expanded = ref<boolean>(
-  typeof localStorage !== "undefined"
-    ? localStorage.getItem(`vc:activity-expanded:${props.projectSlug}`) !== "false"
-    : true,
-);
+const expanded = ref<boolean>(true);
 let pollId: ReturnType<typeof setInterval> | null = null;
 
 function toggle() {
@@ -28,14 +24,16 @@ function toggle() {
 }
 
 async function load() {
+  const slug = props.projectSlug;
   loading.value = true;
   try {
-    const r = await fetch(`/api/v1/projects/${props.projectSlug}/activity?limit=100`, {
+    const r = await fetch(`/api/v1/projects/${slug}/activity?limit=100`, {
       credentials: "include",
     });
-    if (r.ok) events.value = await r.json();
+    // Only commit if we're still looking at the same project.
+    if (r.ok && slug === props.projectSlug) events.value = await r.json();
   } finally {
-    loading.value = false;
+    if (slug === props.projectSlug) loading.value = false;
   }
 }
 
@@ -91,10 +89,22 @@ const collapsed = computed(() => {
   return out;
 });
 
-onMounted(() => {
-  load();
-  pollId = setInterval(load, 15_000);
-});
+// Reset + reload when the project slug changes (Vue may reuse the component
+// across /projects/:slug routes; without this watch, the previous project's
+// events would stay visible).
+watch(
+  () => props.projectSlug,
+  (slug) => {
+    if (typeof localStorage !== "undefined") {
+      expanded.value = localStorage.getItem(`vc:activity-expanded:${slug}`) !== "false";
+    }
+    events.value = [];
+    if (pollId) clearInterval(pollId);
+    load();
+    pollId = setInterval(load, 15_000);
+  },
+  { immediate: true },
+);
 onUnmounted(() => {
   if (pollId) clearInterval(pollId);
 });
