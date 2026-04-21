@@ -2,7 +2,11 @@
 import { ref, onMounted } from "vue";
 import { useRoute } from "vue-router";
 
+import UserMenu from "@/components/app/UserMenu.vue";
+import { useAuthStore } from "@/stores/auth";
+
 const route = useRoute();
+const auth = useAuthStore();
 const activeTab = ref<"privacy" | "terms">("privacy");
 const cookieBannerVisible = ref(false);
 
@@ -173,11 +177,14 @@ const termsSections: LegalSection[] = [
         <span class="font-mono" style="font-size: 18px; color: #5cc8a4">◈</span>
         <span class="font-mono text-[11px] tracking-[0.15em] uppercase" style="color: #5e7088">Vibecell</span>
       </router-link>
-      <router-link to="/login"
-        class="font-mono transition-colors hover:text-fg-primary"
-        style="font-size: 12px; color: #5e7088">
-        Sign in →
-      </router-link>
+      <div class="flex items-center gap-3">
+        <UserMenu v-if="auth.isAuthed" variant="light" />
+        <router-link v-else to="/login"
+          class="font-mono transition-colors hover:text-fg-primary"
+          style="font-size: 12px; color: #5e7088">
+          Sign in →
+        </router-link>
+      </div>
     </header>
 
     <!-- ─── Page hero ─────────────────────────────────────────────────────── -->

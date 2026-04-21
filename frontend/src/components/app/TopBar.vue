@@ -4,6 +4,7 @@ import { RouterLink, useRoute } from "vue-router";
 import { useAuthStore } from "@/stores/auth";
 import { useCommandPaletteStore } from "@/stores/command-palette";
 import KbdHint from "@/components/ui/KbdHint.vue";
+import UserMenu from "./UserMenu.vue";
 
 const route = useRoute();
 const auth = useAuthStore();
@@ -62,13 +63,22 @@ const palette = useCommandPaletteStore();
       >search</RouterLink>
     </nav>
 
-    <button
-      v-if="auth.isAuthed"
-      class="ml-auto flex items-center gap-3 h-7 px-3 rounded-md border border-border bg-bg-surface/50 text-fg-muted text-small transition-colors hover:bg-bg-surface-hi"
-      @click="palette.toggle"
-    >
-      <span>switch project…</span>
-      <KbdHint keys="⌘K" />
-    </button>
+    <div v-if="auth.isAuthed" class="ml-auto flex items-center gap-2">
+      <button
+        class="flex items-center gap-3 h-7 px-3 rounded-md border border-border bg-bg-surface/50 text-fg-muted text-small transition-colors hover:bg-bg-surface-hi"
+        @click="palette.toggle"
+      >
+        <span>switch project…</span>
+        <KbdHint keys="⌘K" />
+      </button>
+      <UserMenu variant="chrome" />
+    </div>
+    <div v-else class="ml-auto">
+      <RouterLink
+        to="/login"
+        class="h-7 px-3 inline-flex items-center rounded-md text-small font-mono bg-signal-green/90 hover:bg-signal-green text-bg-body transition-colors"
+        style="color:#070b10"
+      >sign in →</RouterLink>
+    </div>
   </header>
 </template>

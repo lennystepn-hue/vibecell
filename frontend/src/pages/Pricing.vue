@@ -2,9 +2,13 @@
 import { ref } from "vue";
 import { useRouter } from "vue-router";
 
+import UserMenu from "@/components/app/UserMenu.vue";
+import { useAuthStore } from "@/stores/auth";
+
 const router = useRouter();
+const auth = useAuthStore();
 function goSignIn() {
-  router.push("/login");
+  router.push(auth.isAuthed ? "/p" : "/login");
 }
 
 const openFaq = ref<number | null>(null);
@@ -80,12 +84,15 @@ const faqs = [
         <span class="font-mono" style="font-size: 18px; color: #5cc8a4">◈</span>
         <span class="font-mono text-[11px] tracking-[0.15em] uppercase" style="color: #5e7088">Vibecell</span>
       </router-link>
-      <button
-        class="px-4 py-1.5 rounded font-mono text-[12px] hover:opacity-90 transition-opacity"
-        style="background: #5cc8a4; color: #070b10"
-        @click="goSignIn">
-        Get started →
-      </button>
+      <div class="flex items-center gap-3">
+        <UserMenu v-if="auth.isAuthed" variant="light" />
+        <button
+          class="px-4 py-1.5 rounded font-mono text-[12px] hover:opacity-90 transition-opacity"
+          style="background: #5cc8a4; color: #070b10"
+          @click="goSignIn">
+          {{ auth.isAuthed ? 'Open dashboard →' : 'Get started →' }}
+        </button>
+      </div>
     </header>
 
     <!-- ─── Hero ─────────────────────────────────────────────────────────── -->
@@ -264,7 +271,7 @@ const faqs = [
         class="px-8 py-3 rounded-xl font-mono font-semibold text-[13px] transition-all hover:opacity-90"
         style="background: #5cc8a4; color: #070b10; box-shadow: 0 0 24px rgba(92,200,164,0.2)"
         @click="goSignIn">
-        Get started for free →
+        {{ auth.isAuthed ? 'Open dashboard →' : 'Get started for free →' }}
       </button>
     </section>
 

@@ -2,11 +2,18 @@
 import { ref, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import DiamondHero from "@/components/landing/DiamondHero.vue";
+import UserMenu from "@/components/app/UserMenu.vue";
+import { useAuthStore } from "@/stores/auth";
 
 const router = useRouter();
+const auth = useAuthStore();
 
 function goSignIn() {
-  router.push("/login");
+  router.push(auth.isAuthed ? "/p" : "/login");
+}
+
+function goDashboard() {
+  router.push("/p");
 }
 
 function scrollToDemo() {
@@ -114,17 +121,28 @@ const steps = [
           class="text-small text-fg-muted hover:text-fg-primary transition-colors duration-150">
           Legal
         </router-link>
-        <a href="https://github.com" target="_blank" rel="noopener"
+        <a href="https://github.com/lennystepn-hue/vibecell" target="_blank" rel="noopener"
           class="text-small text-fg-muted hover:text-fg-primary transition-colors duration-150">
           GitHub
         </a>
       </nav>
-      <button
-        class="px-4 py-1.5 rounded text-small font-mono bg-signal-green text-bg-body hover:opacity-90 transition-opacity"
-        style="color: #070b10"
-        @click="goSignIn">
-        Get started →
-      </button>
+      <div class="flex items-center gap-3">
+        <UserMenu v-if="auth.isAuthed" variant="light" />
+        <button
+          v-if="auth.isAuthed"
+          class="px-4 py-1.5 rounded text-small font-mono bg-signal-green hover:opacity-90 transition-opacity"
+          style="color: #070b10"
+          @click="goDashboard">
+          Open dashboard →
+        </button>
+        <button
+          v-else
+          class="px-4 py-1.5 rounded text-small font-mono bg-signal-green hover:opacity-90 transition-opacity"
+          style="color: #070b10"
+          @click="goSignIn">
+          Get started →
+        </button>
+      </div>
     </header>
 
     <!-- ─── Hero ─────────────────────────────────────────────────────────── -->
@@ -165,7 +183,7 @@ const steps = [
               class="px-6 py-3 rounded-lg font-mono font-semibold text-[13px] transition-all hover:opacity-90 hover:scale-[1.02] active:scale-[0.99]"
               style="background: #5cc8a4; color: #070b10; box-shadow: 0 0 24px rgba(92,200,164,0.25)"
               @click="goSignIn">
-              Get started — free
+              {{ auth.isAuthed ? 'Open dashboard →' : 'Get started — free' }}
             </button>
             <button
               class="px-6 py-3 rounded-lg font-mono text-[13px] transition-all hover:border-opacity-60"
@@ -421,7 +439,7 @@ const steps = [
           class="px-10 py-4 rounded-xl font-mono font-semibold text-[14px] transition-all hover:opacity-90 hover:scale-[1.02] active:scale-[0.99]"
           style="background: #5cc8a4; color: #070b10; box-shadow: 0 0 40px rgba(92,200,164,0.3), 0 4px 20px rgba(0,0,0,0.3)"
           @click="goSignIn">
-          Get started — free →
+          {{ auth.isAuthed ? 'Open dashboard →' : 'Get started — free →' }}
         </button>
         <p class="mt-4 font-mono" style="font-size: 11px; color: #5e7088">
           vibecell.dev · No install · Free plan · GDPR compliant
@@ -442,7 +460,7 @@ const steps = [
           <router-link to="/pricing" class="hover:text-fg-muted transition-colors">Pricing</router-link>
           <router-link to="/legal" class="hover:text-fg-muted transition-colors">Privacy</router-link>
           <router-link to="/legal?tab=terms" class="hover:text-fg-muted transition-colors">Terms</router-link>
-          <a href="https://github.com" target="_blank" rel="noopener" class="hover:text-fg-muted transition-colors">GitHub</a>
+          <a href="https://github.com/lennystepn-hue/vibecell" target="_blank" rel="noopener" class="hover:text-fg-muted transition-colors">GitHub</a>
           <a href="mailto:hello@vibecell.dev" class="hover:text-fg-muted transition-colors">Contact</a>
         </nav>
         <!-- Copyright -->
