@@ -50,6 +50,11 @@ class Settings(BaseSettings):
     # AI enrichment — Spec 3.6
     anthropic_api_key: str = Field(default="", description="For AI enrichment during GitHub import")
 
+    # WebAuthn — Spec 4.2
+    webauthn_rp_id: str = Field(default="vibecell.dev", description="WebAuthn relying party ID (domain)")
+    webauthn_rp_name: str = Field(default="Vibecell")
+    webauthn_origin: str = Field(default="https://vibecell.dev")
+
 
 @lru_cache(maxsize=1)
 def get_settings() -> Settings:

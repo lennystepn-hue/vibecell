@@ -24,6 +24,7 @@ dependencies = [
   "prometheus-client>=0.25.0",
   "apscheduler>=3.11.2",
   "anthropic>=0.96.0",
+  "webauthn>=2.7.1",
 ]
 
 [dependency-groups]
