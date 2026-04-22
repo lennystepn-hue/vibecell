@@ -15,7 +15,7 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 
 import httpx
-from sqlalchemy import func, select, text
+from sqlalchemy import Integer, func, select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 from app.core.db import session_scope
@@ -128,7 +128,7 @@ async def _persist_results(results: list[ProbeResult]) -> None:
                 ProjectHealthEvent.project_id,
                 func.count(ProjectHealthEvent.id).label("total"),
                 func.sum(
-                    func.cast(ProjectHealthEvent.status == "up", type_=text("int"))
+                    func.cast(ProjectHealthEvent.status == "up", Integer)
                 ).label("up_count"),
                 func.avg(ProjectHealthEvent.latency_ms).label("avg_lat"),
             )
@@ -143,7 +143,7 @@ async def _persist_results(results: list[ProbeResult]) -> None:
                 ProjectHealthEvent.project_id,
                 func.count(ProjectHealthEvent.id).label("total"),
                 func.sum(
-                    func.cast(ProjectHealthEvent.status == "up", type_=text("int"))
+                    func.cast(ProjectHealthEvent.status == "up", Integer)
                 ).label("up_count"),
             )
             .where(ProjectHealthEvent.project_id.in_(project_ids))

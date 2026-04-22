@@ -25,8 +25,7 @@ async function load(slug: string) {
 watch(() => props.slug, (s) => void load(s), { immediate: true });
 onProjectLiveEvent("*", () => void load(props.slug));
 
-const WEEKS = 12;  // ~ 3 months
-const DAYS = WEEKS * 7;
+const WEEKS = 12;  // ~ 3 months (12 × 7 = 84 day cells)
 
 // Grid indexed [col][row]; col 0 = oldest week on the left, row 0 = Monday top.
 const grid = computed(() => {

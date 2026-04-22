@@ -71,6 +71,28 @@ onMounted(async () => {
 
 const HEATMAP_WEEKS = 12;
 
+/** Compute the ISO 8601 week number + ISO year for a given date.
+ *
+ * The previous implementation used a made-up formula that drifted by one week
+ * mid-year (e.g. 22 April 2026 resolved to W16 instead of the correct W17).
+ * Proper ISO week: find the Thursday of the current week, then count weeks
+ * since the first Thursday of that year. The year itself is the Thursday's
+ * year, which handles the edge case where Dec 31 / Jan 1 belong to the
+ * neighbouring year's week.
+ */
+function isoYearWeek(date: Date): { year: number; week: number } {
+  const target = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  // ISO: Monday = 1 .. Sunday = 7. Move target to the Thursday of the same ISO week.
+  const dayNum = target.getUTCDay() || 7;
+  target.setUTCDate(target.getUTCDate() + 4 - dayNum);
+  const firstThursday = new Date(Date.UTC(target.getUTCFullYear(), 0, 4));
+  const firstThursdayDayNum = firstThursday.getUTCDay() || 7;
+  firstThursday.setUTCDate(firstThursday.getUTCDate() + 4 - firstThursdayDayNum);
+  const diff = (target.getTime() - firstThursday.getTime()) / 86400000;
+  const week = 1 + Math.round(diff / 7);
+  return { year: target.getUTCFullYear(), week };
+}
+
 /** Generate a sorted list of ISO week strings for the last N weeks. */
 function lastNWeeks(n: number): string[] {
   const weeks: string[] = [];
@@ -78,11 +100,8 @@ function lastNWeeks(n: number): string[] {
   for (let i = n - 1; i >= 0; i--) {
     const d = new Date(now);
     d.setDate(d.getDate() - i * 7);
-    // ISO week: YYYY-Www
-    const jan4 = new Date(d.getFullYear(), 0, 4);
-    const dayOfYear = Math.floor((d.getTime() - new Date(d.getFullYear(), 0, 0).getTime()) / 86400000);
-    const week = Math.ceil((dayOfYear + jan4.getDay() - 1) / 7);
-    weeks.push(`${d.getFullYear()}-W${String(week).padStart(2, "0")}`);
+    const { year, week } = isoYearWeek(d);
+    weeks.push(`${year}-W${String(week).padStart(2, "0")}`);
   }
   return weeks;
 }

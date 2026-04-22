@@ -9,7 +9,7 @@ import logging
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
-from app.core.db import SessionLocal
+from app.core.db import session_scope
 from app.services import screenshot_svc
 
 logger = logging.getLogger(__name__)
@@ -17,12 +17,12 @@ logger = logging.getLogger(__name__)
 
 async def _run_refresh_all() -> None:
     """Open a dedicated DB session and capture screenshots for everyone."""
-    async with SessionLocal() as db:
-        try:
+    try:
+        async with session_scope() as db:
             count = await screenshot_svc.refresh_all_auto(db)
             logger.info("screenshot_cron: captured %s preview(s)", count)
-        except Exception:  # noqa: BLE001
-            logger.exception("screenshot_cron: refresh_all_auto crashed")
+    except Exception:  # noqa: BLE001
+        logger.exception("screenshot_cron: refresh_all_auto crashed")
 
 
 def schedule_screenshot_jobs(scheduler: AsyncIOScheduler) -> None:

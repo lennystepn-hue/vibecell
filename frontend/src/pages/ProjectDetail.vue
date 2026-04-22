@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref, watch } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
 import LivePulse from "@/components/app/LivePulse.vue";
@@ -19,7 +19,6 @@ import ShipButton from "@/components/projects/ShipButton.vue";
 import ProjectStackEditor from "@/components/projects/ProjectStackEditor.vue";
 import ProjectTagsEditor from "@/components/projects/ProjectTagsEditor.vue";
 import ProjectHealthCard from "@/components/projects/ProjectHealthCard.vue";
-import ProjectActivityHeatmap from "@/components/projects/ProjectActivityHeatmap.vue";
 import ProjectActivityTimeline from "@/components/projects/ProjectActivityTimeline.vue";
 import ProjectOverviewChips from "@/components/projects/ProjectOverviewChips.vue";
 import ProjectSecretsCard from "@/components/projects/ProjectSecretsCard.vue";
@@ -57,6 +56,27 @@ function fmtRel(iso: string | null | undefined): string {
 const editingContext = ref(false);
 const confirmingDelete = ref(false);
 const deleting = ref(false);
+
+// URL the mini-preview thumbnail links to. Priority mirrors the backend:
+//   1. ProjectLink kind=landing
+//   2. ProjectEnvironment kind=prod
+//   3. Healthcheck origin
+const livePreviewUrl = computed<string | null>(() => {
+  const p: any = projects.active;
+  if (!p) return null;
+  const landing = (p.links ?? []).find((l: any) => l.kind === "landing");
+  if (landing?.url) return landing.url;
+  const prod = (p.environments ?? []).find((e: any) => e.kind === "prod");
+  if (prod?.url) return prod.url;
+  const health = (p.links ?? []).find((l: any) => l.kind === "healthcheck");
+  if (health?.url) {
+    try {
+      const u = new URL(health.url);
+      return `${u.protocol}//${u.host}`;
+    } catch { /* noop */ }
+  }
+  return null;
+});
 
 function load(slug: string) {
   return projects.fetchProject(slug);
@@ -146,28 +166,29 @@ useProjectLive(
                   <span v-else class="mono-label text-signal-green">Active</span>
                 </div>
                 <ProjectOverviewChips :slug="projects.active.slug" class="mt-3" />
-                <!-- Live preview strip of the deployed site. -->
-                <ProjectPreviewImage
-                  :slug="projects.active.slug"
-                  variant="panel"
-                  class="mt-4 max-w-[640px]"
-                  empty-label="// no live preview yet — ship to capture one"
-                />
               </div>
             </div>
-            <!-- Top-right actions -->
-            <div class="flex items-center gap-2 shrink-0">
-              <ShipButton :project="projects.active" />
-              <button
-                type="button"
-                class="mono-label text-fg-muted hover:text-fg-body transition-colors"
-                @click="editingContext = true"
-              >✎ edit</button>
-              <button
-                type="button"
-                class="mono-label text-fg-muted hover:text-signal-red transition-colors"
-                @click="confirmingDelete = true"
-              >🗑 delete</button>
+            <!-- Top-right: live preview mini + actions stacked -->
+            <div class="flex flex-col items-end gap-3 shrink-0">
+              <ProjectPreviewImage
+                :slug="projects.active.slug"
+                variant="mini"
+                :href="livePreviewUrl || undefined"
+                empty-label="// no preview yet"
+              />
+              <div class="flex items-center gap-2">
+                <ShipButton :project="projects.active" />
+                <button
+                  type="button"
+                  class="mono-label text-fg-muted hover:text-fg-body transition-colors"
+                  @click="editingContext = true"
+                >✎ edit</button>
+                <button
+                  type="button"
+                  class="mono-label text-fg-muted hover:text-signal-red transition-colors"
+                  @click="confirmingDelete = true"
+                >🗑 delete</button>
+              </div>
             </div>
           </div>
         </header>
@@ -237,8 +258,7 @@ useProjectLive(
         <ProjectLaunchesCard :project="projects.active" class="mb-4" />
         <ProjectNotesCard :project="projects.active" class="mb-4" />
 
-        <!-- Activity heatmap + timeline at bottom -->
-        <ProjectActivityHeatmap :slug="projects.active.slug" class="mb-4" />
+        <!-- Activity timeline at bottom (heatmap lives on the Portfolio page) -->
         <ProjectActivityTimeline :project-slug="projects.active.slug" />
 
       </div>

@@ -292,15 +292,13 @@ def schedule_background_capture(
 
 
 async def _bg_capture(project_id: str, kind: ScreenshotKind, ship_id: str | None) -> None:
-    from app.core.db import SessionLocal  # late import to avoid import cycle
+    from app.core.db import session_scope  # late import to avoid import cycle
 
-    async with SessionLocal() as db:
-        project = await db.get(Project, project_id)
-        if project is None:
-            return
-        try:
+    try:
+        async with session_scope() as db:
+            project = await db.get(Project, project_id)
+            if project is None:
+                return
             await capture_project(db, project=project, kind=kind, ship_id=ship_id)
-            await db.commit()
-        except Exception:  # noqa: BLE001
-            logger.exception("background screenshot capture failed")
-            await db.rollback()
+    except Exception:  # noqa: BLE001
+        logger.exception("background screenshot capture failed")
