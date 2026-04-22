@@ -55,6 +55,13 @@ class Settings(BaseSettings):
     webauthn_rp_name: str = Field(default="Vibecell")
     webauthn_origin: str = Field(default="https://vibecell.dev")
 
+    # Screenshots — live-preview + ship-shot timeline
+    screenshots_dir: str = Field(
+        default="/var/lib/hangar/screenshots",
+        description="Filesystem path where captured webp screenshots are stored. "
+                    "Bind-mount a persistent volume here in production.",
+    )
+
 
 @lru_cache(maxsize=1)
 def get_settings() -> Settings:

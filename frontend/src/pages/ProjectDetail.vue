@@ -4,6 +4,7 @@ import { useRoute, useRouter } from "vue-router";
 
 import LivePulse from "@/components/app/LivePulse.vue";
 import ProjectTelemetryRail from "@/components/app/ProjectTelemetryRail.vue";
+import ProjectPreviewImage from "@/components/projects/ProjectPreviewImage.vue";
 import SidebarProjects from "@/components/app/SidebarProjects.vue";
 import ProjectContextEditor from "@/components/projects/ProjectContextEditor.vue";
 import ProjectFocusCard from "@/components/projects/ProjectFocusCard.vue";
@@ -18,12 +19,15 @@ import ShipButton from "@/components/projects/ShipButton.vue";
 import ProjectStackEditor from "@/components/projects/ProjectStackEditor.vue";
 import ProjectTagsEditor from "@/components/projects/ProjectTagsEditor.vue";
 import ProjectHealthCard from "@/components/projects/ProjectHealthCard.vue";
+import ProjectActivityHeatmap from "@/components/projects/ProjectActivityHeatmap.vue";
 import ProjectActivityTimeline from "@/components/projects/ProjectActivityTimeline.vue";
 import ProjectOverviewChips from "@/components/projects/ProjectOverviewChips.vue";
 import ProjectSecretsCard from "@/components/projects/ProjectSecretsCard.vue";
+import ProjectTodosCard from "@/components/projects/ProjectTodosCard.vue";
 import CopyableValue from "@/components/ui/CopyableValue.vue";
 import StatusPill from "@/components/ui/StatusPill.vue";
 import { api } from "@/api/client";
+import { useProjectLive } from "@/composables/useProjectLive";
 import { useProjectsStore } from "@/stores/projects";
 import { useToastStore } from "@/stores/toast";
 
@@ -92,6 +96,20 @@ watch(
     }
   },
 );
+
+// Open one SSE stream per project page. Card components subscribe via
+// onProjectLiveEvent (see frontend/src/composables/useProjectLive.ts). When
+// anything on the server changes for this project, the affected card self-
+// refreshes without a page reload.
+useProjectLive(
+  () => (typeof route.params.slug === "string" ? route.params.slug : undefined),
+  () => {
+    // The top-level project aggregate (status, pitch, context) is cheap to
+    // refetch — do it on every event so headers stay in sync.
+    const slug = typeof route.params.slug === "string" ? route.params.slug : null;
+    if (slug) projects.fetchProject(slug);
+  },
+);
 </script>
 
 <template>
@@ -128,6 +146,13 @@ watch(
                   <span v-else class="mono-label text-signal-green">Active</span>
                 </div>
                 <ProjectOverviewChips :slug="projects.active.slug" class="mt-3" />
+                <!-- Live preview strip of the deployed site. -->
+                <ProjectPreviewImage
+                  :slug="projects.active.slug"
+                  variant="panel"
+                  class="mt-4 max-w-[640px]"
+                  empty-label="// no live preview yet — ship to capture one"
+                />
               </div>
             </div>
             <!-- Top-right actions -->
@@ -200,6 +225,9 @@ watch(
           <ProjectEnvironmentsCard :project="projects.active" class="w-full" />
         </div>
 
+        <!-- Row 3.4: TODOs that Claude can tick off (live via SSE) -->
+        <ProjectTodosCard :project="projects.active" class="mb-4" />
+
         <!-- Row 3.5: Secrets (full-width for clarity) -->
         <ProjectSecretsCard :project="projects.active" class="mb-4" />
 
@@ -209,7 +237,8 @@ watch(
         <ProjectLaunchesCard :project="projects.active" class="mb-4" />
         <ProjectNotesCard :project="projects.active" class="mb-4" />
 
-        <!-- Activity timeline at bottom -->
+        <!-- Activity heatmap + timeline at bottom -->
+        <ProjectActivityHeatmap :slug="projects.active.slug" class="mb-4" />
         <ProjectActivityTimeline :project-slug="projects.active.slug" />
 
       </div>

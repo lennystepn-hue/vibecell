@@ -1,0 +1,295 @@
+<script setup lang="ts">
+import { computed, ref, watch } from "vue";
+
+import { onProjectLiveEvent } from "@/composables/useProjectLive";
+
+interface Todo {
+  id: string;
+  project_id: string;
+  batch: string | null;
+  title: string;
+  body: string | null;
+  status: "open" | "in_progress" | "done" | "cancelled";
+  position: number;
+  completed_by: "user" | "claude" | null;
+  completion_note: string | null;
+  created_at: string;
+  started_at: string | null;
+  completed_at: string | null;
+}
+
+const props = defineProps<{ project: { slug: string } }>();
+
+const todos = ref<Todo[]>([]);
+const loading = ref(false);
+const newTitle = ref("");
+const newBatch = ref("");
+const includeDone = ref<boolean>(
+  typeof localStorage !== "undefined"
+    ? localStorage.getItem(`vc:todos-include-done:${props.project.slug}`) === "true"
+    : false,
+);
+const expanded = ref<boolean>(true);
+
+function toggle() {
+  expanded.value = !expanded.value;
+  if (typeof localStorage !== "undefined") {
+    localStorage.setItem(`vc:card-expanded:todos:${props.project.slug}`, expanded.value ? "true" : "false");
+  }
+}
+
+async function load() {
+  const slug = props.project.slug;
+  loading.value = true;
+  try {
+    const r = await fetch(
+      `/api/v1/projects/${slug}/todos?include_done=${includeDone.value}`,
+      { credentials: "include" },
+    );
+    if (r.ok && slug === props.project.slug) todos.value = await r.json();
+  } finally {
+    if (slug === props.project.slug) loading.value = false;
+  }
+}
+
+async function add() {
+  const title = newTitle.value.trim();
+  if (!title) return;
+  const body = {
+    title,
+    batch: newBatch.value.trim() || null,
+  };
+  const r = await fetch(`/api/v1/projects/${props.project.slug}/todos`, {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (r.ok) {
+    newTitle.value = "";
+    // leave newBatch so the user can keep adding to the same batch
+    // live event will trigger a reload, but do one here to feel instant
+    await load();
+  }
+}
+
+async function toggleCompletion(t: Todo) {
+  const path = t.status === "done"
+    ? `/api/v1/projects/${props.project.slug}/todos/${t.id}`  // PATCH back to open
+    : `/api/v1/projects/${props.project.slug}/todos/${t.id}/complete`;
+  const method = t.status === "done" ? "PATCH" : "POST";
+  const body = t.status === "done"
+    ? JSON.stringify({ status: "open" })
+    : JSON.stringify({ completed_by: "user" });
+  await fetch(path, {
+    method,
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body,
+  });
+  await load();
+}
+
+async function remove(t: Todo) {
+  if (!confirm(`Delete "${t.title}"?`)) return;
+  await fetch(`/api/v1/projects/${props.project.slug}/todos/${t.id}`, {
+    method: "DELETE",
+    credentials: "include",
+  });
+  await load();
+}
+
+async function setIncludeDone(v: boolean) {
+  includeDone.value = v;
+  if (typeof localStorage !== "undefined") {
+    localStorage.setItem(`vc:todos-include-done:${props.project.slug}`, v ? "true" : "false");
+  }
+  await load();
+}
+
+// Group by batch: open batches ordered by first-seen, "(no batch)" last.
+const grouped = computed(() => {
+  const map = new Map<string, Todo[]>();
+  const ordered: string[] = [];
+  for (const t of todos.value) {
+    const key = t.batch ?? "__ungrouped__";
+    if (!map.has(key)) {
+      map.set(key, []);
+      ordered.push(key);
+    }
+    map.get(key)!.push(t);
+  }
+  // Move ungrouped to the end for visual stability.
+  if (ordered.includes("__ungrouped__")) {
+    ordered.splice(ordered.indexOf("__ungrouped__"), 1);
+    ordered.push("__ungrouped__");
+  }
+  return ordered.map((k) => ({
+    label: k === "__ungrouped__" ? null : k,
+    items: map.get(k)!,
+  }));
+});
+
+function progressFor(items: Todo[]): { done: number; total: number; pct: number } {
+  const total = items.length;
+  const done = items.filter((t) => t.status === "done").length;
+  const pct = total ? Math.round((done / total) * 100) : 0;
+  return { done, total, pct };
+}
+
+function relative(iso: string | null): string {
+  if (!iso) return "";
+  const ms = Date.now() - new Date(iso).getTime();
+  if (ms < 60_000) return "just now";
+  if (ms < 3_600_000) return `${Math.floor(ms / 60_000)}m ago`;
+  if (ms < 86_400_000) return `${Math.floor(ms / 3_600_000)}h ago`;
+  return `${Math.floor(ms / 86_400_000)}d ago`;
+}
+
+watch(() => props.project.slug, () => {
+  if (typeof localStorage !== "undefined") {
+    expanded.value = localStorage.getItem(`vc:card-expanded:todos:${props.project.slug}`) !== "false";
+  }
+  load();
+}, { immediate: true });
+
+// Live refresh whenever Claude (or another tab) mutates todos.
+onProjectLiveEvent(
+  ["todo.created", "todo.batch_created", "todo.updated", "todo.started", "todo.completed", "todo.deleted"],
+  () => void load(),
+);
+</script>
+
+<template>
+  <section class="glass rounded-lg p-5">
+    <header
+      class="flex items-center justify-between cursor-pointer select-none"
+      :class="{ 'mb-4': expanded }"
+      @click="toggle"
+    >
+      <div class="flex items-center gap-2">
+        <span
+          class="font-mono text-fg-subtle transition-transform duration-fast"
+          :class="{ 'rotate-90': expanded }"
+        >▸</span>
+        <h3 class="mono-label text-fg-muted">//todos</h3>
+      </div>
+      <div class="flex items-center gap-3 text-small">
+        <label class="flex items-center gap-1.5 text-fg-subtle cursor-pointer" @click.stop>
+          <input
+            type="checkbox"
+            class="accent-signal-green"
+            :checked="includeDone"
+            @change="(e) => setIncludeDone((e.target as HTMLInputElement).checked)"
+          />
+          <span class="mono-label">done</span>
+        </label>
+        <span class="text-fg-subtle">{{ todos.filter(t => t.status !== 'done').length }} open</span>
+      </div>
+    </header>
+
+    <div v-if="expanded">
+      <!-- Add form -->
+      <div class="flex gap-2 mb-4">
+        <input
+          v-model="newBatch"
+          placeholder="batch (optional)"
+          class="h-8 px-2 text-small font-mono bg-bg-surface border border-border rounded w-40"
+          @keydown.enter="add"
+        />
+        <input
+          v-model="newTitle"
+          placeholder="New todo — press ⏎"
+          class="h-8 px-2 text-small bg-bg-surface border border-border rounded flex-1"
+          @keydown.enter="add"
+        />
+        <button
+          class="h-8 px-3 text-small font-mono bg-signal-green hover:opacity-90 transition-opacity rounded"
+          style="color: #070b10"
+          :disabled="!newTitle.trim()"
+          @click="add"
+        >add</button>
+      </div>
+
+      <div v-if="loading && todos.length === 0" class="text-fg-subtle mono-label">loading…</div>
+      <div v-else-if="todos.length === 0" class="text-fg-subtle text-small py-3">
+        No todos yet. Add one above, or ask Claude: <em>"vibecell.todo_batch_add: auth-refactor"</em>.
+      </div>
+
+      <div v-else class="space-y-5">
+        <div v-for="g in grouped" :key="g.label ?? '__ungrouped__'">
+          <!-- Batch header + progress -->
+          <header v-if="g.label" class="flex items-center justify-between mb-2">
+            <h4 class="mono-label text-fg-body">{{ g.label }}</h4>
+            <div class="flex items-center gap-2">
+              <div class="w-24 h-1 rounded-full bg-bg-surface overflow-hidden">
+                <div
+                  class="h-full bg-signal-green transition-all duration-slow"
+                  :style="{ width: progressFor(g.items).pct + '%' }"
+                />
+              </div>
+              <span class="font-mono text-[10px] text-fg-subtle tabular-nums">
+                {{ progressFor(g.items).done }} / {{ progressFor(g.items).total }}
+              </span>
+            </div>
+          </header>
+
+          <ul class="space-y-1">
+            <li
+              v-for="t in g.items"
+              :key="t.id"
+              class="group flex items-start gap-3 py-1.5 px-2 -mx-2 rounded hover:bg-white/[0.03] transition-colors"
+              :class="{
+                'opacity-55': t.status === 'done',
+                'ring-1 ring-signal-green/40 bg-signal-green/[0.04]': t.status === 'in_progress',
+              }"
+            >
+              <!-- Checkbox -->
+              <button
+                class="mt-0.5 w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-colors"
+                :class="t.status === 'done'
+                  ? 'bg-signal-green border-signal-green'
+                  : 'border-border hover:border-signal-green'"
+                :aria-label="t.status === 'done' ? 'reopen' : 'complete'"
+                @click="toggleCompletion(t)"
+              >
+                <svg v-if="t.status === 'done'" width="10" height="10" viewBox="0 0 10 10" fill="none">
+                  <path d="M2 5L4 7L8 3" stroke="#070b10" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </button>
+
+              <!-- Title + metadata -->
+              <div class="flex-1 min-w-0">
+                <div class="flex items-baseline gap-2 flex-wrap">
+                  <span class="text-small text-fg-body" :class="{ 'line-through': t.status === 'done' }">
+                    {{ t.title }}
+                  </span>
+                  <span v-if="t.status === 'in_progress'" class="mono-label text-[10px] text-signal-green">
+                    ◉ claude is on this
+                  </span>
+                  <span v-if="t.completed_by === 'claude'" class="mono-label text-[10px] text-signal-green">
+                    ✓ by claude
+                  </span>
+                  <span v-if="t.completed_at" class="text-[10px] text-fg-subtle ml-auto">
+                    {{ relative(t.completed_at) }}
+                  </span>
+                </div>
+                <p
+                  v-if="t.completion_note && t.status === 'done'"
+                  class="text-[11px] text-fg-subtle mt-0.5 italic"
+                >— {{ t.completion_note }}</p>
+              </div>
+
+              <!-- Remove -->
+              <button
+                class="opacity-0 group-hover:opacity-100 text-fg-subtle hover:text-signal-red text-small transition-opacity"
+                @click="remove(t)"
+                aria-label="delete"
+              >✕</button>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+</template>

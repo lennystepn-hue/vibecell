@@ -3,6 +3,8 @@ import { computed, onUnmounted, ref, watch } from "vue";
 import { RouterLink } from "vue-router";
 void RouterLink;  // tell the template compiler RouterLink is in scope for dynamic :is usage
 
+import { onProjectLiveEvent } from "@/composables/useProjectLive";
+
 interface ActivityEvent {
   type: "session" | "decision" | "idea" | "ship" | "lifecycle" | "note" | "tool_call";
   at: string | null;
@@ -118,6 +120,10 @@ watch(
 onUnmounted(() => {
   if (pollId) clearInterval(pollId);
 });
+
+// Reload the timeline the instant ANY project event fires — activity is the
+// union view so it cares about everything.
+onProjectLiveEvent("*", () => void load());
 </script>
 
 <template>

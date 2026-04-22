@@ -26,4 +26,7 @@ async def upsert_note(
         row.markdown = markdown
         row.updated_at = datetime.now(UTC)
     await db.flush()
+
+    from app.services import events as events_svc
+    await events_svc.publish(project.id, "note.updated", {})
     return row

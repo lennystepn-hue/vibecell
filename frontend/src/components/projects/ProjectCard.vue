@@ -2,6 +2,7 @@
 import { RouterLink } from "vue-router";
 
 import LivePulse from "@/components/app/LivePulse.vue";
+import ProjectPreviewImage from "@/components/projects/ProjectPreviewImage.vue";
 import StatusPill from "@/components/ui/StatusPill.vue";
 import { usePresenceStore } from "@/stores/presence";
 import type { components } from "@/api/types.gen";
@@ -18,10 +19,18 @@ const liveClass = () => (presence.isLive(props.project.slug)
 <template>
   <RouterLink
     :to="`/p/${project.slug}`"
-    class="group block glass rounded-lg p-4 transition-all duration-fast ease-out hover:bg-bg-surface-hi hover:border-border-strong relative"
+    class="group block glass rounded-lg p-4 transition-all duration-fast ease-out hover:bg-bg-surface-hi hover:border-border-strong relative overflow-hidden"
     :class="liveClass()"
   >
-    <div class="flex items-start gap-3 mb-2">
+    <!-- Hero preview — live screenshot of the project's deployed site. -->
+    <ProjectPreviewImage :slug="project.slug" variant="hero" />
+    <!-- Gradient overlay so text stays legible over the preview. -->
+    <div
+      class="absolute inset-0 pointer-events-none"
+      style="background: linear-gradient(180deg, rgba(10,16,24,0.55) 0%, rgba(10,16,24,0.82) 55%, rgba(10,16,24,0.92) 100%)"
+      aria-hidden="true"
+    />
+    <div class="relative flex items-start gap-3 mb-2">
       <span
         class="text-[28px] leading-none transition-[filter] duration-fast shrink-0"
         style="filter: saturate(0.85)"
@@ -58,10 +67,10 @@ const liveClass = () => (presence.isLive(props.project.slug)
         <LivePulse :slug="project.slug" variant="pill" class="mt-1" />
       </div>
     </div>
-    <p v-if="project.pitch" class="text-small text-fg-muted line-clamp-2 mt-3">
+    <p v-if="project.pitch" class="relative text-small text-fg-muted line-clamp-2 mt-3">
       {{ project.pitch }}
     </p>
-    <p v-else class="mono-label mt-3 opacity-50">// no pitch yet</p>
+    <p v-else class="relative mono-label mt-3 opacity-50">// no pitch yet</p>
   </RouterLink>
 </template>
 

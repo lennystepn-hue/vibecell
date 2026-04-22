@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
 
+import { onProjectLiveEvent } from "@/composables/useProjectLive";
+
 const props = defineProps<{ slug: string }>();
 
 interface Stats {
@@ -50,6 +52,13 @@ async function load(slug: string) {
 }
 
 watch(() => props.slug, (slug) => void load(slug), { immediate: true });
+
+// Keep the chip row live: anything that changes the counts (session /
+// decision / idea / ship / secret add) should nudge us to re-count.
+onProjectLiveEvent(
+  ["session.created", "decision.created", "idea.created", "ship.created", "secret.added", "secret.removed"],
+  () => void load(props.slug),
+);
 
 function relative(iso: string | null): string {
   if (!iso) return "never";

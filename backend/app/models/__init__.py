@@ -21,7 +21,9 @@ from app.models.project import (
     ProjectLink,
     ProjectRepo,
 )
+from app.models.screenshot import ProjectScreenshot
 from app.models.secret import ProjectSecretRef
+from app.models.todo import ProjectTodo
 from app.models.ship_loop import (
     Decision,
     Idea,
@@ -60,8 +62,10 @@ __all__ = [
     "ProjectInfra",
     "ProjectLink",
     "ProjectRepo",
+    "ProjectScreenshot",
     "ProjectSecretRef",
     "ProjectStack",
+    "ProjectTodo",
     "ProjectTag",
     "Session",
     "Ship",

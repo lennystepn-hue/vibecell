@@ -35,6 +35,10 @@ services:
     restart: unless-stopped
     env_file:
       - /etc/hangar/hangar.env
+    volumes:
+      # Persistent store for captured project screenshots.
+      # Named volume so image rebuilds / redeploys don't wipe visual history.
+      - screenshots:/var/lib/hangar/screenshots
     depends_on:
       postgres:
         condition: service_healthy
@@ -68,3 +72,4 @@ services:
 volumes:
   pg-data:
   redis-data:
+  screenshots:

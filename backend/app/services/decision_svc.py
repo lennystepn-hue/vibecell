@@ -51,6 +51,9 @@ async def create_decision(
     )
     db.add(row)
     await db.flush()
+
+    from app.services import events as events_svc
+    await events_svc.publish(project.id, "decision.created", {"decision_id": row.id})
     return row
 
 

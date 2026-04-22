@@ -70,6 +70,9 @@ async def create_session(
     )
     db.add(row)
     await db.flush()
+
+    from app.services import events as events_svc
+    await events_svc.publish(project.id, "session.created", {"session_id": row.id})
     return row
 
 

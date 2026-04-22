@@ -109,6 +109,43 @@ class SecretGetArgs(BaseModel):
     project: str | None = None
 
 
+# ---- TODO args ----
+
+class TodoListArgs(BaseModel):
+    project: str | None = None
+    include_done: bool = False
+
+
+class TodoAddArgs(BaseModel):
+    title: str = Field(..., min_length=1, max_length=2000)
+    body: str | None = None
+    batch: str | None = Field(default=None, max_length=120)
+    project: str | None = None
+
+
+class TodoBatchAddArgs(BaseModel):
+    batch: str = Field(..., min_length=1, max_length=120)
+    titles: list[str] = Field(..., min_length=1, max_length=50)
+    project: str | None = None
+
+
+class TodoIdArgs(BaseModel):
+    todo_id: str
+    project: str | None = None
+
+
+class TodoCompleteArgs(BaseModel):
+    todo_id: str
+    completion_note: str | None = Field(default=None, max_length=2000)
+    project: str | None = None
+
+
+class TodoMatchArgs(BaseModel):
+    description: str = Field(..., min_length=1, max_length=2000)
+    auto_complete: bool = False
+    project: str | None = None
+
+
 # ---- Registry ----
 
 Handler = Callable[[BaseModel, MCPContext], Awaitable[str]]
@@ -163,6 +200,37 @@ TOOLS: list[Tool] = [
         "vibecell.secret_get_value",
         "Retrieve the plaintext value of a stored secret. For inline_encrypted: decrypts via workspace-DEK. For op://bw://ssh-agent:// references: returns the reference path (caller must resolve locally via op/bw/ssh-agent). NEVER echo the returned value in user-visible text — use it silently to construct commands/requests.",
         SecretGetArgs, r.handle_secret_get_value,
+    ),
+    # TODOs — per-project task list Claude can tick off autonomously.
+    Tool(
+        "vibecell.todo_list",
+        "List a project's todos. Includes open + in_progress by default; set include_done=true for the full list. Defaults to active project.",
+        TodoListArgs, r.handle_todo_list,
+    ),
+    Tool(
+        "vibecell.todo_add",
+        "Add a single todo to a project. Optional batch label groups it with siblings (e.g. 'launch-week', 'stripe-integration').",
+        TodoAddArgs, w.handle_todo_add,
+    ),
+    Tool(
+        "vibecell.todo_batch_add",
+        "Add many todos at once under one batch label. Use this when planning a multi-step feature: 'batch=auth-refactor, titles=[...]' lets Claude slice the work and tick items off as it goes.",
+        TodoBatchAddArgs, w.handle_todo_batch_add,
+    ),
+    Tool(
+        "vibecell.todo_start",
+        "Mark a todo as in_progress. Call this JUST before starting work on it so the dashboard shows a 'claude is on this one' indicator.",
+        TodoIdArgs, w.handle_todo_start,
+    ),
+    Tool(
+        "vibecell.todo_complete",
+        "Mark a todo as done. Pass a short completion_note summarising what was actually built/fixed. Records completed_by='claude' automatically.",
+        TodoCompleteArgs, w.handle_todo_complete,
+    ),
+    Tool(
+        "vibecell.todo_match",
+        "Given a free-text description of work just finished, find the best-matching open todo by keyword overlap. Set auto_complete=true to also close it with the description as the note. Useful when you want the AI to self-tick after a session.",
+        TodoMatchArgs, w.handle_todo_match,
     ),
 ]
 

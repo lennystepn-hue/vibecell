@@ -88,6 +88,9 @@ async def add_secret(
     )
     db.add(row)
     await db.flush()
+
+    from app.services import events as events_svc
+    await events_svc.publish(project.id, "secret.added", {"label": label, "kind": kind})
     return row
 
 
@@ -99,6 +102,9 @@ async def remove_secret(
         raise NotFoundError("secret", label)
     await db.delete(row)
     await db.flush()
+
+    from app.services import events as events_svc
+    await events_svc.publish(project.id, "secret.removed", {"label": label})
 
 
 async def get_decrypted_value(
@@ -123,6 +129,9 @@ async def get_decrypted_value(
     # Record usage so the UI can show "@LABEL used Xm ago".
     row.last_used_at = datetime.now(UTC)
     await db.flush()
+
+    from app.services import events as events_svc
+    await events_svc.publish(project.id, "secret.used", {"label": label})
     return value
 
 
@@ -135,6 +144,9 @@ async def touch_last_used(
     if row is not None:
         row.last_used_at = datetime.now(UTC)
         await db.flush()
+
+        from app.services import events as events_svc
+        await events_svc.publish(project.id, "secret.used", {"label": label})
 
 
 def to_out(row: ProjectSecretRef) -> dict[str, str | None]:

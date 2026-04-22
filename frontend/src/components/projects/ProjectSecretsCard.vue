@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, watch } from "vue";
 
+import { onProjectLiveEvent } from "@/composables/useProjectLive";
 import CopyableValue from "@/components/ui/CopyableValue.vue";
 import PrimaryButton from "@/components/ui/PrimaryButton.vue";
 
@@ -67,6 +68,9 @@ watch(
   },
   { immediate: true },
 );
+
+// Live-refresh when Claude or another tab touches a secret.
+onProjectLiveEvent(["secret.added", "secret.removed", "secret.used"], () => void load());
 
 function kindBadge(k: string): { label: string; color: string; title: string } {
   switch (k) {

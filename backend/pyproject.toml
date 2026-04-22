@@ -25,6 +25,8 @@ dependencies = [
   "apscheduler>=3.11.2",
   "anthropic>=0.96.0",
   "webauthn>=2.7.1",
+  "playwright>=1.48.0",
+  "Pillow>=11.0.0",
 ]
 
 [dependency-groups]

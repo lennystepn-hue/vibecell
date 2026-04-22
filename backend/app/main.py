@@ -46,6 +46,14 @@ from app.jobs.health_cron import schedule_health_jobs
 from app.api.v1.portfolio import router as portfolio_router
 # Activity timeline
 from app.api.v1.activity import router as activity_router
+# Visual previews — live-preview + ship-shot timeline
+from app.api.v1.screenshots import router as screenshots_router
+from app.api.v1.screenshots import preview_router as screenshots_preview_router
+from app.jobs.screenshot_cron import schedule_screenshot_jobs
+# Live project events (SSE stream)
+from app.api.v1.events import router as events_router
+# Per-project TODOs
+from app.api.v1.todos import router as todos_router
 
 _scheduler = AsyncIOScheduler()
 
@@ -67,6 +75,8 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     )
     # Spec 5A — Auto-Signals: health probes every 5 min
     schedule_health_jobs(_scheduler)
+    # Visual previews — hourly project-wide refresh
+    schedule_screenshot_jobs(_scheduler)
     _scheduler.start()
     yield
     _scheduler.shutdown(wait=False)
@@ -123,6 +133,13 @@ app.include_router(health_router)
 app.include_router(portfolio_router)
 # Activity timeline
 app.include_router(activity_router)
+# Visual previews
+app.include_router(screenshots_router)
+app.include_router(screenshots_preview_router)
+# Live project-event stream (SSE)
+app.include_router(events_router)
+# Per-project TODOs
+app.include_router(todos_router)
 
 
 @app.get("/api/v1/healthz")

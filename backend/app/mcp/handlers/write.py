@@ -290,3 +290,99 @@ async def handle_secret_rm(args, ctx: MCPContext) -> str:
 
     await secret_svc.remove_secret(ctx.db, project, args.label)
     return json.dumps({"ok": True, "label": args.label, "project": project.slug})
+
+
+# ---------------------------------------------------------------------------
+# TODO handlers
+# ---------------------------------------------------------------------------
+
+def _todo_out(row) -> dict:
+    return {
+        "id": row.id,
+        "batch": row.batch,
+        "title": row.title,
+        "body": row.body,
+        "status": row.status,
+        "position": row.position,
+        "completed_by": row.completed_by,
+        "completion_note": row.completion_note,
+        "created_at": row.created_at.isoformat() if row.created_at else None,
+        "started_at": row.started_at.isoformat() if row.started_at else None,
+        "completed_at": row.completed_at.isoformat() if row.completed_at else None,
+    }
+
+
+async def handle_todo_add(args, ctx: MCPContext) -> str:
+    """Add a single todo to a project."""
+    from app.services import todo_svc
+
+    project = await _resolve_project(args, ctx)
+    row = await todo_svc.create_todo(
+        ctx.db,
+        project=project,
+        title=args.title,
+        body=getattr(args, "body", None),
+        batch=getattr(args, "batch", None),
+    )
+    return json.dumps(_todo_out(row))
+
+
+async def handle_todo_batch_add(args, ctx: MCPContext) -> str:
+    """Add many todos at once under one batch label."""
+    from app.services import todo_svc
+
+    project = await _resolve_project(args, ctx)
+    items = [{"title": t} for t in args.titles]
+    rows = await todo_svc.create_batch(
+        ctx.db, project=project, batch=args.batch, items=items,
+    )
+    return json.dumps({
+        "batch": args.batch,
+        "count": len(rows),
+        "todos": [_todo_out(r) for r in rows],
+    })
+
+
+async def handle_todo_start(args, ctx: MCPContext) -> str:
+    """Mark a todo as in_progress — lights up the 'claude is on this' indicator."""
+    from app.services import todo_svc
+
+    project = await _resolve_project(args, ctx)
+    row = await todo_svc.start_todo(ctx.db, project=project, todo_id=args.todo_id)
+    return json.dumps(_todo_out(row))
+
+
+async def handle_todo_complete(args, ctx: MCPContext) -> str:
+    """Mark a todo as done (completed_by=claude). Pass completion_note describing what was built."""
+    from app.services import todo_svc
+
+    project = await _resolve_project(args, ctx)
+    row = await todo_svc.complete_todo(
+        ctx.db,
+        project=project,
+        todo_id=args.todo_id,
+        completed_by="claude",
+        completion_note=getattr(args, "completion_note", None),
+    )
+    return json.dumps(_todo_out(row))
+
+
+async def handle_todo_match(args, ctx: MCPContext) -> str:
+    """Fuzzy-match a description against open todos. Optionally auto-complete the best match."""
+    from app.services import todo_svc
+
+    project = await _resolve_project(args, ctx)
+    best = await todo_svc.match_open_todo(
+        ctx.db, project=project, description=args.description,
+    )
+    if best is None:
+        return json.dumps({"matched": None, "note": "no open todo matched that description"})
+    if getattr(args, "auto_complete", False):
+        best = await todo_svc.complete_todo(
+            ctx.db,
+            project=project,
+            todo_id=best.id,
+            completed_by="claude",
+            completion_note=args.description,
+        )
+    return json.dumps({"matched": _todo_out(best)})

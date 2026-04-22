@@ -53,4 +53,17 @@ async def create_ship(
     )
     db.add(lifecycle)
     await db.flush()
+
+    # Fire-and-forget ship-shot capture: a screenshot of the live site right
+    # now, attached to this ship_id. Runs in the background so the ship
+    # response doesn't wait for chromium (~5s) to settle.
+    from app.services import screenshot_svc  # defer to avoid import cycle
+    screenshot_svc.schedule_background_capture(
+        project_id=project.id, kind="ship", ship_id=ship.id,
+    )
+
+    # Live-event broadcast.
+    from app.services import events as events_svc
+    await events_svc.publish(project.id, "ship.created", {"ship_id": ship.id, "version": version})
+
     return ship

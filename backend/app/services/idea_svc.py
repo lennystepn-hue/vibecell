@@ -63,6 +63,10 @@ async def create_idea(
     )
     db.add(row)
     await db.flush()
+
+    if project_id is not None:
+        from app.services import events as events_svc
+        await events_svc.publish(project_id, "idea.created", {"idea_id": row.id})
     return row
 
 

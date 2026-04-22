@@ -240,6 +240,34 @@ async def handle_activity(args: Any, ctx: MCPContext) -> str:
     return json.dumps(events)
 
 
+async def handle_todo_list(args: Any, ctx: MCPContext) -> str:
+    """List a project's todos (open + in_progress by default)."""
+    from app.services import todo_svc
+
+    project = await _resolve_project(args, ctx)
+    include_done = getattr(args, "include_done", False)
+    rows = await todo_svc.list_todos(
+        ctx.db, project=project, include_done=include_done,
+    )
+    out = [
+        {
+            "id": r.id,
+            "batch": r.batch,
+            "title": r.title,
+            "body": r.body,
+            "status": r.status,
+            "position": r.position,
+            "completed_by": r.completed_by,
+            "completion_note": r.completion_note,
+            "created_at": r.created_at.isoformat() if r.created_at else None,
+            "started_at": r.started_at.isoformat() if r.started_at else None,
+            "completed_at": r.completed_at.isoformat() if r.completed_at else None,
+        }
+        for r in rows
+    ]
+    return json.dumps(out)
+
+
 def _mask_secret(value: str | None, kind: str) -> str:
     """Return the reference path for non-inline kinds; mask inline encrypted values."""
     if kind != "inline_encrypted" and value:
