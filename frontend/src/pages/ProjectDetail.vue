@@ -7,24 +7,9 @@ import ProjectTelemetryRail from "@/components/app/ProjectTelemetryRail.vue";
 import ProjectPreviewImage from "@/components/projects/ProjectPreviewImage.vue";
 import SidebarProjects from "@/components/app/SidebarProjects.vue";
 import ProjectContextEditor from "@/components/projects/ProjectContextEditor.vue";
-import ProjectFocusCard from "@/components/projects/ProjectFocusCard.vue";
-import ProjectInfraCard from "@/components/projects/ProjectInfraCard.vue";
-import ProjectDecisionsCard from "@/components/projects/ProjectDecisionsCard.vue";
-import ProjectEnvironmentsCard from "@/components/projects/ProjectEnvironmentsCard.vue";
-import ProjectLaunchesCard from "@/components/projects/ProjectLaunchesCard.vue";
-import ProjectLinksCommands from "@/components/projects/ProjectLinksCommands.vue";
-import ProjectNotesCard from "@/components/projects/ProjectNotesCard.vue";
-import ProjectSessionsCard from "@/components/projects/ProjectSessionsCard.vue";
 import ShipButton from "@/components/projects/ShipButton.vue";
-import ProjectStackEditor from "@/components/projects/ProjectStackEditor.vue";
-import ProjectTagsEditor from "@/components/projects/ProjectTagsEditor.vue";
-import ProjectHealthCard from "@/components/projects/ProjectHealthCard.vue";
-import ProjectActivityTimeline from "@/components/projects/ProjectActivityTimeline.vue";
-import ProjectBriefCard from "@/components/projects/ProjectBriefCard.vue";
 import ProjectOverviewChips from "@/components/projects/ProjectOverviewChips.vue";
-import ProjectSecretsCard from "@/components/projects/ProjectSecretsCard.vue";
-import ProjectTodosCard from "@/components/projects/ProjectTodosCard.vue";
-import ZoneHeader from "@/components/projects/ZoneHeader.vue";
+import ProjectGridDashboard from "@/components/projects/ProjectGridDashboard.vue";
 import Confetti from "@/components/projects/Confetti.vue";
 import CopyableValue from "@/components/ui/CopyableValue.vue";
 import StatusPill from "@/components/ui/StatusPill.vue";
@@ -59,19 +44,6 @@ function fmtRel(iso: string | null | undefined): string {
 const editingContext = ref(false);
 const confirmingDelete = ref(false);
 const deleting = ref(false);
-
-// Collapse state for the // config zone (bulk toggle, localStorage-persisted).
-const configOpen = ref<boolean>(
-  typeof localStorage !== "undefined"
-    ? localStorage.getItem("vc:zone-open:config") !== "false"
-    : true,
-);
-function setConfigOpen(v: boolean) {
-  configOpen.value = v;
-  if (typeof localStorage !== "undefined") {
-    localStorage.setItem("vc:zone-open:config", v ? "true" : "false");
-  }
-}
 
 // Bump to fire confetti from <Confetti :fire="…" /> — any ship.created or
 // all-todos-in-batch-done event will nudge this counter.
@@ -244,80 +216,16 @@ useProjectLive(
           >{{ deleting ? "Deleting…" : "Yes, delete" }}</button>
         </div>
 
-        <!-- ─── // NOW — AI glance + health at one glance ───────────── -->
-        <ZoneHeader label="now" hint="your state in one look" />
-
-        <div class="grid grid-cols-1 xl:grid-cols-3 gap-4 items-stretch zone-row" style="--zone-delay: 0ms">
-          <div class="xl:col-span-2 flex">
-            <ProjectBriefCard :slug="projects.active.slug" class="w-full" />
-          </div>
-          <ProjectHealthCard :slug="projects.active.slug" class="w-full" />
-        </div>
-
-        <!-- Current focus editor (inline) -->
-        <div class="mt-4 zone-row" style="--zone-delay: 80ms">
-          <ProjectContextEditor v-if="editingContext" :project="projects.active" @close="editingContext = false" />
-          <ProjectFocusCard v-else :project="projects.active" />
-        </div>
-
-        <!-- ─── // WORK — active todos, sessions, decisions, ships, notes ── -->
-        <ZoneHeader label="work" hint="todos, sessions, decisions, ships" />
-
-        <div class="zone-row" style="--zone-delay: 0ms">
-          <ProjectTodosCard :project="projects.active" class="mb-4" />
-        </div>
-
-        <div class="grid grid-cols-1 xl:grid-cols-2 gap-4 mb-4 zone-row" style="--zone-delay: 80ms">
-          <ProjectSessionsCard :project="projects.active" class="w-full" />
-          <ProjectDecisionsCard :project="projects.active" class="w-full" />
-        </div>
-
-        <div class="grid grid-cols-1 xl:grid-cols-2 gap-4 mb-4 zone-row" style="--zone-delay: 160ms">
-          <ProjectLaunchesCard :project="projects.active" class="w-full" />
-          <ProjectNotesCard :project="projects.active" class="w-full" />
-        </div>
-
-        <!-- ─── // CONFIG — infra, stack, tags, links, envs, secrets ──── -->
-        <ZoneHeader
-          label="config"
-          hint="stack, infra, links, env, secrets"
-          collapsible
-          :open="configOpen"
-          @update:open="setConfigOpen"
+        <!-- Inline context editor (when you hit ✎ edit in the header) -->
+        <ProjectContextEditor
+          v-if="editingContext"
+          :project="projects.active"
+          class="mb-4"
+          @close="editingContext = false"
         />
 
-        <transition
-          enter-active-class="transition-all duration-med ease-out overflow-hidden"
-          enter-from-class="opacity-0 max-h-0"
-          enter-to-class="opacity-100 max-h-[4000px]"
-          leave-active-class="transition-all duration-med ease-out overflow-hidden"
-          leave-from-class="opacity-100 max-h-[4000px]"
-          leave-to-class="opacity-0 max-h-0"
-        >
-          <div v-if="configOpen">
-            <div class="grid grid-cols-1 xl:grid-cols-3 gap-4 mb-4 items-stretch">
-              <ProjectInfraCard :project="projects.active" class="w-full" />
-              <ProjectStackEditor :project="projects.active" class="w-full" />
-              <ProjectTagsEditor :project="projects.active" class="w-full" />
-            </div>
-
-            <div class="grid grid-cols-1 xl:grid-cols-3 gap-4 mb-4 items-stretch">
-              <div class="xl:col-span-2">
-                <ProjectLinksCommands :project="projects.active" class="w-full" />
-              </div>
-              <ProjectEnvironmentsCard :project="projects.active" class="w-full" />
-            </div>
-
-            <ProjectSecretsCard :project="projects.active" class="mb-4" />
-          </div>
-        </transition>
-
-        <!-- ─── // PULSE — chronological activity feed ───────────────── -->
-        <ZoneHeader label="pulse" hint="everything that happened, newest first" />
-
-        <div class="zone-row" style="--zone-delay: 0ms">
-          <ProjectActivityTimeline :project-slug="projects.active.slug" />
-        </div>
+        <!-- Draggable / resizable / customisable dashboard grid. -->
+        <ProjectGridDashboard :project="projects.active" />
 
         <Confetti :fire="celebrationTick" />
 
@@ -339,26 +247,3 @@ useProjectLive(
   </div>
 </template>
 
-<style scoped>
-/* Staggered fade-up entrance for each zone row. Delay is set per-element via
-   --zone-delay. Respects prefers-reduced-motion (transition disabled). */
-.zone-row {
-  opacity: 0;
-  transform: translate3d(0, 8px, 0);
-  animation: zone-in 360ms cubic-bezier(0.2, 0.6, 0.2, 1) forwards;
-  animation-delay: var(--zone-delay, 0ms);
-}
-@keyframes zone-in {
-  to {
-    opacity: 1;
-    transform: translate3d(0, 0, 0);
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .zone-row {
-    opacity: 1;
-    transform: none;
-    animation: none;
-  }
-}
-</style>
