@@ -326,16 +326,16 @@ function addWidget(id: string) {
 
 /* ─── Widget-internal scrolling ─────────────────────────────────────────
    When a card is sized smaller than its content, the inner div scrolls
-   but the native scrollbar is hidden entirely — user explicitly didn't
-   want an ugly gutter. Scrolling works via wheel, trackpad, touch, and
-   keyboard arrows. `overscroll-behavior: contain` stops the scroll
-   chain from bouncing the whole page when you hit the end inside a
-   card. */
+   but the native scrollbar is hidden entirely — user didn't want an
+   ugly gutter. Scrolling works via wheel, trackpad, touch, keyboard.
+   Scroll chaining is LEFT ON (default) so hitting the top/bottom of a
+   widget bubbles up to the page scroll — otherwise the user gets stuck
+   unable to scroll the whole page when their cursor happens to be over
+   a card. */
 .widget-scroll {
   scrollbar-width: none;            /* Firefox */
   -ms-overflow-style: none;         /* legacy Edge */
   scroll-behavior: smooth;
-  overscroll-behavior: contain;
 }
 .widget-scroll::-webkit-scrollbar {
   display: none;                    /* Chrome / Safari / Opera / Edge */
