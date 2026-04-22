@@ -185,99 +185,116 @@ class Tool:
 
 TOOLS: list[Tool] = [
     # Read
-    Tool("vibecell.ping", "Health check. Returns ok=true + version + active project slug.", NoArgs, r.handle_ping),
-    Tool("vibecell.active", "Return the currently-active project's full aggregate. Always call this at session start.", NoArgs, r.handle_active),
-    Tool("vibecell.list", "List projects in the active workspace. Optional filters: status, tag, q.", ListArgs, r.handle_list),
-    Tool("vibecell.get", "Return the full aggregate for a single project by slug.", SlugRequired, r.handle_get),
-    Tool("vibecell.brief", "Resurrection brief for a project. Defaults to active.", SlugArg, r.handle_brief),
-    Tool("vibecell.search", "Federated full-text search across the workspace.", SearchArgs, r.handle_search),
-    Tool("vibecell.recent_projects", "Return up to n projects ordered by sidebar position.", RecentArgs, r.handle_recent),
-    Tool("vibecell.claude_md", "Generate a CLAUDE.md-ready markdown brief for a project.", SlugArg, r.handle_claude_md),
-    Tool("vibecell.handover", "Longer prose onboarding brief. Defaults to active.", SlugArg, r.handle_handover),
+    Tool("vibecell_ping", "Health check. Returns ok=true + version + active project slug.", NoArgs, r.handle_ping),
+    Tool("vibecell_active", "Return the currently-active project's full aggregate. Always call this at session start.", NoArgs, r.handle_active),
+    Tool("vibecell_list", "List projects in the active workspace. Optional filters: status, tag, q.", ListArgs, r.handle_list),
+    Tool("vibecell_get", "Return the full aggregate for a single project by slug.", SlugRequired, r.handle_get),
+    Tool("vibecell_brief", "Resurrection brief for a project. Defaults to active.", SlugArg, r.handle_brief),
+    Tool("vibecell_search", "Federated full-text search across the workspace.", SearchArgs, r.handle_search),
+    Tool("vibecell_recent_projects", "Return up to n projects ordered by sidebar position.", RecentArgs, r.handle_recent),
+    Tool("vibecell_claude_md", "Generate a CLAUDE.md-ready markdown brief for a project.", SlugArg, r.handle_claude_md),
+    Tool("vibecell_handover", "Longer prose onboarding brief. Defaults to active.", SlugArg, r.handle_handover),
     # Write
-    Tool("vibecell.switch", "Switch the active project within this workspace.", SlugRequired, w.handle_switch),
-    Tool("vibecell.log_session", "Log a coding session.", LogSessionArgs, w.handle_log_session),
-    Tool("vibecell.update_context", "Patch the active project's context fields.", UpdateContextArgs, w.handle_update_context),
-    Tool("vibecell.decision", "Record an ADR-lite decision on the active project.", DecisionArgs, w.handle_decision),
-    Tool("vibecell.idea", "Capture an idea. Workspace inbox if project omitted.", IdeaArgs, w.handle_idea),
-    Tool("vibecell.note_append", "Append a markdown block to the active project's notes.", NoteAppendArgs, w.handle_note_append),
-    Tool("vibecell.ship", "Record a ship event for the active project.", ShipArgs, w.handle_ship),
-    Tool("vibecell.status", "Set the active project's status.", StatusArgs, w.handle_status),
-    Tool("vibecell.activity", "Unified activity feed for a project (sessions, decisions, ideas, ships, lifecycle, tool calls). Defaults to active project.", ActivityArgs, r.handle_activity),
+    Tool("vibecell_switch", "Switch the active project within this workspace.", SlugRequired, w.handle_switch),
+    Tool("vibecell_log_session", "Log a coding session.", LogSessionArgs, w.handle_log_session),
+    Tool("vibecell_update_context", "Patch the active project's context fields.", UpdateContextArgs, w.handle_update_context),
+    Tool("vibecell_decision", "Record an ADR-lite decision on the active project.", DecisionArgs, w.handle_decision),
+    Tool("vibecell_idea", "Capture an idea. Workspace inbox if project omitted.", IdeaArgs, w.handle_idea),
+    Tool("vibecell_note_append", "Append a markdown block to the active project's notes.", NoteAppendArgs, w.handle_note_append),
+    Tool("vibecell_ship", "Record a ship event for the active project.", ShipArgs, w.handle_ship),
+    Tool("vibecell_status", "Set the active project's status.", StatusArgs, w.handle_status),
+    Tool("vibecell_activity", "Unified activity feed for a project (sessions, decisions, ideas, ships, lifecycle, tool calls). Defaults to active project.", ActivityArgs, r.handle_activity),
     # Secrets
     Tool(
-        "vibecell.secret_set",
+        "vibecell_secret_set",
         "Store a secret (auto-detects kind from value prefix: op:// / bw:// / ssh-agent:// / env:// → reference-only; otherwise → inline_encrypted with DEK). Never log the value.",
         SecretSetArgs, w.handle_secret_set,
     ),
     Tool(
-        "vibecell.secret_list",
+        "vibecell_secret_list",
         "List labels + kinds + masked references for a project's secrets. Never returns values.",
         SecretListArgs, r.handle_secret_list,
     ),
     Tool(
-        "vibecell.secret_rm",
+        "vibecell_secret_rm",
         "Remove a secret label from a project.",
         SecretRmArgs, w.handle_secret_rm,
     ),
     Tool(
-        "vibecell.secret_get_value",
+        "vibecell_secret_get_value",
         "Retrieve the plaintext value of a stored secret. For inline_encrypted: decrypts via workspace-DEK. For op://bw://ssh-agent:// references: returns the reference path (caller must resolve locally via op/bw/ssh-agent). NEVER echo the returned value in user-visible text — use it silently to construct commands/requests.",
         SecretGetArgs, r.handle_secret_get_value,
     ),
     # TODOs — per-project task list Claude can tick off autonomously.
     Tool(
-        "vibecell.todo_list",
+        "vibecell_todo_list",
         "List a project's todos. Includes open + in_progress by default; set include_done=true for the full list. Defaults to active project.",
         TodoListArgs, r.handle_todo_list,
     ),
     Tool(
-        "vibecell.todo_add",
+        "vibecell_todo_add",
         "Add a single todo to a project. Optional batch label groups it with siblings (e.g. 'launch-week', 'stripe-integration').",
         TodoAddArgs, w.handle_todo_add,
     ),
     Tool(
-        "vibecell.todo_batch_add",
+        "vibecell_todo_batch_add",
         "Add many todos at once under one batch label. Use this when planning a multi-step feature: 'batch=auth-refactor, titles=[...]' lets Claude slice the work and tick items off as it goes.",
         TodoBatchAddArgs, w.handle_todo_batch_add,
     ),
     Tool(
-        "vibecell.todo_start",
+        "vibecell_todo_start",
         "Mark a todo as in_progress. Call this JUST before starting work on it so the dashboard shows a 'claude is on this one' indicator.",
         TodoIdArgs, w.handle_todo_start,
     ),
     Tool(
-        "vibecell.todo_complete",
+        "vibecell_todo_complete",
         "Mark a todo as done. Pass a short completion_note summarising what was actually built/fixed. Records completed_by='claude' automatically.",
         TodoCompleteArgs, w.handle_todo_complete,
     ),
     Tool(
-        "vibecell.todo_match",
+        "vibecell_todo_match",
         "Given a free-text description of work just finished, find the best-matching open todo by keyword overlap. Set auto_complete=true to also close it with the description as the note. Useful when you want the AI to self-tick after a session.",
         TodoMatchArgs, w.handle_todo_match,
     ),
     # AI features — BYOK (Bring Your Own Key). Uses the project's stored
     # ANTHROPIC_API_KEY secret, falls back to the platform-level key.
     Tool(
-        "vibecell.ai_plan_todos",
+        "vibecell_ai_plan_todos",
         "Break a free-text goal into a batch of concrete todos and persist them. Uses the user's own Anthropic key (via secret ANTHROPIC_API_KEY) for planning. Set commit=false to preview titles without saving.",
         AIPlanTodosArgs, w.handle_ai_plan_todos,
     ),
     Tool(
-        "vibecell.ai_launch_copy",
+        "vibecell_ai_launch_copy",
         "Generate launch copy for a ship event — Twitter/X, LinkedIn, IndieHackers, ProductHunt — using the user's own Anthropic key. Defaults to the latest ship if ship_id omitted.",
         AILaunchCopyArgs, w.handle_ai_launch_copy,
     ),
     Tool(
-        "vibecell.ai_retro",
+        "vibecell_ai_retro",
         "Generate a one-page markdown retrospective (Worked / Didn't / Next-time) from sessions + decisions since the last ship.",
         AIRetroArgs, w.handle_ai_retro,
     ),
     Tool(
-        "vibecell.ai_resume_brief",
+        "vibecell_ai_resume_brief",
         "Generate the funny 'where the fuck was I' morning-brief — ~150 words summarising last session + next step + open questions + a single concrete action to take first.",
         AIResumeBriefArgs, w.handle_ai_resume_brief,
     ),
 ]
 
 TOOLS_BY_NAME: dict[str, Tool] = {t.name: t for t in TOOLS}
+
+# Back-compat alias: old clients (Claude Code sessions that connected when the
+# tool names had dots — e.g. "vibecell.ping") still send the dotted form on
+# tools/call. Accept both by mapping dots → underscores transparently in the
+# dispatcher. Claude Desktop rejects dots in tool names per its schema
+# validation (^[a-zA-Z0-9_-]{1,64}$), so tools/list returns only the
+# underscore form.
+def resolve_tool(name: str) -> Tool | None:
+    """Look up a tool by canonical (underscore) name OR legacy dotted name."""
+    if name in TOOLS_BY_NAME:
+        return TOOLS_BY_NAME[name]
+    # Accept "vibecell.foo" → "vibecell_foo" (only the first dot, to avoid
+    # mangling user-supplied arguments that happen to contain dots).
+    if "." in name:
+        underscore = name.replace(".", "_", 1)
+        return TOOLS_BY_NAME.get(underscore)
+    return None

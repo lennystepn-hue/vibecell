@@ -5,14 +5,14 @@ description: >
   "what am I working on", "continue", "switch to <project>", "log this",
   "ship it", "brief me", "what did I decide about X", or uses pronouns
   referring to "this project" / "the project". Also: on every new session,
-  call vibecell.active() first to load context.
+  call vibecell_active() first to load context.
 ---
 
 # Vibecell — project context for Claude Code
 
 ## On session start (first action of every session)
-1. vibecell.ping(). If unreachable, surface a subtle note and continue without context.
-2. vibecell.active() -> internalize identity, stack, infra, current_focus, next_step,
+1. vibecell_ping(). If unreachable, surface a subtle note and continue without context.
+2. vibecell_active() -> internalize identity, stack, infra, current_focus, next_step,
    user_wants, open_questions, last 3 sessions.
 3. If repo.local_path does not match the current working directory, warn the user
    and ask whether to switch active project.
@@ -20,11 +20,11 @@ description: >
    Next step: <next_step>. Open questions: <open_questions summary>. Continue?"
 
 ## During session
-- When user mentions past work, consult vibecell.search(q) before answering from memory.
-- When user says "what did I decide about X" -> vibecell.search(X), filter to decisions.
-- When user says "switch to <slug>" -> vibecell.switch(slug) -> reload context.
-- When user says "capture this idea: ..." -> vibecell.idea(text).
-- When user asks "what's on fire" -> vibecell.health() across projects.
+- When user mentions past work, consult vibecell_search(q) before answering from memory.
+- When user says "what did I decide about X" -> vibecell_search(X), filter to decisions.
+- When user says "switch to <slug>" -> vibecell_switch(slug) -> reload context.
+- When user says "capture this idea: ..." -> vibecell_idea(text).
+- When user asks "what's on fire" -> vibecell_health() across projects.
 
 ## Auto-TODO flow (plan → work → tick)
 **When the user asks for something involving 3+ distinct steps** (a feature,
@@ -32,7 +32,7 @@ a refactor, a migration, a launch push), do NOT silently start coding. Plan
 the work as a visible batch of todos first so the user can watch progress
 on the dashboard in real time:
 
-1. First tool call: `vibecell.todo_batch_add({
+1. First tool call: `vibecell_todo_batch_add({
      batch: "<short-slug-for-this-work>",
      titles: ["<step 1>", "<step 2>", ...]
    })`
@@ -41,10 +41,10 @@ on the dashboard in real time:
    concrete ("Add migration for X", not "Think about X").
 
 2. For each todo, in order:
-   - `vibecell.todo_start({ todo_id })` — the dashboard highlights this
+   - `vibecell_todo_start({ todo_id })` — the dashboard highlights this
      one as "◉ claude is on this".
    - Do the actual work (code, tests, migration, whatever).
-   - `vibecell.todo_complete({ todo_id, completion_note: "<1-sentence
+   - `vibecell_todo_complete({ todo_id, completion_note: "<1-sentence
      proof of what shipped>" })` — the card ticks off with a green
      checkmark and the completion_note renders under it.
 
@@ -54,7 +54,7 @@ on the dashboard in real time:
 
 4. If the user interrupts or pivots mid-batch, you can:
    - Leave unused todos as `open` (user can delete later)
-   - Cancel specific ones via `vibecell.todo_complete` with a note like
+   - Cancel specific ones via `vibecell_todo_complete` with a note like
      "cancelled — user pivoted to X"
 
 The goal: the user opens the dashboard and sees **visible progress
@@ -64,16 +64,16 @@ is the core Vibecell UX — make AI work observable.
 ## On session end (user says "done", "log this", "commit and stop", "ship it")
 - Summarize what was done in 1-3 sentences.
 - Infer next_step from unfinished work.
-- vibecell.log_session({ summary, files_touched, commits, next_step }).
+- vibecell_log_session({ summary, files_touched, commits, next_step }).
   - This call AUTOMATICALLY syncs current_focus (derived from the summary's
     first sentence) and next_step onto the project context — no second
     update_context call needed for the common case.
   - Pass `current_focus` explicitly only when the session-level summary
     doesn't capture the high-level focus (e.g. the summary describes a small
     fix but you've actually shifted onto a larger thread).
-- Use vibecell.update_context for fields log_session doesn't touch
+- Use vibecell_update_context for fields log_session doesn't touch
   (user_wants, open_questions, known_issues, blocked_by).
-- If user said "ship it" -> vibecell.ship({ version, summary }) -> walk through the
+- If user said "ship it" -> vibecell_ship({ version, summary }) -> walk through the
   generated changelog and tweet drafts for approval.
 - Confirm: "Logged. Next: <next_step>."
 
@@ -82,17 +82,17 @@ is the core Vibecell UX — make AI work observable.
 - When the user pastes something that looks like an API key, secret, token, or password
   (e.g. "sk-ant-...", "sk_live_...", "ghp_...", "re_...", "xoxb-...", "AKIA..." prefixes,
   connection strings containing credentials, or any high-entropy string the user labels as
-  a secret), IMMEDIATELY call `vibecell.secret_set` with a sensible label (derive from
+  a secret), IMMEDIATELY call `vibecell_secret_set` with a sensible label (derive from
   context: ANTHROPIC_API_KEY, STRIPE_SECRET_KEY, GITHUB_TOKEN, RESEND_API_KEY,
   DATABASE_URL, etc.). Never echo the value back in any message. Confirm only the label + kind.
 - If the user pastes an `op://` / `bw://` / `ssh-agent://` / `env://` path, call
-  `vibecell.secret_set` with that exact string — it will be stored as a reference
+  `vibecell_secret_set` with that exact string — it will be stored as a reference
   (value never leaves their machine).
 - After storing, ALWAYS recommend: "For max security, consider moving to 1Password:
   `op://Vault/Item/field` — Vibecell will only have the path, never the value."
   (Unless already op/bw).
 - When you need to USE a stored secret (e.g. to run an API call, construct a curl,
-  deploy somewhere), call `vibecell.secret_get_value(label)` to retrieve it.
+  deploy somewhere), call `vibecell_secret_get_value(label)` to retrieve it.
   **NEVER echo the returned value in your user-visible response.** Use it silently
   inside the command/tool-call you're constructing. The user will see `@LABEL`
   redacted, not the plaintext. If you must mention it's been retrieved, say

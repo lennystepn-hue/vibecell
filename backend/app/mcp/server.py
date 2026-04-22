@@ -12,7 +12,7 @@ from pydantic import ValidationError
 
 from app.mcp.audit import log_tool_call
 from app.mcp.auth import MCPContext, require_mcp_context
-from app.mcp.tools import TOOLS, TOOLS_BY_NAME
+from app.mcp.tools import TOOLS, resolve_tool
 from app.metrics.registry import mcp_tool_calls
 from app.services import presence as presence_svc
 
@@ -72,7 +72,7 @@ async def mcp_endpoint(
 async def _dispatch_tool_call(ctx: MCPContext, req_id: Any, params: dict) -> dict:
     name = params.get("name")
     arguments = params.get("arguments") or {}
-    tool = TOOLS_BY_NAME.get(name or "")
+    tool = resolve_tool(name or "")
     if tool is None:
         return _err(req_id, -32602, f"Unknown tool: {name}")
 
