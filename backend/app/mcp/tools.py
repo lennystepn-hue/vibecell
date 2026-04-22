@@ -146,6 +146,30 @@ class TodoMatchArgs(BaseModel):
     project: str | None = None
 
 
+# ---- AI args (BYOK — uses user's stored ANTHROPIC_API_KEY) ----
+
+class AIPlanTodosArgs(BaseModel):
+    goal: str = Field(..., min_length=3, max_length=2000)
+    commit: bool = True
+    project: str | None = None
+
+
+class AILaunchCopyArgs(BaseModel):
+    ship_id: str | None = None
+    platforms: list[str] = Field(
+        default_factory=lambda: ["twitter_x", "linkedin", "indiehackers", "product_hunt"],
+    )
+    project: str | None = None
+
+
+class AIRetroArgs(BaseModel):
+    project: str | None = None
+
+
+class AIResumeBriefArgs(BaseModel):
+    project: str | None = None
+
+
 # ---- Registry ----
 
 Handler = Callable[[BaseModel, MCPContext], Awaitable[str]]
@@ -231,6 +255,28 @@ TOOLS: list[Tool] = [
         "vibecell.todo_match",
         "Given a free-text description of work just finished, find the best-matching open todo by keyword overlap. Set auto_complete=true to also close it with the description as the note. Useful when you want the AI to self-tick after a session.",
         TodoMatchArgs, w.handle_todo_match,
+    ),
+    # AI features — BYOK (Bring Your Own Key). Uses the project's stored
+    # ANTHROPIC_API_KEY secret, falls back to the platform-level key.
+    Tool(
+        "vibecell.ai_plan_todos",
+        "Break a free-text goal into a batch of concrete todos and persist them. Uses the user's own Anthropic key (via secret ANTHROPIC_API_KEY) for planning. Set commit=false to preview titles without saving.",
+        AIPlanTodosArgs, w.handle_ai_plan_todos,
+    ),
+    Tool(
+        "vibecell.ai_launch_copy",
+        "Generate launch copy for a ship event — Twitter/X, LinkedIn, IndieHackers, ProductHunt — using the user's own Anthropic key. Defaults to the latest ship if ship_id omitted.",
+        AILaunchCopyArgs, w.handle_ai_launch_copy,
+    ),
+    Tool(
+        "vibecell.ai_retro",
+        "Generate a one-page markdown retrospective (Worked / Didn't / Next-time) from sessions + decisions since the last ship.",
+        AIRetroArgs, w.handle_ai_retro,
+    ),
+    Tool(
+        "vibecell.ai_resume_brief",
+        "Generate the funny 'where the fuck was I' morning-brief — ~150 words summarising last session + next step + open questions + a single concrete action to take first.",
+        AIResumeBriefArgs, w.handle_ai_resume_brief,
     ),
 ]
 

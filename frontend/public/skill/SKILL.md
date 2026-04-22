@@ -26,6 +26,41 @@ description: >
 - When user says "capture this idea: ..." -> vibecell.idea(text).
 - When user asks "what's on fire" -> vibecell.health() across projects.
 
+## Auto-TODO flow (plan → work → tick)
+**When the user asks for something involving 3+ distinct steps** (a feature,
+a refactor, a migration, a launch push), do NOT silently start coding. Plan
+the work as a visible batch of todos first so the user can watch progress
+on the dashboard in real time:
+
+1. First tool call: `vibecell.todo_batch_add({
+     batch: "<short-slug-for-this-work>",
+     titles: ["<step 1>", "<step 2>", ...]
+   })`
+   Keep batch names short and kebab-case (e.g. "stripe-webhook",
+   "auth-refactor", "v0.9-launch"). Titles should be imperative and
+   concrete ("Add migration for X", not "Think about X").
+
+2. For each todo, in order:
+   - `vibecell.todo_start({ todo_id })` — the dashboard highlights this
+     one as "◉ claude is on this".
+   - Do the actual work (code, tests, migration, whatever).
+   - `vibecell.todo_complete({ todo_id, completion_note: "<1-sentence
+     proof of what shipped>" })` — the card ticks off with a green
+     checkmark and the completion_note renders under it.
+
+3. If the user's request clearly resolves in 1-2 trivial edits, skip the
+   todo dance — it's overhead for a one-liner. Rule of thumb: if you'd
+   normally split into multiple commits, it's worth the todo batch.
+
+4. If the user interrupts or pivots mid-batch, you can:
+   - Leave unused todos as `open` (user can delete later)
+   - Cancel specific ones via `vibecell.todo_complete` with a note like
+     "cancelled — user pivoted to X"
+
+The goal: the user opens the dashboard and sees **visible progress
+ticking off in real time** instead of a wall of silent code edits. This
+is the core Vibecell UX — make AI work observable.
+
 ## On session end (user says "done", "log this", "commit and stop", "ship it")
 - Summarize what was done in 1-3 sentences.
 - Infer next_step from unfinished work.

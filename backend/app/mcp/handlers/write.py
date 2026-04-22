@@ -386,3 +386,186 @@ async def handle_todo_match(args, ctx: MCPContext) -> str:
             completion_note=args.description,
         )
     return json.dumps({"matched": _todo_out(best)})
+
+
+# ---------------------------------------------------------------------------
+# AI (BYOK) handlers — shared logic with /api/v1/projects/:slug/ai/*
+# ---------------------------------------------------------------------------
+
+async def _ai_project_context(db, project) -> str:
+    """Build the same context blob the REST endpoints use."""
+    from sqlalchemy import select
+    from app.models import ProjectContext as PCtx
+
+    ctx_row = (await db.execute(
+        select(PCtx).where(PCtx.project_id == project.id)
+    )).scalar_one_or_none()
+    pitch = project.pitch or "(no pitch)"
+    focus = ctx_row.current_focus if ctx_row else "(no current focus)"
+    next_step = ctx_row.next_step if ctx_row else "(no next step)"
+    oq = ctx_row.open_questions if ctx_row else []
+    return (
+        f"Project: {project.name} ({project.slug})\n"
+        f"Pitch: {pitch}\n"
+        f"Current focus: {focus}\n"
+        f"Next step: {next_step}\n"
+        f"Open questions: {', '.join(oq) if oq else '(none)'}\n"
+    )
+
+
+async def handle_ai_plan_todos(args, ctx: MCPContext) -> str:
+    """Break a goal into a batch of todos using the user's Anthropic key, persist them."""
+    from app.services import ai as ai_svc
+    from app.services import todo_svc
+
+    project = await _resolve_project(args, ctx)
+    context = await _ai_project_context(ctx.db, project)
+    try:
+        batch, titles, meta = await ai_svc.plan_todos(
+            ctx.db, project=project, workspace_id=ctx.workspace_id,
+            goal=args.goal, context_brief=context,
+        )
+    except ai_svc.AIConfigError as exc:
+        return json.dumps({"error": "no_ai_key", "message": str(exc)})
+
+    todo_ids: list[str] = []
+    if getattr(args, "commit", True) and titles:
+        rows = await todo_svc.create_batch(
+            ctx.db, project=project, batch=batch,
+            items=[{"title": t} for t in titles],
+        )
+        todo_ids = [r.id for r in rows]
+    return json.dumps({
+        "batch": batch, "titles": titles, "todo_ids": todo_ids, "meta": meta,
+    })
+
+
+async def handle_ai_launch_copy(args, ctx: MCPContext) -> str:
+    """Generate platform-specific launch posts for a ship."""
+    from sqlalchemy import select
+    from app.models import Ship
+    from app.services import ai as ai_svc
+
+    project = await _resolve_project(args, ctx)
+
+    ship = None
+    if getattr(args, "ship_id", None):
+        ship = (await ctx.db.execute(
+            select(Ship).where(
+                Ship.id == args.ship_id, Ship.project_id == project.id,
+            )
+        )).scalar_one_or_none()
+    if ship is None:
+        ship = (await ctx.db.execute(
+            select(Ship).where(Ship.project_id == project.id)
+            .order_by(Ship.shipped_at.desc()).limit(1)
+        )).scalar_one_or_none()
+    if ship is None:
+        return json.dumps({
+            "error": "no_ship", "message": "No ship events yet — call vibecell.ship first.",
+        })
+
+    context = await _ai_project_context(ctx.db, project)
+    ship_blob = (
+        f"{context}\nShip version: {ship.version or '?'}\n"
+        f"Ship summary: {ship.summary or '(empty)'}\n"
+        f"Changelog:\n{ship.changelog_md or '(empty)'}\n"
+    )
+    try:
+        posts, meta = await ai_svc.launch_copy(
+            ctx.db, project=project, workspace_id=ctx.workspace_id,
+            ship_context=ship_blob,
+            platforms=getattr(args, "platforms", ["twitter_x", "linkedin", "indiehackers", "product_hunt"]),
+        )
+    except ai_svc.AIConfigError as exc:
+        return json.dumps({"error": "no_ai_key", "message": str(exc)})
+
+    return json.dumps({"ship_id": ship.id, "posts": posts, "meta": meta})
+
+
+async def handle_ai_retro(args, ctx: MCPContext) -> str:
+    """Generate a markdown retro covering activity since the last ship."""
+    from sqlalchemy import select
+    from app.models import Decision, Session, Ship
+    from app.services import ai as ai_svc
+
+    project = await _resolve_project(args, ctx)
+
+    latest_ship = (await ctx.db.execute(
+        select(Ship).where(Ship.project_id == project.id)
+        .order_by(Ship.shipped_at.desc()).limit(1)
+    )).scalar_one_or_none()
+    cutoff = latest_ship.shipped_at if latest_ship else None
+
+    session_stmt = select(Session).where(Session.project_id == project.id)
+    decision_stmt = select(Decision).where(Decision.project_id == project.id)
+    if cutoff is not None:
+        session_stmt = session_stmt.where(Session.started_at > cutoff)
+        decision_stmt = decision_stmt.where(Decision.created_at > cutoff)
+
+    sessions = (await ctx.db.execute(
+        session_stmt.order_by(Session.started_at.asc())
+    )).scalars().all()
+    decisions = (await ctx.db.execute(
+        decision_stmt.order_by(Decision.created_at.asc())
+    )).scalars().all()
+
+    lines = []
+    if latest_ship:
+        lines.append(f"Previous ship: {latest_ship.version or '?'} — {latest_ship.summary or ''}")
+    else:
+        lines.append("No previous ship; retro covers all activity to date.")
+    lines.append("")
+    lines.append(f"{len(sessions)} session(s):")
+    for s in sessions[-20:]:
+        lines.append(f"- {s.summary or '(empty)'}")
+    lines.append("")
+    lines.append(f"{len(decisions)} decision(s):")
+    for d in decisions[-15:]:
+        lines.append(f"- {d.title}: {d.decision[:200]}")
+    events_summary = "\n".join(lines)
+
+    try:
+        md, meta = await ai_svc.retro(
+            ctx.db, project=project, workspace_id=ctx.workspace_id,
+            events_summary=events_summary,
+        )
+    except ai_svc.AIConfigError as exc:
+        return json.dumps({"error": "no_ai_key", "message": str(exc)})
+    return json.dumps({"markdown": md, "meta": meta})
+
+
+async def handle_ai_resume_brief(args, ctx: MCPContext) -> str:
+    """Generate the funny 'where the fuck was I' morning brief."""
+    from sqlalchemy import select
+    from app.models import Decision, Session
+    from app.services import ai as ai_svc
+
+    project = await _resolve_project(args, ctx)
+    context = await _ai_project_context(ctx.db, project)
+
+    last = (await ctx.db.execute(
+        select(Session).where(Session.project_id == project.id)
+        .order_by(Session.started_at.desc()).limit(1)
+    )).scalar_one_or_none()
+    last_blob = (
+        f"Last session at {last.started_at.isoformat() if last and last.started_at else '?'}: "
+        f"{last.summary if last else '(no sessions yet)'}\n"
+        f"Next step: {last.next_step if last else '(none)'}"
+    )
+
+    decisions = (await ctx.db.execute(
+        select(Decision).where(Decision.project_id == project.id)
+        .order_by(Decision.created_at.desc()).limit(3)
+    )).scalars().all()
+    d_blob = "\n".join(f"- {d.title}: {d.decision[:140]}" for d in decisions) or "(no decisions)"
+
+    blob = f"{context}\nLAST SESSION:\n{last_blob}\n\nRECENT DECISIONS:\n{d_blob}\n"
+    try:
+        text, meta = await ai_svc.resume_brief(
+            ctx.db, project=project, workspace_id=ctx.workspace_id,
+            context_blob=blob,
+        )
+    except ai_svc.AIConfigError as exc:
+        return json.dumps({"error": "no_ai_key", "message": str(exc)})
+    return json.dumps({"brief": text, "meta": meta})

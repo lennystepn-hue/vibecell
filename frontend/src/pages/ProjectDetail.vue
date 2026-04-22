@@ -20,6 +20,7 @@ import ProjectStackEditor from "@/components/projects/ProjectStackEditor.vue";
 import ProjectTagsEditor from "@/components/projects/ProjectTagsEditor.vue";
 import ProjectHealthCard from "@/components/projects/ProjectHealthCard.vue";
 import ProjectActivityTimeline from "@/components/projects/ProjectActivityTimeline.vue";
+import ProjectBriefCard from "@/components/projects/ProjectBriefCard.vue";
 import ProjectOverviewChips from "@/components/projects/ProjectOverviewChips.vue";
 import ProjectSecretsCard from "@/components/projects/ProjectSecretsCard.vue";
 import ProjectTodosCard from "@/components/projects/ProjectTodosCard.vue";
@@ -245,6 +246,9 @@ useProjectLive(
           </div>
           <ProjectEnvironmentsCard :project="projects.active" class="w-full" />
         </div>
+
+        <!-- Row 3.3: funny morning brief — "where the fuck was I" (AI, BYOK) -->
+        <ProjectBriefCard :slug="projects.active.slug" class="mb-4" />
 
         <!-- Row 3.4: TODOs that Claude can tick off (live via SSE) -->
         <ProjectTodosCard :project="projects.active" class="mb-4" />

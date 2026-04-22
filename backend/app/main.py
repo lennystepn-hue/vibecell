@@ -54,6 +54,8 @@ from app.jobs.screenshot_cron import schedule_screenshot_jobs
 from app.api.v1.events import router as events_router
 # Per-project TODOs
 from app.api.v1.todos import router as todos_router
+# BYOK AI features
+from app.api.v1.ai import router as ai_router
 
 _scheduler = AsyncIOScheduler()
 
@@ -140,6 +142,8 @@ app.include_router(screenshots_preview_router)
 app.include_router(events_router)
 # Per-project TODOs
 app.include_router(todos_router)
+# BYOK AI features
+app.include_router(ai_router)
 
 
 @app.get("/api/v1/healthz")

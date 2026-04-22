@@ -24,6 +24,8 @@ const todos = ref<Todo[]>([]);
 const loading = ref(false);
 const newTitle = ref("");
 const newBatch = ref("");
+const planning = ref(false);
+const planError = ref<string | null>(null);
 const includeDone = ref<boolean>(
   typeof localStorage !== "undefined"
     ? localStorage.getItem(`vc:todos-include-done:${props.project.slug}`) === "true"
@@ -67,9 +69,34 @@ async function add() {
   });
   if (r.ok) {
     newTitle.value = "";
-    // leave newBatch so the user can keep adding to the same batch
-    // live event will trigger a reload, but do one here to feel instant
     await load();
+  }
+}
+
+async function aiPlan() {
+  const goal = newTitle.value.trim();
+  if (!goal) return;
+  planning.value = true;
+  planError.value = null;
+  try {
+    const r = await fetch(`/api/v1/projects/${props.project.slug}/ai/plan_todos`, {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ goal, commit: true }),
+    });
+    if (!r.ok) {
+      const body = await r.json().catch(() => ({}));
+      planError.value = body.detail ?? `Error ${r.status}`;
+      return;
+    }
+    newTitle.value = "";
+    newBatch.value = "";
+    await load();
+  } catch {
+    planError.value = "AI planner unreachable.";
+  } finally {
+    planning.value = false;
   }
 }
 
@@ -190,7 +217,7 @@ onProjectLiveEvent(
 
     <div v-if="expanded">
       <!-- Add form -->
-      <div class="flex gap-2 mb-4">
+      <div class="flex gap-2 mb-2">
         <input
           v-model="newBatch"
           placeholder="batch (optional)"
@@ -199,17 +226,29 @@ onProjectLiveEvent(
         />
         <input
           v-model="newTitle"
-          placeholder="New todo — press ⏎"
+          placeholder="New todo, or a goal for ✨ AI plan — press ⏎"
           class="h-8 px-2 text-small bg-bg-surface border border-border rounded flex-1"
+          :disabled="planning"
           @keydown.enter="add"
         />
         <button
-          class="h-8 px-3 text-small font-mono bg-signal-green hover:opacity-90 transition-opacity rounded"
+          class="h-8 px-3 text-small font-mono bg-signal-green hover:opacity-90 transition-opacity rounded disabled:opacity-50"
           style="color: #070b10"
-          :disabled="!newTitle.trim()"
+          :disabled="!newTitle.trim() || planning"
           @click="add"
         >add</button>
+        <button
+          class="h-8 px-3 text-small font-mono rounded border transition-colors disabled:opacity-50"
+          style="border-color: rgba(92,200,164,0.4); color: #5cc8a4; background: rgba(92,200,164,0.06)"
+          :disabled="!newTitle.trim() || planning"
+          :title="'AI: break this into a batch of todos'"
+          @click="aiPlan"
+        >{{ planning ? "✨ planning…" : "✨ AI plan" }}</button>
       </div>
+      <p
+        v-if="planError"
+        class="text-[11px] text-signal-red mb-3"
+      >{{ planError }}</p>
 
       <div v-if="loading && todos.length === 0" class="text-fg-subtle mono-label">loading…</div>
       <div v-else-if="todos.length === 0" class="text-fg-subtle text-small py-3">
