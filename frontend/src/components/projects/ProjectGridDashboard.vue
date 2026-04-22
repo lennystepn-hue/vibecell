@@ -200,11 +200,12 @@ function addWidget(id: string) {
               : ''"
             @contextmenu="onWidgetContextMenu($event, String(item.i))"
           >
-            <!-- Drag handle overlay (header strip, only grabbed when edit-mode is on) -->
+            <!-- Drag handle overlay (only in edit mode, pinned above the scroll) -->
             <div
               v-if="store.editMode"
-              class="widget-drag-handle absolute inset-x-0 top-0 h-8 z-10 cursor-move flex items-center justify-between px-3"
+              class="widget-drag-handle absolute inset-x-0 top-0 h-8 z-20 cursor-move flex items-center justify-between px-3"
               :title="widgetById(String(item.i))?.title"
+              style="background: linear-gradient(to bottom, rgba(13,18,26,0.92), transparent);"
             >
               <span class="font-mono text-[10px] text-fg-subtle opacity-60 pointer-events-none">
                 ⠿ {{ widgetById(String(item.i))?.title }}
@@ -217,13 +218,19 @@ function addWidget(id: string) {
               >✕</button>
             </div>
 
-            <!-- Actual card — leaves room for the drag handle on top. -->
-            <component
-              :is="widgetById(String(item.i))!.component"
-              v-bind="widgetById(String(item.i))!.props(project)"
-              class="h-full"
+            <!-- Scrollable inner container. Hides the native scrollbar via the
+                 `.widget-scroll` helper below; the fade masks at top + bottom
+                 hint at cropped content in both directions without a visible
+                 bar. -->
+            <div
+              class="widget-scroll h-full overflow-y-auto"
               :class="store.editMode ? 'pt-8' : ''"
-            />
+            >
+              <component
+                :is="widgetById(String(item.i))!.component"
+                v-bind="widgetById(String(item.i))!.props(project)"
+              />
+            </div>
           </article>
         </template>
       </template>
@@ -305,9 +312,47 @@ function addWidget(id: string) {
   opacity: 0;
   transition: opacity 120ms;
   border-bottom-right-radius: 8px;
+  z-index: 10;
 }
 .vue-grid-item:hover > .vue-resizable-handle,
 .vue-grid-item.resizing > .vue-resizable-handle {
   opacity: 0.7;
+}
+
+/* ─── Widget-internal scrolling ─────────────────────────────────────────
+   When a card is sized smaller than its content, the inner div scrolls
+   but the native scrollbar is hidden entirely — user explicitly didn't
+   want an ugly gutter. Scrolling works via wheel, trackpad, touch, and
+   keyboard arrows. `overscroll-behavior: contain` stops the scroll
+   chain from bouncing the whole page when you hit the end inside a
+   card. */
+.widget-scroll {
+  scrollbar-width: none;            /* Firefox */
+  -ms-overflow-style: none;         /* legacy Edge */
+  scroll-behavior: smooth;
+  overscroll-behavior: contain;
+}
+.widget-scroll::-webkit-scrollbar {
+  display: none;                    /* Chrome / Safari / Opera / Edge */
+  width: 0;
+  height: 0;
+}
+
+/* A tiny radial shadow at the bottom inside edge of every card. Sits ABOVE
+   content, fades to nothing when you're scrolled to the end, gives a
+   soft "more below" hint without a bar. 4 px tall — imperceptible on
+   short cards, exactly what you want on overflowing ones. */
+.widget::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 12px;
+  background: linear-gradient(to top, rgba(7, 11, 16, 0.55), rgba(7, 11, 16, 0));
+  pointer-events: none;
+  border-bottom-left-radius: 8px;
+  border-bottom-right-radius: 8px;
+  z-index: 2;
 }
 </style>
