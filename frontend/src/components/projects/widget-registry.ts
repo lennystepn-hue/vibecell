@@ -54,7 +54,7 @@ export const WIDGETS: Record<string, WidgetDef> = {
     icon: "✨",
     component: ProjectBriefCard,
     props: (p) => ({ slug: p.slug }),
-    minW: 5, minH: 4,
+    minW: 3, minH: 3,
   },
   health: {
     id: "health",
@@ -63,7 +63,7 @@ export const WIDGETS: Record<string, WidgetDef> = {
     icon: "◎",
     component: ProjectHealthCard,
     props: (p) => ({ slug: p.slug }),
-    minW: 3, minH: 4,
+    minW: 3, minH: 3,
   },
   focus: {
     id: "focus",
@@ -72,7 +72,7 @@ export const WIDGETS: Record<string, WidgetDef> = {
     icon: "◆",
     component: ProjectFocusCard,
     props: (p) => ({ project: p }),
-    minW: 4, minH: 4,
+    minW: 3, minH: 3,
   },
   todos: {
     id: "todos",
@@ -81,7 +81,7 @@ export const WIDGETS: Record<string, WidgetDef> = {
     icon: "☑",
     component: ProjectTodosCard,
     props: (p) => ({ project: p }),
-    minW: 5, minH: 5,
+    minW: 3, minH: 3,
   },
   sessions: {
     id: "sessions",
@@ -90,7 +90,7 @@ export const WIDGETS: Record<string, WidgetDef> = {
     icon: "◎",
     component: ProjectSessionsCard,
     props: (p) => ({ project: p }),
-    minW: 4, minH: 4,
+    minW: 3, minH: 3,
   },
   decisions: {
     id: "decisions",
@@ -99,7 +99,7 @@ export const WIDGETS: Record<string, WidgetDef> = {
     icon: "⟁",
     component: ProjectDecisionsCard,
     props: (p) => ({ project: p }),
-    minW: 4, minH: 4,
+    minW: 3, minH: 3,
   },
   launches: {
     id: "launches",
@@ -108,7 +108,7 @@ export const WIDGETS: Record<string, WidgetDef> = {
     icon: "▲",
     component: ProjectLaunchesCard,
     props: (p) => ({ project: p }),
-    minW: 4, minH: 4,
+    minW: 3, minH: 3,
   },
   notes: {
     id: "notes",
@@ -117,7 +117,7 @@ export const WIDGETS: Record<string, WidgetDef> = {
     icon: "✎",
     component: ProjectNotesCard,
     props: (p) => ({ project: p }),
-    minW: 4, minH: 4,
+    minW: 3, minH: 3,
   },
   infra: {
     id: "infra",
@@ -153,7 +153,7 @@ export const WIDGETS: Record<string, WidgetDef> = {
     icon: "↗",
     component: ProjectLinksCommands,
     props: (p) => ({ project: p }),
-    minW: 4, minH: 4,
+    minW: 3, minH: 3,
   },
   environments: {
     id: "environments",
@@ -171,7 +171,7 @@ export const WIDGETS: Record<string, WidgetDef> = {
     icon: "🔐",
     component: ProjectSecretsCard,
     props: (p) => ({ project: p }),
-    minW: 5, minH: 4,
+    minW: 3, minH: 3,
   },
   activity: {
     id: "activity",
@@ -180,7 +180,7 @@ export const WIDGETS: Record<string, WidgetDef> = {
     icon: "⟐",
     component: ProjectActivityTimeline,
     props: (p) => ({ projectSlug: p.slug }),
-    minW: 6, minH: 6,
+    minW: 3, minH: 3,
   },
 };
 

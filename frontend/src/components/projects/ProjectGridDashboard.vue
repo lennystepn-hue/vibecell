@@ -199,47 +199,38 @@ function addWidget(id: string) {
       <template #item="{ item }">
         <!-- Skip rendering hidden widgets entirely. -->
         <template v-if="!(item as any).hidden && widgetById(String(item.i))">
-          <!-- The article is content-height: it HUGS its content instead of
-               being force-stretched to fill the whole grid cell. The grid
-               still reserves cell-height rows for layout (so the next row
-               starts where the slot ends), but visually the card doesn't
-               paint the empty area below its content. max-h-full keeps it
-               from blowing past the slot — if the content is taller than
-               the slot, .widget-scroll inside scrolls instead. This kills
-               the "glass box with big empty area" look when a small card
-               happens to live in a tall row. -->
+          <!-- max-h-full lets the card HUG its content while capping at the
+               grid-cell height. View-mode and edit-mode now produce the
+               SAME card height — edit mode adds only a ring + tiny corner
+               icons (no top strip that pushes content down), so exiting
+               edit doesn't leave phantom padding. -->
           <article
             class="widget relative max-h-full w-full overflow-hidden rounded-lg transition-shadow"
             :class="store.editMode
-              ? 'ring-1 ring-border hover:ring-signal-green/40 hover:shadow-[0_0_0_1px_rgba(92,200,164,0.15)]'
+              ? 'ring-1 ring-signal-green/30 cursor-move'
               : ''"
             @contextmenu="onWidgetContextMenu($event, String(item.i))"
           >
-            <!-- Drag handle overlay (only in edit mode, pinned above the scroll) -->
-            <div
-              v-if="store.editMode"
-              class="widget-drag-handle absolute inset-x-0 top-0 h-8 z-20 cursor-move flex items-center justify-between px-3"
-              :title="widgetById(String(item.i))?.title"
-              style="background: linear-gradient(to bottom, rgba(13,18,26,0.92), transparent);"
-            >
-              <span class="font-mono text-[10px] text-fg-subtle opacity-60 pointer-events-none">
-                ⠿ {{ widgetById(String(item.i))?.title }}
-              </span>
+            <!-- Edit-mode corner affordances: tiny drag hint (top-left,
+                 pointer-events-none so it can't swallow clicks) + remove
+                 button (top-right, .no-drag so the grid won't treat the
+                 click as the start of a drag). -->
+            <template v-if="store.editMode">
+              <span
+                class="absolute top-1.5 left-2 z-20 font-mono text-[10px] text-signal-green/70 pointer-events-none select-none tracking-widest"
+                aria-hidden="true"
+              >⠿</span>
               <button
                 type="button"
-                class="text-fg-subtle hover:text-signal-red transition-colors text-small font-mono"
-                title="Remove (you can re-add from + add widget)"
+                class="no-drag absolute top-1 right-1 z-20 w-6 h-6 rounded-md flex items-center justify-center text-fg-subtle hover:text-signal-red hover:bg-signal-red/10 transition-colors text-small font-mono"
+                :title="`Remove ${widgetById(String(item.i))?.title ?? ''}`"
                 @click.stop="removeWidget(String(item.i))"
               >✕</button>
-            </div>
+            </template>
 
-            <!-- Scrollable inner container — scrolls only when the content
-                 would exceed the grid-slot height (max-h-full). Otherwise
-                 it's simply content-sized. -->
-            <div
-              class="widget-scroll max-h-full overflow-y-auto"
-              :class="store.editMode ? 'pt-8' : ''"
-            >
+            <!-- Scrollable inner container — content-height by default,
+                 caps at grid-cell (max-h-full). Scrollbar is hidden. -->
+            <div class="widget-scroll max-h-full overflow-y-auto">
               <component
                 :is="widgetById(String(item.i))!.component"
                 v-bind="widgetById(String(item.i))!.props(project)"
@@ -304,33 +295,45 @@ function addWidget(id: string) {
   opacity: 0.9;
   z-index: 3;
 }
+/* Resize handle — bottom-right corner of each grid cell. Invisible in view
+   mode (we hide it by not being resizable at all at the grid-layout-plus
+   level). In edit mode we force it visible by default (low opacity) so
+   the user always sees where to grab, and brighter on hover. */
 .vue-grid-item > .vue-resizable-handle {
   position: absolute;
-  width: 20px;
-  height: 20px;
+  width: 22px;
+  height: 22px;
   bottom: 0;
   right: 0;
   cursor: se-resize;
   background-image: linear-gradient(
     135deg,
     transparent 0%,
-    transparent 50%,
-    var(--signal-green, #5cc8a4) 50%,
-    var(--signal-green, #5cc8a4) 60%,
-    transparent 60%,
-    transparent 70%,
-    var(--signal-green, #5cc8a4) 70%,
-    var(--signal-green, #5cc8a4) 80%,
-    transparent 80%
+    transparent 45%,
+    var(--signal-green, #5cc8a4) 45%,
+    var(--signal-green, #5cc8a4) 55%,
+    transparent 55%,
+    transparent 65%,
+    var(--signal-green, #5cc8a4) 65%,
+    var(--signal-green, #5cc8a4) 75%,
+    transparent 75%,
+    transparent 85%,
+    var(--signal-green, #5cc8a4) 85%,
+    var(--signal-green, #5cc8a4) 95%,
+    transparent 95%
   );
   opacity: 0;
   transition: opacity 120ms;
   border-bottom-right-radius: 8px;
-  z-index: 10;
+  z-index: 15;
 }
-.vue-grid-item:hover > .vue-resizable-handle,
+.grid-is-editing .vue-grid-item > .vue-resizable-handle {
+  /* Always half-visible in edit mode so the user can see grab-zones. */
+  opacity: 0.55;
+}
+.grid-is-editing .vue-grid-item:hover > .vue-resizable-handle,
 .vue-grid-item.resizing > .vue-resizable-handle {
-  opacity: 0.7;
+  opacity: 1;
 }
 
 /* ─── Widget-internal scrolling ─────────────────────────────────────────
@@ -352,21 +355,7 @@ function addWidget(id: string) {
   height: 0;
 }
 
-/* A tiny radial shadow at the bottom inside edge of every card. Sits ABOVE
-   content, fades to nothing when you're scrolled to the end, gives a
-   soft "more below" hint without a bar. 4 px tall — imperceptible on
-   short cards, exactly what you want on overflowing ones. */
-.widget::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: 12px;
-  background: linear-gradient(to top, rgba(7, 11, 16, 0.55), rgba(7, 11, 16, 0));
-  pointer-events: none;
-  border-bottom-left-radius: 8px;
-  border-bottom-right-radius: 8px;
-  z-index: 2;
-}
+/* (Previous ::after bottom-fade removed — it was overlaying the resize
+   handle area and making the corner grab-zone harder to spot in edit
+   mode. The hidden-scrollbar already signals overflow well enough.) */
 </style>
