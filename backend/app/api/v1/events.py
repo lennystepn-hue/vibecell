@@ -8,6 +8,7 @@ backing the affected card (sessions, decisions, secrets, screenshots, …).
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import json
 from datetime import UTC, datetime
 from typing import Annotated
@@ -27,7 +28,13 @@ HEARTBEAT_SECONDS = 20.0
 
 
 async def _event_stream(project_id: str):  # -> AsyncIterator[str]
-    """Yield SSE frames: hello → live updates → periodic heartbeats."""
+    """Yield SSE frames: hello → live updates → periodic heartbeats.
+
+    Uses asyncio.wait_for on the async generator's __anext__ directly (no
+    separate asyncio.Task) so that when the client disconnects the generator
+    can be aclose()'d cleanly without the "asynchronous generator is already
+    running" runtime error we hit on the first implementation.
+    """
     # Opening handshake so the client knows the stream is live.
     hello = json.dumps({
         "type": "stream.open",
@@ -37,29 +44,32 @@ async def _event_stream(project_id: str):  # -> AsyncIterator[str]
     yield f"data: {hello}\n\n"
 
     sub = events_svc.subscribe(project_id)
-    sub_task: asyncio.Task[str | None] = asyncio.create_task(sub.__anext__())  # type: ignore[arg-type]
-
     try:
         while True:
-            done, _pending = await asyncio.wait(
-                {sub_task}, timeout=HEARTBEAT_SECONDS,
-            )
-            if not done:
-                # No events this interval — emit heartbeat so proxies don't close.
+            try:
+                payload = await asyncio.wait_for(
+                    sub.__anext__(),
+                    timeout=HEARTBEAT_SECONDS,
+                )
+            except asyncio.TimeoutError:
+                # No events this window — keep the socket alive for proxies.
                 yield ": heartbeat\n\n"
                 continue
-            try:
-                payload = sub_task.result()
             except StopAsyncIteration:
                 break
+            except asyncio.CancelledError:
+                # Client disconnected mid-wait — bail out cleanly.
+                break
+
             if payload is None:
                 break
             yield f"data: {payload}\n\n"
-            sub_task = asyncio.create_task(sub.__anext__())  # type: ignore[arg-type]
     finally:
-        sub_task.cancel()
-        # Close underlying pubsub via generator teardown.
-        await sub.aclose()  # type: ignore[attr-defined]
+        # Suppress the "generator already running" race: if the client cut us
+        # while __anext__ was still pending, aclose() inside the same frame
+        # raises RuntimeError. Swallow it — there's nothing meaningful to do.
+        with contextlib.suppress(RuntimeError, Exception):
+            await sub.aclose()  # type: ignore[attr-defined]
 
 
 @router.get("/stream")
