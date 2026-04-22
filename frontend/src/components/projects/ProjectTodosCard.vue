@@ -31,15 +31,6 @@ const includeDone = ref<boolean>(
     ? localStorage.getItem(`vc:todos-include-done:${props.project.slug}`) === "true"
     : false,
 );
-const expanded = ref<boolean>(true);
-
-function toggle() {
-  expanded.value = !expanded.value;
-  if (typeof localStorage !== "undefined") {
-    localStorage.setItem(`vc:card-expanded:todos:${props.project.slug}`, expanded.value ? "true" : "false");
-  }
-}
-
 async function load() {
   const slug = props.project.slug;
   loading.value = true;
@@ -192,9 +183,6 @@ function relative(iso: string | null): string {
 }
 
 watch(() => props.project.slug, () => {
-  if (typeof localStorage !== "undefined") {
-    expanded.value = localStorage.getItem(`vc:card-expanded:todos:${props.project.slug}`) !== "false";
-  }
   load();
   refreshDoneCount();
 }, { immediate: true });
@@ -211,18 +199,8 @@ onProjectLiveEvent(
 
 <template>
   <section class="glass rounded-lg p-5">
-    <header
-      class="flex items-center justify-between cursor-pointer select-none"
-      :class="{ 'mb-4': expanded }"
-      @click="toggle"
-    >
-      <div class="flex items-center gap-2">
-        <span
-          class="font-mono text-fg-subtle transition-transform duration-fast"
-          :class="{ 'rotate-90': expanded }"
-        >▸</span>
-        <h3 class="mono-label text-fg-muted">//todos</h3>
-      </div>
+    <header class="flex items-center justify-between mb-4 select-none">
+      <h3 class="mono-label text-fg-muted">//todos</h3>
       <div class="flex items-center gap-3 text-small" @click.stop>
         <span class="text-fg-subtle tabular-nums">
           <span class="text-fg-body font-mono">{{ todos.filter(t => t.status !== 'done').length }}</span>
@@ -242,7 +220,7 @@ onProjectLiveEvent(
       </div>
     </header>
 
-    <div v-if="expanded">
+    <div>
       <!-- Add form -->
       <div class="flex gap-2 mb-2">
         <input

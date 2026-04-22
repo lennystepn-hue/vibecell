@@ -19,19 +19,6 @@ const launches = useLaunchesStore();
 const ships = useShipsStore();
 const toast = useToastStore();
 
-// Card-level collapsible state (default: collapsed)
-const cardExpanded = ref<boolean>(
-  typeof localStorage !== "undefined"
-    ? localStorage.getItem(`vc:card-expanded:launches:${props.project.slug}`) === "true"
-    : false,
-);
-function toggleCard() {
-  cardExpanded.value = !cardExpanded.value;
-  if (typeof localStorage !== "undefined") {
-    localStorage.setItem(`vc:card-expanded:launches:${props.project.slug}`, cardExpanded.value ? "true" : "false");
-  }
-}
-
 const editing = ref(false);
 const submitting = ref(false);
 
@@ -91,28 +78,17 @@ const shipsCount = computed(() => ships.list.length);
 
 <template>
   <section class="glass rounded-lg p-5">
-    <header
-      class="flex items-center justify-between cursor-pointer select-none"
-      :class="{ 'mb-4': cardExpanded }"
-      @click="toggleCard"
-    >
-      <div class="flex items-center gap-2">
-        <span
-          class="font-mono text-fg-subtle transition-transform duration-fast"
-          :class="{ 'rotate-90': cardExpanded }"
-          aria-hidden="true"
-        >▸</span>
-        <h3 class="mono-label text-fg-muted">//ships + launches <span class="opacity-60">({{ shipsCount }} ships · {{ count }} launches)</span></h3>
-      </div>
+    <header class="flex items-center justify-between mb-4 select-none">
+      <h3 class="mono-label text-fg-muted">//ships + launches <span class="opacity-60">({{ shipsCount }} ships · {{ count }} launches)</span></h3>
       <button
-        v-if="cardExpanded && !editing"
+        v-if="!editing"
         type="button"
         class="mono-label hover:text-fg-body transition-colors"
-        @click.stop="editing = true"
+        @click="editing = true"
       >+ record launch</button>
     </header>
 
-    <div v-if="cardExpanded">
+    <div>
     <form v-if="editing" class="mb-5 p-4 rounded-md bg-bg-surface/40 space-y-3" @submit.prevent="onSubmit">
       <div class="grid grid-cols-3 gap-3">
         <div>
@@ -190,6 +166,6 @@ const shipsCount = computed(() => ships.list.length);
         </li>
       </ul>
     </div>
-    </div><!-- /cardExpanded -->
+    </div>
   </section>
 </template>

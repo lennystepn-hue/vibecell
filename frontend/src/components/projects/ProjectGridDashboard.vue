@@ -199,8 +199,17 @@ function addWidget(id: string) {
       <template #item="{ item }">
         <!-- Skip rendering hidden widgets entirely. -->
         <template v-if="!(item as any).hidden && widgetById(String(item.i))">
+          <!-- The article is content-height: it HUGS its content instead of
+               being force-stretched to fill the whole grid cell. The grid
+               still reserves cell-height rows for layout (so the next row
+               starts where the slot ends), but visually the card doesn't
+               paint the empty area below its content. max-h-full keeps it
+               from blowing past the slot — if the content is taller than
+               the slot, .widget-scroll inside scrolls instead. This kills
+               the "glass box with big empty area" look when a small card
+               happens to live in a tall row. -->
           <article
-            class="widget relative h-full w-full overflow-hidden rounded-lg transition-shadow"
+            class="widget relative max-h-full w-full overflow-hidden rounded-lg transition-shadow"
             :class="store.editMode
               ? 'ring-1 ring-border hover:ring-signal-green/40 hover:shadow-[0_0_0_1px_rgba(92,200,164,0.15)]'
               : ''"
@@ -224,12 +233,11 @@ function addWidget(id: string) {
               >✕</button>
             </div>
 
-            <!-- Scrollable inner container. Hides the native scrollbar via the
-                 `.widget-scroll` helper below; the fade masks at top + bottom
-                 hint at cropped content in both directions without a visible
-                 bar. -->
+            <!-- Scrollable inner container — scrolls only when the content
+                 would exceed the grid-slot height (max-h-full). Otherwise
+                 it's simply content-sized. -->
             <div
-              class="widget-scroll h-full overflow-y-auto"
+              class="widget-scroll max-h-full overflow-y-auto"
               :class="store.editMode ? 'pt-8' : ''"
             >
               <component

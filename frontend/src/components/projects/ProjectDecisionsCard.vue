@@ -15,19 +15,6 @@ const props = defineProps<{ project: Project }>();
 const decisions = useDecisionsStore();
 const toast = useToastStore();
 
-// Card-level collapsible state (default: expanded)
-const cardExpanded = ref<boolean>(
-  typeof localStorage !== "undefined"
-    ? localStorage.getItem(`vc:card-expanded:decisions:${props.project.slug}`) !== "false"
-    : true,
-);
-function toggleCard() {
-  cardExpanded.value = !cardExpanded.value;
-  if (typeof localStorage !== "undefined") {
-    localStorage.setItem(`vc:card-expanded:decisions:${props.project.slug}`, cardExpanded.value ? "true" : "false");
-  }
-}
-
 const editing = ref(false);
 const submitting = ref(false);
 
@@ -89,28 +76,17 @@ const count = computed(() => decisions.list.length);
 
 <template>
   <section class="glass rounded-lg p-5">
-    <header
-      class="flex items-center justify-between cursor-pointer select-none"
-      :class="{ 'mb-4': cardExpanded }"
-      @click="toggleCard"
-    >
-      <div class="flex items-center gap-2">
-        <span
-          class="font-mono text-fg-subtle transition-transform duration-fast"
-          :class="{ 'rotate-90': cardExpanded }"
-          aria-hidden="true"
-        >▸</span>
-        <h3 class="mono-label text-fg-muted">//decisions <span class="opacity-60">({{ count }})</span></h3>
-      </div>
+    <header class="flex items-center justify-between mb-4 select-none">
+      <h3 class="mono-label text-fg-muted">//decisions <span class="opacity-60">({{ count }})</span></h3>
       <button
-        v-if="cardExpanded && !editing"
+        v-if="!editing"
         type="button"
         class="mono-label hover:text-fg-body transition-colors"
-        @click.stop="editing = true; resetForm()"
+        @click="editing = true; resetForm()"
       >+ new decision</button>
     </header>
 
-    <div v-if="cardExpanded">
+    <div>
     <form v-if="editing" class="space-y-3 mb-5 p-4 rounded-md bg-bg-surface/40" @submit.prevent="onSubmit">
       <TextField v-model="form.title" label="title (required)" placeholder="Use Postgres over SQLite" />
       <TextArea v-model="form.context" label="context" placeholder="What forces led to this?" :rows="2" />
@@ -170,6 +146,6 @@ const count = computed(() => decisions.list.length);
         </div>
       </li>
     </ul>
-    </div><!-- /cardExpanded -->
+    </div>
   </section>
 </template>

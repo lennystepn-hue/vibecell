@@ -30,14 +30,6 @@ const adding = ref(false);
 const newLabel = ref("");
 const newValue = ref("");
 
-const expanded = ref<boolean>(true);
-function toggle() {
-  expanded.value = !expanded.value;
-  if (typeof localStorage !== "undefined") {
-    localStorage.setItem(`vc:card-expanded:secrets:${props.project.slug}`, expanded.value ? "true" : "false");
-  }
-}
-
 async function load() {
   const slug = props.project.slug;
   loading.value = true;
@@ -58,16 +50,7 @@ async function load() {
 // Re-load whenever the project slug changes (Vue may reuse the component
 // across /projects/:slug navigations — without this watch, secrets from
 // the previous project would remain visible on the next project's page).
-watch(
-  () => props.project.slug,
-  (slug) => {
-    if (typeof localStorage !== "undefined") {
-      expanded.value = localStorage.getItem(`vc:card-expanded:secrets:${slug}`) !== "false";
-    }
-    load();
-  },
-  { immediate: true },
-);
+watch(() => props.project.slug, () => load(), { immediate: true });
 
 // Live-refresh when Claude or another tab touches a secret.
 onProjectLiveEvent(["secret.added", "secret.removed", "secret.used"], () => void load());
@@ -116,15 +99,12 @@ async function remove(label: string) {
 
 <template>
   <section class="glass rounded-lg p-5">
-    <header class="flex items-center justify-between cursor-pointer select-none" :class="{ 'mb-3': expanded }" @click="toggle">
-      <div class="flex items-center gap-2">
-        <span class="font-mono text-fg-subtle transition-transform duration-fast" :class="{ 'rotate-90': expanded }">▸</span>
-        <h3 class="mono-label text-fg-muted">//secrets</h3>
-      </div>
+    <header class="flex items-center justify-between mb-3 select-none">
+      <h3 class="mono-label text-fg-muted">//secrets</h3>
       <span class="text-small text-fg-subtle">{{ secrets.length }} labels</span>
     </header>
 
-    <div v-if="expanded">
+    <div>
       <p v-if="secrets.length === 0" class="text-small text-fg-subtle py-2">
         No secrets yet. Paste an API key or 1Password path — Claude (via vibecell_secret_set) or the + button below will store it securely.
       </p>
