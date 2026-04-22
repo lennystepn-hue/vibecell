@@ -7,7 +7,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.mcp.audit import McpAuditLog
-from app.models import Decision, Idea, LifecycleEvent, Note, Project, Session, Ship
+from app.models import Decision, Idea, LifecycleEvent, Note, Project, ProjectTodo, Session, Ship
 
 
 async def fetch_activity(
@@ -97,6 +97,34 @@ async def fetch_activity(
             "title": "Notes updated",
             "body": None,
             "meta": {},
+        })
+
+    # TODOs — completed items show as "checked" rows, started-but-not-done
+    # appear as "in progress". Open, untouched todos do NOT show (they'd spam
+    # the feed on batch creation). Sort by completed_at when present, else
+    # started_at.
+    todo_rows = (await db.execute(
+        select(ProjectTodo)
+        .where(ProjectTodo.project_id == project.id)
+        .where(ProjectTodo.status.in_(["in_progress", "done"]))
+        .order_by(ProjectTodo.completed_at.desc().nullslast(),
+                  ProjectTodo.started_at.desc().nullslast())
+        .limit(40)
+    )).scalars().all()
+    for t in todo_rows:
+        at = t.completed_at or t.started_at
+        title = f"{'✓' if t.status == 'done' else '◉'} {t.title}"
+        events.append({
+            "type": "todo",
+            "at": at.isoformat() if at else None,
+            "title": title,
+            "body": t.completion_note,
+            "meta": {
+                "id": t.id,
+                "status": t.status,
+                "batch": t.batch,
+                "completed_by": t.completed_by,
+            },
         })
 
     # Lifecycle events

@@ -6,7 +6,7 @@ void RouterLink;  // tell the template compiler RouterLink is in scope for dynam
 import { onProjectLiveEvent } from "@/composables/useProjectLive";
 
 interface ActivityEvent {
-  type: "session" | "decision" | "idea" | "ship" | "lifecycle" | "note" | "tool_call";
+  type: "session" | "decision" | "idea" | "ship" | "lifecycle" | "note" | "tool_call" | "todo";
   at: string | null;
   title: string;
   body: string | null;
@@ -59,6 +59,7 @@ function iconFor(type: string) {
     lifecycle: "•",
     note: "✎",
     tool_call: "→",
+    todo: "☑",
   } as any)[type] ?? "•";
 }
 
@@ -71,6 +72,7 @@ function colorFor(type: string) {
     lifecycle: "text-fg-subtle",
     note: "text-fg-muted",
     tool_call: "text-fg-subtle",
+    todo: "text-signal-green",
   } as any)[type] ?? "text-fg-muted";
 }
 

@@ -164,6 +164,24 @@ function progressFor(items: Todo[]): { done: number; total: number; pct: number 
   return { done, total, pct };
 }
 
+// Count of done todos — only populated when the "show done" toggle is ON
+// (the server filters done rows out otherwise). For the header counter we
+// fetch separately.
+const doneCount = ref(0);
+
+async function refreshDoneCount() {
+  const slug = props.project.slug;
+  try {
+    const r = await fetch(`/api/v1/projects/${slug}/todos?include_done=true`, { credentials: "include" });
+    if (r.ok && slug === props.project.slug) {
+      const all = await r.json() as Todo[];
+      doneCount.value = all.filter((t) => t.status === "done").length;
+    }
+  } catch {
+    /* best-effort counter */
+  }
+}
+
 function relative(iso: string | null): string {
   if (!iso) return "";
   const ms = Date.now() - new Date(iso).getTime();
@@ -178,12 +196,16 @@ watch(() => props.project.slug, () => {
     expanded.value = localStorage.getItem(`vc:card-expanded:todos:${props.project.slug}`) !== "false";
   }
   load();
+  refreshDoneCount();
 }, { immediate: true });
 
 // Live refresh whenever Claude (or another tab) mutates todos.
 onProjectLiveEvent(
   ["todo.created", "todo.batch_created", "todo.updated", "todo.started", "todo.completed", "todo.deleted"],
-  () => void load(),
+  () => {
+    void load();
+    void refreshDoneCount();
+  },
 );
 </script>
 
@@ -201,17 +223,22 @@ onProjectLiveEvent(
         >▸</span>
         <h3 class="mono-label text-fg-muted">//todos</h3>
       </div>
-      <div class="flex items-center gap-3 text-small">
-        <label class="flex items-center gap-1.5 text-fg-subtle cursor-pointer" @click.stop>
-          <input
-            type="checkbox"
-            class="accent-signal-green"
-            :checked="includeDone"
-            @change="(e) => setIncludeDone((e.target as HTMLInputElement).checked)"
-          />
-          <span class="mono-label">done</span>
-        </label>
-        <span class="text-fg-subtle">{{ todos.filter(t => t.status !== 'done').length }} open</span>
+      <div class="flex items-center gap-3 text-small" @click.stop>
+        <span class="text-fg-subtle tabular-nums">
+          <span class="text-fg-body font-mono">{{ todos.filter(t => t.status !== 'done').length }}</span>
+          open
+        </span>
+        <span v-if="doneCount > 0" class="text-fg-subtle tabular-nums">
+          ·
+          <span class="text-signal-green font-mono">{{ doneCount }}</span>
+          done
+        </span>
+        <button
+          class="mono-label transition-colors"
+          :class="includeDone ? 'text-signal-green' : 'text-fg-subtle hover:text-fg-body'"
+          @click.stop="setIncludeDone(!includeDone)"
+          :title="includeDone ? 'Hide completed todos' : 'Show completed todos'"
+        >{{ includeDone ? '☑ show done' : '☐ show done' }}</button>
       </div>
     </header>
 
