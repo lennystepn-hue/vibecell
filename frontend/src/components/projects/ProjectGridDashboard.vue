@@ -99,19 +99,78 @@ function addWidget(id: string) {
 
 <template>
   <div class="relative">
-    <!-- ── Edit-mode toolbar ──────────────────────────────────────────── -->
+    <!-- ── Dashboard toolbar ──────────────────────────────────────────────
+         Always visible. In view mode it's a slim page-header band with the
+         "//dashboard" label on the left and a single "rearrange" button on
+         the right. In edit mode it expands with add-widget / reset / hint.
+         Same outer box in both modes so the page doesn't jump when toggling. -->
     <header
-      class="sticky z-20 flex items-center gap-3 mb-4"
-      :class="store.editMode ? 'top-[44px] -mx-2 px-2 py-2 rounded-md' : ''"
+      class="sticky top-[44px] z-20 flex items-center gap-3 mb-4 px-3 h-10 rounded-md transition-colors"
       :style="store.editMode
         ? 'background: rgba(92,200,164,0.06); border: 1px solid rgba(92,200,164,0.25); backdrop-filter: blur(8px)'
-        : ''"
+        : 'background: rgba(13,18,26,0.55); border: 1px solid var(--border-subtle); backdrop-filter: blur(8px)'"
     >
+      <span class="mono-label text-fg-muted">// dashboard</span>
+      <span v-if="store.editMode" class="text-[11px] text-signal-green font-mono">— edit mode</span>
+
+      <!-- Edit-only: add widget + reset + hint (all pushed right of label) -->
+      <template v-if="store.editMode">
+        <div class="relative" @click.stop>
+          <button
+            type="button"
+            class="flex items-center gap-2 h-7 px-2.5 rounded-md text-small font-mono border border-border hover:border-signal-green/60 hover:text-fg-body text-fg-muted transition-colors"
+            :disabled="hiddenWidgets.length === 0"
+            @click="addMenuOpen = !addMenuOpen"
+          >
+            <span aria-hidden="true">+</span>
+            <span>add widget</span>
+            <span v-if="hiddenWidgets.length > 0" class="text-fg-subtle">({{ hiddenWidgets.length }})</span>
+          </button>
+          <transition
+            enter-active-class="transition ease-out duration-100"
+            enter-from-class="opacity-0 -translate-y-1"
+            enter-to-class="opacity-100 translate-y-0"
+            leave-active-class="transition ease-in duration-75"
+            leave-from-class="opacity-100"
+            leave-to-class="opacity-0"
+          >
+            <div
+              v-if="addMenuOpen && hiddenWidgets.length > 0"
+              class="absolute top-9 left-0 z-30 w-72 rounded-md overflow-hidden shadow-xl"
+              style="background: rgba(13,18,26,0.97); border: 1px solid rgba(138,180,255,0.14); backdrop-filter: blur(10px)"
+            >
+              <button
+                v-for="w in hiddenWidgets"
+                :key="w.id"
+                class="w-full text-left px-3 py-2 flex items-start gap-2.5 hover:bg-white/[0.04] transition-colors"
+                @click="addWidget(w.id)"
+              >
+                <span class="font-mono text-signal-green shrink-0">{{ w.icon }}</span>
+                <span class="min-w-0 flex-1">
+                  <span class="block text-small text-fg-body">{{ w.title }}</span>
+                  <span class="block text-[11px] text-fg-subtle mt-0.5 truncate">{{ w.hint }}</span>
+                </span>
+              </button>
+            </div>
+          </transition>
+        </div>
+        <button
+          type="button"
+          class="text-small text-fg-subtle hover:text-fg-body font-mono transition-colors"
+          title="Reset to default layout"
+          @click="restoreDefaults"
+        >reset</button>
+        <span class="hidden lg:inline text-[11px] text-fg-subtle font-mono">
+          drag header · resize corner · right-click for sizes
+        </span>
+      </template>
+
+      <!-- Toggle button pinned to the right in both modes. -->
       <button
         type="button"
-        class="flex items-center gap-2 px-3 h-8 rounded-md text-small font-mono transition-all"
+        class="ml-auto flex items-center gap-2 px-3 h-7 rounded-md text-small font-mono transition-all"
         :class="store.editMode
-          ? 'bg-signal-green text-bg-body hover:opacity-90'
+          ? 'bg-signal-green hover:opacity-90'
           : 'text-fg-muted hover:text-fg-body border border-border hover:border-border-strong'"
         :style="store.editMode ? 'color:#070b10' : ''"
         :title="store.editMode ? 'Exit edit mode' : 'Rearrange cards'"
@@ -120,77 +179,19 @@ function addWidget(id: string) {
         <span aria-hidden="true">{{ store.editMode ? "✓" : "✎" }}</span>
         <span>{{ store.editMode ? "done" : "rearrange" }}</span>
       </button>
-
-      <!-- Add widget button (only in edit mode) -->
-      <div v-if="store.editMode" class="relative" @click.stop>
-        <button
-          type="button"
-          class="flex items-center gap-2 h-8 px-3 rounded-md text-small font-mono border border-border hover:border-signal-green/60 hover:text-fg-body text-fg-muted transition-colors"
-          :disabled="hiddenWidgets.length === 0"
-          @click="addMenuOpen = !addMenuOpen"
-        >
-          <span aria-hidden="true">+</span>
-          <span>add widget</span>
-          <span v-if="hiddenWidgets.length > 0" class="text-fg-subtle">({{ hiddenWidgets.length }})</span>
-        </button>
-        <transition
-          enter-active-class="transition ease-out duration-100"
-          enter-from-class="opacity-0 -translate-y-1"
-          enter-to-class="opacity-100 translate-y-0"
-          leave-active-class="transition ease-in duration-75"
-          leave-from-class="opacity-100"
-          leave-to-class="opacity-0"
-        >
-          <div
-            v-if="addMenuOpen && hiddenWidgets.length > 0"
-            class="absolute top-10 left-0 z-30 w-72 rounded-md overflow-hidden shadow-xl"
-            style="background: rgba(13,18,26,0.97); border: 1px solid rgba(138,180,255,0.14); backdrop-filter: blur(10px)"
-          >
-            <button
-              v-for="w in hiddenWidgets"
-              :key="w.id"
-              class="w-full text-left px-3 py-2 flex items-start gap-2.5 hover:bg-white/[0.04] transition-colors"
-              @click="addWidget(w.id)"
-            >
-              <span class="font-mono text-signal-green shrink-0">{{ w.icon }}</span>
-              <span class="min-w-0 flex-1">
-                <span class="block text-small text-fg-body">{{ w.title }}</span>
-                <span class="block text-[11px] text-fg-subtle mt-0.5 truncate">{{ w.hint }}</span>
-              </span>
-            </button>
-          </div>
-        </transition>
-      </div>
-
-      <button
-        v-if="store.editMode"
-        type="button"
-        class="text-small text-fg-subtle hover:text-fg-body font-mono transition-colors"
-        title="Reset to default layout"
-        @click="restoreDefaults"
-      >reset</button>
-
-      <span
-        v-if="store.editMode"
-        class="ml-auto text-[11px] text-fg-subtle font-mono hidden sm:inline"
-      >
-        drag header · resize corner · right-click for sizes
-      </span>
     </header>
 
     <!-- ── Grid ───────────────────────────────────────────────────────── -->
-    <!-- margin = [horizontal, vertical] px between items. Horizontal is a
-         hairline 4 px so cards read as "attached" (user didn't want a
-         column of air). Vertical 10 px keeps rows from feeling glued.
-         vertical-compact=true so hiding a widget doesn't leave an empty
-         row; grid-layout-plus slides the rest up gracefully. -->
+    <!-- margin = [horizontal, vertical] px between items. Back to 16/16
+         — the original spacing reads best with the toolbar band above. -->
+
     <GridLayout
       v-model:layout="store.layout"
       :col-num="12"
       :row-height="40"
       :is-draggable="store.editMode"
       :is-resizable="store.editMode"
-      :margin="[4, 10]"
+      :margin="[16, 16]"
       :use-css-transforms="true"
       :vertical-compact="true"
       drag-allow-from=".widget-drag-handle"
