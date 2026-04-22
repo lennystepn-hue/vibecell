@@ -3,6 +3,7 @@ import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 
 import { useAuthStore } from "@/stores/auth";
+import { useThemeStore, type ThemeName } from "@/stores/theme";
 
 const props = defineProps<{
   /** Visual variant — "light" for dark marketing pages, "chrome" for the app chrome. */
@@ -11,6 +12,14 @@ const props = defineProps<{
 
 const auth = useAuthStore();
 const router = useRouter();
+const theme = useThemeStore();
+
+function applyTheme(name: ThemeName) {
+  theme.apply(name);
+  // Keep the menu open so the user can see the switch take effect + try
+  // another preset without re-opening. Only toggle switcher submenu if
+  // explicitly clicked outside.
+}
 
 const open = ref(false);
 const menuRef = ref<HTMLElement | null>(null);
@@ -142,6 +151,22 @@ function onKey(e: KeyboardEvent) {
             <span class="font-mono" style="color:#8ba1bd">⚙</span>
             Settings
           </button>
+        </div>
+        <!-- Theme switcher. Clicks keep the menu open so you can try presets. -->
+        <div class="py-2 border-t" style="border-color: rgba(138,180,255,0.08)">
+          <p class="font-mono text-[10px] uppercase tracking-[0.12em] px-3 mb-1.5" style="color:#5e7088">Theme</p>
+          <div class="grid grid-cols-3 gap-1 px-2" @click.stop>
+            <button
+              v-for="[name, meta] in theme.options"
+              :key="name"
+              :title="meta.hint"
+              class="rounded px-2 py-1.5 text-[11px] font-mono transition-all"
+              :class="theme.active === name
+                ? 'bg-signal-green/15 text-signal-green ring-1 ring-signal-green/40'
+                : 'text-fg-muted hover:text-fg-body hover:bg-white/[0.04]'"
+              @click="applyTheme(name)"
+            >{{ meta.label.split(' ')[0] }}</button>
+          </div>
         </div>
         <div class="py-1 border-t" style="border-color: rgba(138,180,255,0.08)">
           <button

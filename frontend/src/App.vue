@@ -3,11 +3,15 @@ import { onBeforeUnmount, watch } from "vue";
 
 import AppLayout from "@/components/app/AppLayout.vue";
 import CommandPalette from "@/components/palette/CommandPalette.vue";
+import KeyboardShortcuts from "@/components/app/KeyboardShortcuts.vue";
 import { useAuthStore } from "@/stores/auth";
 import { usePresenceStore } from "@/stores/presence";
+import { useThemeStore } from "@/stores/theme";
 
 const auth = useAuthStore();
 const presence = usePresenceStore();
+// Boot the theme store so data-theme gets written to <html> from localStorage.
+useThemeStore();
 
 // Start/stop presence polling based on auth state — Redis-backed, 5s poll,
 // 2.5m aging window. When you're signed in the dashboard shows live pulses
@@ -28,4 +32,5 @@ onBeforeUnmount(() => presence.stop());
     <RouterView />
   </AppLayout>
   <CommandPalette />
+  <KeyboardShortcuts />
 </template>

@@ -278,8 +278,15 @@ onProjectLiveEvent(
       >{{ planError }}</p>
 
       <div v-if="loading && todos.length === 0" class="text-fg-subtle mono-label">loading…</div>
-      <div v-else-if="todos.length === 0" class="text-fg-subtle text-small py-3">
-        No todos yet. Add one above, or ask Claude: <em>"vibecell.todo_batch_add: auth-refactor"</em>.
+      <div
+        v-else-if="todos.length === 0"
+        class="rounded-md py-6 px-4 text-center"
+        style="background: rgba(92,200,164,0.04); border: 1px dashed rgba(92,200,164,0.25)"
+      >
+        <p class="text-small text-fg-body">Nothing on the list yet.</p>
+        <p class="text-[11px] text-fg-subtle mt-1">
+          Type a goal above and hit <span class="font-mono">✨ AI plan</span> — Claude breaks it into todos.
+        </p>
       </div>
 
       <div v-else class="space-y-5">
@@ -300,7 +307,11 @@ onProjectLiveEvent(
             </div>
           </header>
 
-          <ul class="space-y-1">
+          <TransitionGroup
+            tag="ul"
+            name="todo-list"
+            class="space-y-1 relative"
+          >
             <li
               v-for="t in g.items"
               :key="t.id"
@@ -310,18 +321,24 @@ onProjectLiveEvent(
                 'ring-1 ring-signal-green/40 bg-signal-green/[0.04]': t.status === 'in_progress',
               }"
             >
-              <!-- Checkbox -->
+              <!-- Checkbox with bounce-in tick animation on done -->
               <button
-                class="mt-0.5 w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-colors"
+                class="mt-0.5 w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-all duration-fast"
                 :class="t.status === 'done'
-                  ? 'bg-signal-green border-signal-green'
-                  : 'border-border hover:border-signal-green'"
+                  ? 'bg-signal-green border-signal-green scale-100 shadow-[0_0_8px_rgba(92,200,164,0.4)]'
+                  : 'border-border hover:border-signal-green hover:scale-110'"
                 :aria-label="t.status === 'done' ? 'reopen' : 'complete'"
                 @click="toggleCompletion(t)"
               >
-                <svg v-if="t.status === 'done'" width="10" height="10" viewBox="0 0 10 10" fill="none">
-                  <path d="M2 5L4 7L8 3" stroke="#070b10" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
+                <transition
+                  enter-active-class="transition-transform duration-med"
+                  enter-from-class="scale-0 rotate-45"
+                  enter-to-class="scale-100 rotate-0"
+                >
+                  <svg v-if="t.status === 'done'" width="10" height="10" viewBox="0 0 10 10" fill="none" class="origin-center">
+                    <path d="M2 5L4 7L8 3" stroke="#070b10" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </transition>
               </button>
 
               <!-- Title + metadata -->
@@ -353,9 +370,33 @@ onProjectLiveEvent(
                 aria-label="delete"
               >✕</button>
             </li>
-          </ul>
+          </TransitionGroup>
         </div>
       </div>
     </div>
   </section>
 </template>
+
+<style scoped>
+/* Smooth enter/leave + reorder when todos move between "open" and "done"
+   piles. Uses TransitionGroup which FLIPs existing items when the list
+   reorders. */
+.todo-list-enter-active,
+.todo-list-leave-active,
+.todo-list-move {
+  transition: all 280ms cubic-bezier(0.2, 0.6, 0.2, 1);
+}
+.todo-list-enter-from {
+  opacity: 0;
+  transform: translateY(-4px) scale(0.98);
+}
+.todo-list-leave-to {
+  opacity: 0;
+  transform: translateX(6px);
+}
+.todo-list-leave-active {
+  position: absolute;
+  left: 0;
+  right: 0;
+}
+</style>

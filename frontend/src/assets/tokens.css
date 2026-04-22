@@ -48,3 +48,53 @@
     --dur-slow: 0ms;
   }
 }
+
+/* ─── THEMES — overrides on :root[data-theme=…] ───────────────────────── */
+
+/* Terminal-green: full-phosphor, CRT hacker vibe. Greens everywhere,
+   deep black ground, amber becomes a warmer green-yellow. */
+:root[data-theme="terminal-green"] {
+  --bg-body-from: #082014;
+  --bg-body-to: #020705;
+  --bg-surface: rgba(10, 40, 25, 0.5);
+  --bg-surface-hi: rgba(10, 50, 30, 0.7);
+  --bg-chrome: rgba(6, 20, 12, 0.8);
+  --fg-primary: #c5f2d8;
+  --fg-body: #8dd9ae;
+  --fg-muted: #6aa085;
+  --fg-subtle: #4a7560;
+  --signal-green: #7dffb4;
+  --signal-green-bg: rgba(125, 255, 180, 0.14);
+  --signal-blue: #8dd9ae;
+  --signal-blue-bg: rgba(141, 217, 174, 0.08);
+  --border-subtle: rgba(125, 255, 180, 0.08);
+  --border-default: rgba(125, 255, 180, 0.14);
+  --border-strong: rgba(125, 255, 180, 0.22);
+}
+
+/* Paper: light mode. Good for daytime demos and screenshots. */
+:root[data-theme="paper"] {
+  --bg-body-from: #f5f3ee;
+  --bg-body-to: #eae6dd;
+  --bg-body: radial-gradient(ellipse at 20% -10%, var(--bg-body-from) 0%, var(--bg-body-to) 55%);
+  --bg-surface: rgba(255, 252, 245, 0.9);
+  --bg-surface-hi: rgba(255, 252, 245, 1);
+  --bg-overlay: rgba(0, 0, 0, 0.35);
+  --bg-chrome: rgba(246, 243, 235, 0.92);
+  --fg-primary: #0e1418;
+  --fg-body: #2b3440;
+  --fg-muted: #5a6674;
+  --fg-subtle: #8a96a4;
+  --fg-disabled: #b8c0ca;
+  --signal-green: #1e9b6b;
+  --signal-green-bg: rgba(30, 155, 107, 0.08);
+  --signal-amber: #c98416;
+  --signal-amber-bg: rgba(201, 132, 22, 0.08);
+  --signal-red: #c4362f;
+  --signal-red-bg: rgba(196, 54, 47, 0.08);
+  --signal-blue: #3968c4;
+  --signal-blue-bg: rgba(57, 104, 196, 0.08);
+  --border-subtle: rgba(20, 30, 40, 0.08);
+  --border-default: rgba(20, 30, 40, 0.14);
+  --border-strong: rgba(20, 30, 40, 0.22);
+}

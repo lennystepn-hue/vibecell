@@ -92,6 +92,23 @@ function onSubmit() {
   router.push({ path: "/search", query: { q } });
 }
 
+/** Render an FTS snippet safely: HTML-escape everything, then only re-enable
+ * the <mark>…</mark> highlight wrappers where the backend emitted the
+ * ⟦HL⟧ / ⟦/HL⟧ sentinels from ts_headline. This prevents stored XSS via
+ * user-supplied session/decision/idea bodies that happen to contain HTML
+ * (`<script>`, `<img onerror>`, etc.) — ts_headline does NOT escape its
+ * input, so the previous v-html direct-render was vulnerable. */
+function renderSnippet(raw: string): string {
+  const esc = raw
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+  // Restore sentinels as the only allowed markup.
+  return esc.replace(/⟦HL⟧/g, "<mark>").replace(/⟦\/HL⟧/g, "</mark>");
+}
+
 function resultLink(hit: SearchHit): string {
   if (hit.entity === "project" && hit.project_slug) return `/p/${hit.project_slug}`;
   if (hit.project_slug) return `/p/${hit.project_slug}`;
@@ -193,8 +210,13 @@ const entityLabels: Record<string, string> = {
                   <span class="font-mono text-[10px] uppercase text-fg-subtle shrink-0 w-16">{{ hit.entity }}</span>
                   <div class="flex-1 min-w-0">
                     <p v-if="hit.title" class="text-body text-fg-primary font-medium truncate">{{ hit.title }}</p>
+                    <!-- XSS-safe highlight: we HTML-escape the whole snippet client-side,
+                         then re-insert <mark> tags only where the backend emitted the
+                         ⟦HL⟧ / ⟦/HL⟧ sentinels around ts_headline matches. v-html is safe
+                         here because `renderSnippet()` guarantees the only tags present
+                         after processing are <mark>. -->
                     <!-- eslint-disable-next-line vue/no-v-html -->
-                    <p class="text-small text-fg-muted mt-0.5 snippet" v-html="hit.snippet" />
+                    <p class="text-small text-fg-muted mt-0.5 snippet" v-html="renderSnippet(hit.snippet)" />
                     <p v-if="hit.project_slug" class="mono-label mt-1 opacity-60">
                       project: <span class="font-mono">{{ hit.project_slug }}</span>
                     </p>
@@ -210,8 +232,11 @@ const entityLabels: Record<string, string> = {
 </template>
 
 <style>
-.snippet b {
+.snippet mark {
+  background: rgba(92, 200, 164, 0.15);
   color: var(--signal-green);
+  padding: 0 2px;
+  border-radius: 2px;
   font-weight: 600;
 }
 </style>

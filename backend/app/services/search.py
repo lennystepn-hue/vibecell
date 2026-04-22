@@ -48,7 +48,7 @@ _QUERIES: dict[str, str] = {
                 'english',
                 coalesce(p.name, '') || ' ' || coalesce(p.pitch, ''),
                 plainto_tsquery('english', :q),
-                'MaxFragments=1,MaxWords=25,MinWords=5'
+                'MaxFragments=1,MaxWords=25,MinWords=5,StartSel=⟦HL⟧,StopSel=⟦/HL⟧'
             ) AS snippet,
             ts_rank_cd(
                 to_tsvector('english', coalesce(p.name, '') || ' ' || coalesce(p.pitch, '')),
@@ -71,7 +71,7 @@ _QUERIES: dict[str, str] = {
                 'english',
                 coalesce(s.summary, '') || ' ' || coalesce(s.next_step, ''),
                 plainto_tsquery('english', :q),
-                'MaxFragments=1,MaxWords=25,MinWords=5'
+                'MaxFragments=1,MaxWords=25,MinWords=5,StartSel=⟦HL⟧,StopSel=⟦/HL⟧'
             ) AS snippet,
             ts_rank_cd(
                 to_tsvector('english', coalesce(s.summary, '') || ' ' || coalesce(s.next_step, '')),
@@ -95,7 +95,7 @@ _QUERIES: dict[str, str] = {
                 'english',
                 d.title || ' ' || coalesce(d.decision, '') || ' ' || coalesce(d.context, ''),
                 plainto_tsquery('english', :q),
-                'MaxFragments=1,MaxWords=25,MinWords=5'
+                'MaxFragments=1,MaxWords=25,MinWords=5,StartSel=⟦HL⟧,StopSel=⟦/HL⟧'
             ) AS snippet,
             ts_rank_cd(
                 to_tsvector('english', d.title || ' ' || coalesce(d.decision, '') || ' ' || coalesce(d.context, '')),
@@ -118,7 +118,7 @@ _QUERIES: dict[str, str] = {
             ts_headline(
                 'english', i.body,
                 plainto_tsquery('english', :q),
-                'MaxFragments=1,MaxWords=25,MinWords=5'
+                'MaxFragments=1,MaxWords=25,MinWords=5,StartSel=⟦HL⟧,StopSel=⟦/HL⟧'
             ) AS snippet,
             ts_rank_cd(
                 to_tsvector('english', i.body),
@@ -140,7 +140,7 @@ _QUERIES: dict[str, str] = {
             ts_headline(
                 'english', n.markdown,
                 plainto_tsquery('english', :q),
-                'MaxFragments=1,MaxWords=25,MinWords=5'
+                'MaxFragments=1,MaxWords=25,MinWords=5,StartSel=⟦HL⟧,StopSel=⟦/HL⟧'
             ) AS snippet,
             ts_rank_cd(
                 to_tsvector('english', n.markdown),

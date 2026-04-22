@@ -15,6 +15,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db import get_db
 from app.core.deps import AuthContext, ProjectContext, require_auth, require_project
+from app.core.rate_limit_ai import enforce_ai_rate_limit
 from app.models import Decision, Project, ProjectContext as PCtx, Session, Ship
 from app.services import ai as ai_svc
 from app.services import todo_svc
@@ -24,6 +25,8 @@ router = APIRouter(prefix="/api/v1/projects/{slug}/ai", tags=["ai"])
 DbDep = Annotated[AsyncSession, Depends(get_db)]
 CtxDep = Annotated[ProjectContext, Depends(require_project)]
 AuthDep = Annotated[AuthContext, Depends(require_auth)]
+# Rate limit applies to every generation endpoint. /status is exempt.
+RateLimitDep = Annotated[None, Depends(enforce_ai_rate_limit)]
 
 
 # ---------------------------------------------------------------------------
@@ -199,7 +202,7 @@ async def status_(ctx: CtxDep, auth: AuthDep, db: DbDep) -> AIStatusOut:
 
 @router.post("/plan_todos", response_model=PlanTodosOut)
 async def plan_todos(
-    body: PlanTodosIn, ctx: CtxDep, auth: AuthDep, db: DbDep,
+    body: PlanTodosIn, ctx: CtxDep, auth: AuthDep, db: DbDep, _rl: RateLimitDep,
 ) -> PlanTodosOut:
     """Break a free-text goal into a batch of todos using the user's AI key.
 
@@ -236,7 +239,7 @@ async def plan_todos(
 
 @router.post("/launch_copy", response_model=LaunchCopyOut)
 async def launch_copy(
-    body: LaunchCopyIn, ctx: CtxDep, auth: AuthDep, db: DbDep,
+    body: LaunchCopyIn, ctx: CtxDep, auth: AuthDep, db: DbDep, _rl: RateLimitDep,
 ) -> LaunchCopyOut:
     """Generate platform-specific launch posts for a ship event."""
     ship = None
@@ -283,7 +286,7 @@ async def launch_copy(
 
 
 @router.post("/retro", response_model=RetroOut)
-async def retro(ctx: CtxDep, auth: AuthDep, db: DbDep) -> RetroOut:
+async def retro(ctx: CtxDep, auth: AuthDep, db: DbDep, _rl: RateLimitDep) -> RetroOut:
     """Generate a markdown retro covering everything since the last ship."""
     events = await _events_summary_since_ship(db, ctx.project)
     try:
@@ -299,7 +302,7 @@ async def retro(ctx: CtxDep, auth: AuthDep, db: DbDep) -> RetroOut:
 
 
 @router.post("/resume_brief", response_model=BriefOut)
-async def resume_brief(ctx: CtxDep, auth: AuthDep, db: DbDep) -> BriefOut:
+async def resume_brief(ctx: CtxDep, auth: AuthDep, db: DbDep, _rl: RateLimitDep) -> BriefOut:
     """Generate the funny "where the fuck was I" morning brief."""
     context = await _project_context_blob(db, ctx.project)
     last = await _last_session_summary(db, ctx.project)
