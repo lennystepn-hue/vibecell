@@ -179,13 +179,18 @@ function addWidget(id: string) {
     </header>
 
     <!-- ── Grid ───────────────────────────────────────────────────────── -->
+    <!-- margin = [horizontal, vertical] px between items. Horizontal is a
+         hairline 4 px so cards read as "attached" (user didn't want a
+         column of air). Vertical 10 px keeps rows from feeling glued.
+         vertical-compact=true so hiding a widget doesn't leave an empty
+         row; grid-layout-plus slides the rest up gracefully. -->
     <GridLayout
       v-model:layout="store.layout"
       :col-num="12"
       :row-height="40"
       :is-draggable="store.editMode"
       :is-resizable="store.editMode"
-      :margin="[16, 16]"
+      :margin="[4, 10]"
       :use-css-transforms="true"
       :vertical-compact="true"
       drag-allow-from=".widget-drag-handle"
