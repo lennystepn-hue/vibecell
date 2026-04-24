@@ -29,58 +29,52 @@ const counters = ref([
   { value: 0, target: 0, label: "install", suffix: "" },
 ]);
 
-// MCP tool catalog — 6 capability cards for a clean 3×2 grid. Each card
-// gets ONE sentence of plain-English explanation + at most 3 chips so the
-// section reads as "here's what you get" not "here's an API dump".
+// MCP tool catalog — 6 capability cards. Seeded so every category gets
+// its own orb (consistent visual language with the rest of the page).
+// One sentence of plain English + a single signature tool name.
 const mcpGroups = [
   {
+    seed: "mcp-spawn",
     tag: "Spawn",
-    icon: "spark",
     count: 4,
-    blurb:
-      "Describe an idea in Claude — a project appears in the dashboard with stack, tags, pitch pre-filled.",
-    chips: ["vibecell_create_project", "vibecell_sync_repo", "vibecell_check_env_drift"],
+    blurb: "Describe an idea in Claude — a project appears in the dashboard with stack, tags, pitch pre-filled.",
+    signature: "vibecell_create_project",
     accent: true,
   },
   {
+    seed: "mcp-read",
     tag: "Read",
-    icon: "eye",
     count: 11,
-    blurb:
-      "Claude can pull the full project aggregate, search your history, or get a resurrection brief.",
-    chips: ["vibecell_active", "vibecell_search", "vibecell_brief"],
+    blurb: "Claude pulls the full project aggregate, searches your history, generates a resurrection brief.",
+    signature: "vibecell_active",
   },
   {
+    seed: "mcp-write",
     tag: "Write",
-    icon: "pen",
     count: 13,
-    blurb:
-      "Every session, decision, ship, URL, or script Claude touches lands in the dashboard as a one-line tool call.",
-    chips: ["vibecell_log_session", "vibecell_decision", "vibecell_add_environment"],
+    blurb: "Every session, decision, ship, URL or script Claude touches lands as a one-line tool call.",
+    signature: "vibecell_log_session",
   },
   {
+    seed: "mcp-todos",
     tag: "Todos",
-    icon: "check",
     count: 6,
-    blurb:
-      "Plan work as visible batches. Claude ticks each one off with a commit note as it ships.",
-    chips: ["vibecell_todo_batch_add", "vibecell_todo_start", "vibecell_todo_complete"],
+    blurb: "Plan work as visible batches. Claude ticks each one off with a commit note as it ships.",
+    signature: "vibecell_todo_batch_add",
   },
   {
+    seed: "mcp-secrets",
     tag: "Secrets",
-    icon: "key",
     count: 4,
-    blurb:
-      "Workspace-scoped vault. References to 1Password / Bitwarden, or inline-encrypted with a DEK.",
-    chips: ["vibecell_secret_set", "vibecell_secret_get_value", "vibecell_secret_list"],
+    blurb: "Workspace-scoped vault. References to 1Password / Bitwarden, or inline-encrypted with a DEK.",
+    signature: "vibecell_secret_get_value",
   },
   {
+    seed: "mcp-ai",
     tag: "AI",
-    icon: "sparkles",
     count: 4,
-    blurb:
-      "BYOK Anthropic key. Goal-to-todos planning, launch copy, retros, morning resume brief.",
-    chips: ["vibecell_ai_plan_todos", "vibecell_ai_launch_copy", "vibecell_ai_retro"],
+    blurb: "BYOK Anthropic key. Goal-to-todos planning, launch copy, retros, morning resume brief.",
+    signature: "vibecell_ai_plan_todos",
   },
 ];
 
@@ -100,44 +94,8 @@ onMounted(() => {
   setTimeout(tick, 400);
 });
 
-const features = [
-  {
-    icon: "terminal",
-    label: "Claude + your code, one click",
-    body: "Vibecell ships as an MCP server that plugs into Claude Desktop, Claude Code, Cursor, Zed, and any MCP-compatible IDE. No wiring needed.",
-    accent: true,
-  },
-  {
-    icon: "brain",
-    label: "AI that knows your projects",
-    body: "Project context, next steps, open questions, and tech stack are auto-loaded at session start. Your AI starts exactly where you left off.",
-    accent: false,
-  },
-  {
-    icon: "scroll",
-    label: "Ship log that writes itself",
-    body: "Every session end triggers an auto-log: what shipped, what's next, any blockers. Zero cognitive overhead.",
-    accent: false,
-  },
-  {
-    icon: "github",
-    label: "13 projects in seconds",
-    body: "Import your entire GitHub org in one click. AI reads your README and manifests to generate pitch, tags, stack, and infra automatically.",
-    accent: false,
-  },
-  {
-    icon: "chart",
-    label: "Portfolio intel",
-    body: "Activity heatmap across your whole portfolio. Stagnation detection flags what hasn't shipped in weeks before you forget it exists.",
-    accent: false,
-  },
-  {
-    icon: "key",
-    label: "Workspace-scoped secrets",
-    body: "Inline secrets, 1Password, or Bitwarden — all scoped to your workspace. Your credentials never leave your machine in plaintext.",
-    accent: false,
-  },
-];
+// Removed the generic feature grid — it repeated what the orb-showcase +
+// MCP catalog + session-mockup already cover. Keeping the surface tight.
 
 // Showcase seeds → each orb is an illustrated hint at a capability. The seed
 // string also doubles as a stable key for the ProjectOrb hash so the colors
@@ -290,22 +248,38 @@ const steps = [
 
           <h1 class="font-sans font-semibold mb-6 leading-[1.07] tracking-tight"
             style="font-size: clamp(2.4rem, 5vw, 4rem); letter-spacing: -0.04em; color: #ffffff">
-            Remember every<br>
-            project<br>
-            <!-- Gradient that mirrors the hero orb's palette: violet →
-                 mint → pink. Ties the headline into the 3D object sitting
-                 next to it. -->
+            Project memory for<br>
+            <!-- Gradient pulls from the hero orb's palette: violet → mint →
+                 pink. Ties the headline into the 3D object sitting next to it. -->
             <span
               class="bg-clip-text text-transparent"
               style="background-image: linear-gradient(120deg, #b592ff 0%, #7dffd4 45%, #ff6b9d 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent"
-            >you ship.</span>
+            >Claude &amp; Cursor.</span>
           </h1>
 
-          <p class="mb-10 leading-relaxed max-w-md"
-            style="font-size: 1.05rem; color: #8ba1bd; line-height: 1.65">
-            Vibecell is the operating system for vibecoders — a context layer, MCP server, and
-            ship-log that keeps your AI and your projects in sync across every session.
+          <p class="mb-6 leading-relaxed max-w-md"
+            style="font-size: 1.05rem; color: #cfd4dc; line-height: 1.6">
+            A dashboard plus <strong style="color: #ffffff; font-weight: 600">38 MCP tools</strong>
+            that keep your AI in sync with every project you ship. Set it up once, never
+            re-explain your codebase to Claude again.
           </p>
+
+          <!-- Concrete what-it-does bullets — tells a scanning visitor what
+               lives inside before they scroll. -->
+          <ul class="mb-9 space-y-2" style="font-size: 13px; color: #8ba1bd">
+            <li class="flex items-start gap-2.5">
+              <span class="mt-[7px] w-1 h-1 rounded-full shrink-0" style="background: #5cc8a4"></span>
+              <span>Import your whole GitHub org — stack, tags, pitch auto-filled by AI</span>
+            </li>
+            <li class="flex items-start gap-2.5">
+              <span class="mt-[7px] w-1 h-1 rounded-full shrink-0" style="background: #b592ff"></span>
+              <span>Claude logs a session row on every git commit. No manual diary.</span>
+            </li>
+            <li class="flex items-start gap-2.5">
+              <span class="mt-[7px] w-1 h-1 rounded-full shrink-0" style="background: #ff6b9d"></span>
+              <span>Plugs into Claude Code, Cursor, Zed &mdash; any MCP client. 10-second setup.</span>
+            </li>
+          </ul>
 
           <div class="flex flex-wrap gap-3 mb-8">
             <!-- Primary CTA — same gradient as the "you ship" text + the
@@ -383,88 +357,49 @@ const steps = [
           </p>
         </div>
 
-        <!-- Tool-group grid: 7 capability cards -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-14">
+        <!-- Tool-group list: 6 rows, each with orb + meta + blurb + signature tool.
+             Horizontal stripe layout (not cards) to DIFFERENTIATE from the
+             card patterns used elsewhere on the page. Reads like a reference
+             index — dense, scannable, calm. -->
+        <div class="mt-16 divide-y" style="border-color: rgba(138,180,255,0.08); border-top: 1px solid rgba(138,180,255,0.08); border-bottom: 1px solid rgba(138,180,255,0.08)">
           <div
             v-for="g in mcpGroups"
             :key="g.tag"
-            class="rounded-xl p-5 transition-all duration-300 hover:-translate-y-[2px] hover:border-opacity-40"
-            :style="g.accent
-              ? 'background: rgba(92,200,164,0.07); border: 1px solid rgba(92,200,164,0.22); box-shadow: 0 0 32px rgba(92,200,164,0.05)'
-              : 'background: rgba(20,33,50,0.45); border: 1px solid rgba(138,180,255,0.09)'"
+            class="grid grid-cols-[auto_160px_1fr_auto] items-center gap-6 py-5 px-2 transition-colors hover:bg-white/[0.02]"
+            style="border-top: 1px solid rgba(138,180,255,0.08)"
           >
-            <!-- Header row: icon + tag + count -->
-            <div class="flex items-center justify-between mb-4">
-              <div class="flex items-center gap-2.5">
-                <div class="w-8 h-8 rounded-lg flex items-center justify-center"
-                  :style="g.accent
-                    ? 'background: rgba(92,200,164,0.15)'
-                    : 'background: rgba(138,180,255,0.07)'"
-                >
-                  <!-- eye -->
-                  <svg v-if="g.icon === 'eye'" viewBox="0 0 20 20" fill="none" style="width:16px;height:16px">
-                    <path d="M2 10s3-5 8-5 8 5 8 5-3 5-8 5-8-5-8-5Z" stroke="#8ba1bd" stroke-width="1.4"/>
-                    <circle cx="10" cy="10" r="2.4" stroke="#8ba1bd" stroke-width="1.4"/>
-                  </svg>
-                  <!-- pen -->
-                  <svg v-if="g.icon === 'pen'" viewBox="0 0 20 20" fill="none" style="width:16px;height:16px">
-                    <path d="M13 3l4 4-9 9H4v-4l9-9Z" stroke="#8ba1bd" stroke-width="1.4" stroke-linejoin="round"/>
-                  </svg>
-                  <!-- spark -->
-                  <svg v-if="g.icon === 'spark'" viewBox="0 0 20 20" fill="none" style="width:16px;height:16px">
-                    <path d="M10 2l2 6 6 2-6 2-2 6-2-6-6-2 6-2 2-6Z" fill="#5cc8a4" fill-opacity="0.25" stroke="#5cc8a4" stroke-width="1.3" stroke-linejoin="round"/>
-                  </svg>
-                  <!-- check -->
-                  <svg v-if="g.icon === 'check'" viewBox="0 0 20 20" fill="none" style="width:16px;height:16px">
-                    <rect x="3" y="3" width="14" height="14" rx="3" stroke="#8ba1bd" stroke-width="1.4"/>
-                    <path d="M6 10l3 3 5-6" stroke="#8ba1bd" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                  </svg>
-                  <!-- edit -->
-                  <svg v-if="g.icon === 'edit'" viewBox="0 0 20 20" fill="none" style="width:16px;height:16px">
-                    <path d="M4 4h7M4 10h7M4 16h5" stroke="#8ba1bd" stroke-width="1.4" stroke-linecap="round"/>
-                    <path d="M14 12l3 3-4 1 1-4Z" stroke="#8ba1bd" stroke-width="1.4" stroke-linejoin="round"/>
-                  </svg>
-                  <!-- key -->
-                  <svg v-if="g.icon === 'key'" viewBox="0 0 20 20" fill="none" style="width:16px;height:16px">
-                    <circle cx="8" cy="9" r="3" stroke="#8ba1bd" stroke-width="1.4"/>
-                    <path d="M10.5 11.5l5 5M13 14l1.5 1.5" stroke="#8ba1bd" stroke-width="1.4" stroke-linecap="round"/>
-                  </svg>
-                  <!-- sparkles -->
-                  <svg v-if="g.icon === 'sparkles'" viewBox="0 0 20 20" fill="none" style="width:16px;height:16px">
-                    <path d="M7 3l1 2 2 1-2 1-1 2-1-2-2-1 2-1 1-2Z" fill="#8ba1bd" fill-opacity="0.3" stroke="#8ba1bd" stroke-width="1.2" stroke-linejoin="round"/>
-                    <path d="M14 9l.8 1.6 1.6.8-1.6.8L14 14l-.8-1.8-1.6-.8 1.6-.8L14 9Z" fill="#8ba1bd" fill-opacity="0.3" stroke="#8ba1bd" stroke-width="1.1" stroke-linejoin="round"/>
-                  </svg>
-                </div>
-                <span class="font-semibold"
-                  style="font-size: 13px; color: #ffffff; letter-spacing: -0.01em">
-                  {{ g.tag }}
-                </span>
-              </div>
-              <span class="font-mono text-[11px] tabular-nums"
-                :style="g.accent ? 'color: #5cc8a4' : 'color: #5e7088'">
+            <!-- Orb — the category identity -->
+            <ProjectOrb :seed="g.seed" :size="44" />
+
+            <!-- Tag + count -->
+            <div>
+              <p class="font-semibold"
+                style="font-size: 15px; color: #ffffff; letter-spacing: -0.01em">
+                {{ g.tag }}
+              </p>
+              <p class="font-mono tabular-nums mt-0.5"
+                :style="g.accent
+                  ? 'font-size: 11px; color: #5cc8a4'
+                  : 'font-size: 11px; color: #5e7088'">
                 {{ g.count }} tools
-              </span>
+              </p>
             </div>
 
             <!-- Blurb -->
-            <p class="mb-4 leading-relaxed"
-              style="font-size: 12px; color: #8ba1bd; line-height: 1.6">
+            <p class="leading-relaxed hidden md:block"
+              style="font-size: 13px; color: #8ba1bd; line-height: 1.55">
               {{ g.blurb }}
             </p>
 
-            <!-- Chips: specific tool names in mono -->
-            <div class="flex flex-wrap gap-1.5">
-              <span
-                v-for="chip in g.chips"
-                :key="chip"
-                class="font-mono text-[10px] px-2 py-1 rounded-md whitespace-nowrap"
-                :style="g.accent
-                  ? 'background: rgba(92,200,164,0.08); color: #a9e5cc; border: 1px solid rgba(92,200,164,0.15)'
-                  : 'background: rgba(7,11,16,0.5); color: #8ba1bd; border: 1px solid rgba(138,180,255,0.08)'"
-              >
-                {{ chip }}
-              </span>
-            </div>
+            <!-- Signature tool name -->
+            <span
+              class="font-mono text-[11px] px-2.5 py-1 rounded-md whitespace-nowrap tabular-nums"
+              :style="g.accent
+                ? 'background: rgba(92,200,164,0.08); color: #a9e5cc; border: 1px solid rgba(92,200,164,0.18)'
+                : 'background: rgba(7,11,16,0.5); color: #8ba1bd; border: 1px solid rgba(138,180,255,0.1)'"
+            >
+              {{ g.signature }}
+            </span>
           </div>
         </div>
 
@@ -485,79 +420,7 @@ const steps = [
       </div>
     </section>
 
-    <!-- ─── Feature grid ─────────────────────────────────────────────────── -->
-    <section class="max-w-6xl mx-auto px-6 py-28">
-      <div class="text-center mb-16">
-        <p class="font-mono text-[11px] uppercase tracking-[0.15em] mb-3" style="color: #5cc8a4">
-          Everything you need
-        </p>
-        <h2 class="font-semibold leading-tight" style="font-size: clamp(1.6rem, 3vw, 2.4rem); letter-spacing: -0.03em; color: #ffffff">
-          Built for the way you actually code
-        </h2>
-      </div>
-
-      <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
-        <div
-          v-for="(f, i) in features"
-          :key="f.label"
-          class="rounded-xl p-6 transition-all duration-300 hover:translate-y-[-2px] group cursor-default"
-          :style="f.accent
-            ? 'background: rgba(92,200,164,0.06); border: 1px solid rgba(92,200,164,0.2); box-shadow: 0 0 32px rgba(92,200,164,0.04)'
-            : 'background: rgba(20,33,50,0.45); border: 1px solid rgba(138,180,255,0.1)'"
-        >
-          <!-- Icon -->
-          <div class="w-9 h-9 rounded-lg flex items-center justify-center mb-4"
-            :style="f.accent
-              ? 'background: rgba(92,200,164,0.15)'
-              : 'background: rgba(138,180,255,0.07)'">
-            <!-- terminal -->
-            <svg v-if="f.icon === 'terminal'" viewBox="0 0 20 20" fill="none" class="w-4.5 h-4.5" style="width:18px;height:18px">
-              <path d="M3 5l4 4-4 4M9 13h8" stroke="#5cc8a4" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-            <!-- brain -->
-            <svg v-if="f.icon === 'brain'" viewBox="0 0 20 20" fill="none" style="width:18px;height:18px">
-              <path d="M7 10c0-1.65 1.34-3 3-3s3 1.35 3 3-1.34 3-3 3M10 7V4M10 16v-3M4.93 4.93l2.12 2.12M12.95 12.95l2.12 2.12M4 10H7M13 10h3M4.93 15.07l2.12-2.12M12.95 7.05l2.12-2.12" stroke="#8ba1bd" stroke-width="1.4" stroke-linecap="round"/>
-            </svg>
-            <!-- scroll -->
-            <svg v-if="f.icon === 'scroll'" viewBox="0 0 20 20" fill="none" style="width:18px;height:18px">
-              <rect x="4" y="3" width="12" height="14" rx="2" stroke="#8ba1bd" stroke-width="1.4"/>
-              <path d="M7 7h6M7 10h6M7 13h4" stroke="#8ba1bd" stroke-width="1.4" stroke-linecap="round"/>
-            </svg>
-            <!-- github -->
-            <svg v-if="f.icon === 'github'" viewBox="0 0 20 20" fill="none" style="width:18px;height:18px">
-              <path fill-rule="evenodd" clip-rule="evenodd" d="M10 2C5.58 2 2 5.58 2 10c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38v-1.34c-2.22.48-2.69-1.07-2.69-1.07-.36-.92-.89-1.17-.89-1.17-.73-.5.05-.49.05-.49.8.06 1.22.82 1.22.82.71 1.22 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82A7.69 7.69 0 0 1 10 6.84c.68 0 1.36.09 2 .26 1.52-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48v2.19c0 .21.15.46.55.38A8.013 8.013 0 0 0 18 10c0-4.42-3.58-8-8-8Z" fill="#8ba1bd"/>
-            </svg>
-            <!-- chart -->
-            <svg v-if="f.icon === 'chart'" viewBox="0 0 20 20" fill="none" style="width:18px;height:18px">
-              <rect x="3" y="11" width="3" height="5" rx="1" fill="none" stroke="#8ba1bd" stroke-width="1.4"/>
-              <rect x="8" y="7" width="3" height="9" rx="1" fill="none" stroke="#8ba1bd" stroke-width="1.4"/>
-              <rect x="13" y="4" width="3" height="12" rx="1" fill="none" stroke="#8ba1bd" stroke-width="1.4"/>
-            </svg>
-            <!-- key -->
-            <svg v-if="f.icon === 'key'" viewBox="0 0 20 20" fill="none" style="width:18px;height:18px">
-              <circle cx="8" cy="9" r="3" stroke="#8ba1bd" stroke-width="1.4"/>
-              <path d="M10.5 11.5l5 5M13 14l1.5 1.5" stroke="#8ba1bd" stroke-width="1.4" stroke-linecap="round"/>
-            </svg>
-          </div>
-
-          <h3 class="font-semibold mb-2" style="font-size: 14px; color: #ffffff; letter-spacing: -0.01em">
-            {{ f.label }}
-          </h3>
-          <p class="leading-relaxed" style="font-size: 12px; color: #8ba1bd; line-height: 1.6">
-            {{ f.body }}
-          </p>
-
-          <!-- Accent badge for first card -->
-          <div v-if="i === 0" class="mt-4 inline-flex items-center gap-1.5 font-mono"
-            style="font-size: 10px; color: #5cc8a4; letter-spacing: 0.08em; text-transform: uppercase">
-            <span class="w-1 h-1 rounded-full bg-signal-green" />
-            MCP-native
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ─── Orb showcase + how-to-spawn ──────────────────────────────────── -->
+    <!-- ─── Orb feature storytelling ─────────────────────────────────────── -->
     <section class="relative py-28 px-6 overflow-hidden">
       <!-- Subtle radial glow behind the orbs — same aesthetic as the hero -->
       <div class="absolute inset-0 pointer-events-none"
