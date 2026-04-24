@@ -3,6 +3,7 @@ import { ref, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import DiamondHero from "@/components/landing/DiamondHero.vue";
 import UserMenu from "@/components/app/UserMenu.vue";
+import ProjectOrb from "@/components/ui/ProjectOrb.vue";
 import { useAuthStore } from "@/stores/auth";
 
 const router = useRouter();
@@ -80,6 +81,41 @@ const features = [
     label: "Workspace-scoped secrets",
     body: "Inline secrets, 1Password, or Bitwarden — all scoped to your workspace. Your credentials never leave your machine in plaintext.",
     accent: false,
+  },
+];
+
+// Showcase seeds → deterministic orbs, one per imagined project archetype.
+// Lets the landing page demo the per-project visual identity without
+// requiring real data.
+const orbShowcase = [
+  { seed: "giftmakr", label: "giftmakr" },
+  { seed: "clipscribe", label: "clipscribe" },
+  { seed: "agentcheck", label: "agentcheck" },
+  { seed: "vibecell", label: "vibecell" },
+  { seed: "inbox-zero", label: "inbox-zero" },
+  { seed: "lensflare", label: "lensflare" },
+  { seed: "prompt-lab", label: "prompt-lab" },
+  { seed: "portfolio-os", label: "portfolio-os" },
+];
+
+const spawnPaths = [
+  {
+    icon: "mcp",
+    tag: "via Claude Code",
+    title: "Describe your idea, Claude creates it",
+    body: "Say \"I want to build a dashboard for tracking X\" in Claude Code — Vibecell spawns the project with stack, tags, environments + commands pre-filled. Zero form.",
+  },
+  {
+    icon: "github",
+    tag: "via GitHub import",
+    title: "Pull your entire org in one click",
+    body: "Connect GitHub, select repos, Haiku reads each README + manifest and writes pitch, stack, infra, env URLs, run-scripts. Live in seconds.",
+  },
+  {
+    icon: "manual",
+    tag: "via dashboard",
+    title: "Manual control when you want it",
+    body: "Name, emoji (optional — orb is auto), pitch, status. Done. Claude starts populating the rest the moment you open a session in the repo.",
   },
 ];
 
@@ -295,6 +331,124 @@ const steps = [
             style="font-size: 10px; color: #5cc8a4; letter-spacing: 0.08em; text-transform: uppercase">
             <span class="w-1 h-1 rounded-full bg-signal-green" />
             MCP-native
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── Orb showcase + how-to-spawn ──────────────────────────────────── -->
+    <section class="relative py-28 px-6 overflow-hidden">
+      <!-- Subtle radial glow behind the orbs — same aesthetic as the hero -->
+      <div class="absolute inset-0 pointer-events-none"
+        style="background: radial-gradient(ellipse 70% 50% at 50% 40%, rgba(138,180,255,0.06) 0%, transparent 70%)" />
+      <div
+        class="absolute top-1/3 left-1/4 w-[500px] h-[500px] rounded-full pointer-events-none"
+        style="background: radial-gradient(circle, rgba(181,146,255,0.05) 0%, transparent 70%); filter: blur(40px)"
+      />
+      <div
+        class="absolute top-1/2 right-1/4 w-[500px] h-[500px] rounded-full pointer-events-none"
+        style="background: radial-gradient(circle, rgba(92,200,164,0.05) 0%, transparent 70%); filter: blur(40px)"
+      />
+
+      <div class="relative z-10 max-w-6xl mx-auto">
+        <!-- Heading -->
+        <div class="text-center mb-14">
+          <p class="font-mono text-[11px] uppercase tracking-[0.15em] mb-3" style="color: #5cc8a4">
+            Every project, its own identity
+          </p>
+          <h2 class="font-semibold leading-tight mb-4"
+            style="font-size: clamp(1.6rem, 3vw, 2.4rem); letter-spacing: -0.03em; color: #ffffff">
+            Deterministic glass orbs &mdash;<br class="hidden sm:block">
+            <span style="color: #8ba1bd">70&thinsp;million unique designs</span>
+          </h2>
+          <p class="max-w-xl mx-auto leading-relaxed" style="font-size: 14px; color: #8ba1bd">
+            No two projects look the same. Each slug seeds a glass sphere &mdash; colors, blob
+            positions and rotation derived from an FNV hash. Same project, same orb, every
+            time you see it. Build visual muscle memory across your portfolio.
+          </p>
+        </div>
+
+        <!-- Orb grid -->
+        <div class="grid grid-cols-4 md:grid-cols-8 gap-6 md:gap-8 mb-24 max-w-4xl mx-auto">
+          <div
+            v-for="o in orbShowcase"
+            :key="o.seed"
+            class="flex flex-col items-center gap-3 transition-transform duration-300 hover:-translate-y-1"
+          >
+            <ProjectOrb :seed="o.seed" :size="64" />
+            <span class="font-mono text-[10px] tracking-wide" style="color: #5e7088">
+              {{ o.label }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Spawn paths — three sub-sections -->
+        <div class="text-center mb-10">
+          <p class="font-mono text-[11px] uppercase tracking-[0.15em] mb-3" style="color: #5cc8a4">
+            Three ways to spawn a project
+          </p>
+          <h3 class="font-semibold"
+            style="font-size: clamp(1.3rem, 2.4vw, 1.8rem); letter-spacing: -0.02em; color: #ffffff">
+            Start from a conversation, a repo, or a blank slate
+          </h3>
+        </div>
+
+        <div class="grid md:grid-cols-3 gap-5">
+          <div
+            v-for="(s, i) in spawnPaths"
+            :key="s.tag"
+            class="rounded-xl p-6 transition-all duration-300 hover:-translate-y-[2px]"
+            :style="i === 0
+              ? 'background: rgba(92,200,164,0.06); border: 1px solid rgba(92,200,164,0.2); box-shadow: 0 0 32px rgba(92,200,164,0.04)'
+              : 'background: rgba(20,33,50,0.45); border: 1px solid rgba(138,180,255,0.1)'"
+          >
+            <!-- Icon tile -->
+            <div class="w-10 h-10 rounded-lg flex items-center justify-center mb-5"
+              :style="i === 0
+                ? 'background: rgba(92,200,164,0.15)'
+                : 'background: rgba(138,180,255,0.07)'"
+            >
+              <!-- MCP — stacked-circle spark -->
+              <svg v-if="s.icon === 'mcp'" viewBox="0 0 20 20" fill="none" style="width:18px;height:18px">
+                <circle cx="10" cy="10" r="2" fill="#5cc8a4" />
+                <circle cx="10" cy="10" r="5" stroke="#5cc8a4" stroke-width="1.2" stroke-opacity="0.6" />
+                <circle cx="10" cy="10" r="8" stroke="#5cc8a4" stroke-width="1" stroke-opacity="0.25" />
+              </svg>
+              <!-- GitHub -->
+              <svg v-if="s.icon === 'github'" viewBox="0 0 20 20" fill="none" style="width:18px;height:18px">
+                <path fill-rule="evenodd" clip-rule="evenodd" d="M10 2C5.58 2 2 5.58 2 10c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38v-1.34c-2.22.48-2.69-1.07-2.69-1.07-.36-.92-.89-1.17-.89-1.17-.73-.5.05-.49.05-.49.8.06 1.22.82 1.22.82.71 1.22 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82A7.69 7.69 0 0 1 10 6.84c.68 0 1.36.09 2 .26 1.52-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48v2.19c0 .21.15.46.55.38A8.013 8.013 0 0 0 18 10c0-4.42-3.58-8-8-8Z" fill="#8ba1bd"/>
+              </svg>
+              <!-- Manual / plus -->
+              <svg v-if="s.icon === 'manual'" viewBox="0 0 20 20" fill="none" style="width:18px;height:18px">
+                <path d="M10 5v10M5 10h10" stroke="#8ba1bd" stroke-width="1.5" stroke-linecap="round"/>
+              </svg>
+            </div>
+
+            <!-- Tag -->
+            <p class="font-mono text-[10px] uppercase tracking-[0.12em] mb-2"
+              :style="i === 0 ? 'color: #5cc8a4' : 'color: #5e7088'"
+            >
+              {{ s.tag }}
+            </p>
+            <h4 class="font-semibold mb-2"
+              style="font-size: 14px; color: #ffffff; letter-spacing: -0.01em; line-height: 1.3"
+            >
+              {{ s.title }}
+            </h4>
+            <p class="leading-relaxed" style="font-size: 12px; color: #8ba1bd; line-height: 1.6">
+              {{ s.body }}
+            </p>
+
+            <!-- Code snippet on card 1 — the Claude conversation example -->
+            <div v-if="i === 0"
+              class="mt-5 rounded-md p-3 font-mono"
+              style="background: rgba(7,11,16,0.6); border: 1px solid rgba(92,200,164,0.15); font-size: 11px; line-height: 1.5"
+            >
+              <p style="color: #5e7088">you:</p>
+              <p style="color: #cfd4dc" class="mb-2">&ldquo;let&rsquo;s build a tool that <br>turns TikToks into blog posts&rdquo;</p>
+              <p style="color: #5e7088">claude:</p>
+              <p style="color: #5cc8a4">✓ spawned clipscribe →</p>
+            </div>
           </div>
         </div>
       </div>
