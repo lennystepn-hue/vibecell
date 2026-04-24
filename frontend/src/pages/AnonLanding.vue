@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
 import { useRouter } from "vue-router";
-import DiamondHero from "@/components/landing/DiamondHero.vue";
+import HeroOrb from "@/components/landing/HeroOrb.vue";
 import UserMenu from "@/components/app/UserMenu.vue";
 import ProjectOrb from "@/components/ui/ProjectOrb.vue";
 import { useAuthStore } from "@/stores/auth";
@@ -321,18 +321,13 @@ const steps = [
           </p>
         </div>
 
-        <!-- Right: 3D Diamond -->
+        <!-- Right: Hero orb — slowly-rotating aurora-glass sphere. Carries
+             the same visual language as the per-project orbs used throughout
+             the dashboard, scaled up and animated. -->
         <div class="relative flex items-center justify-center">
-          <div class="relative w-full" style="aspect-ratio: 1; max-width: 480px; margin: auto">
-            <DiamondHero class="w-full h-full" />
-            <!-- ◈ symbol overlay — subtle brand stamp -->
-            <div class="absolute inset-0 flex items-center justify-center pointer-events-none select-none">
-              <span class="font-mono" style="font-size: 3.5rem; color: rgba(92,200,164,0.12); line-height:1">◈</span>
-            </div>
+          <div class="relative w-full" style="aspect-ratio: 1; max-width: 520px; margin: auto">
+            <HeroOrb class="w-full h-full" />
           </div>
-          <!-- Decorative glow behind canvas -->
-          <div class="absolute inset-0 pointer-events-none rounded-full"
-            style="background: radial-gradient(circle at 50% 50%, rgba(92,200,164,0.07) 0%, transparent 65%)" />
         </div>
       </div>
     </section>
