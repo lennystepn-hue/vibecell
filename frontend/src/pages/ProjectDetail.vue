@@ -153,11 +153,14 @@ useProjectLive(
                   <LivePulse :slug="projects.active.slug" variant="pill" />
                 </div>
                 <p v-if="projects.active.pitch" class="text-body text-fg-muted mt-1 max-w-3xl">{{ projects.active.pitch }}</p>
+                <!-- Created/updated timestamps only. Status is already shown by
+                     the StatusPill dropdown above — no need for a redundant
+                     "Active/Archived" word here. Before, that line stayed on
+                     "ARCHIVED" forever because archived_at wasn't cleared when
+                     status changed back. -->
                 <div class="flex items-center gap-3 mt-3 text-small text-fg-subtle flex-wrap">
                   <span v-if="(projects.active as any).created_at" class="mono-label">Created {{ fmtDate((projects.active as any).created_at) }}</span>
                   <span v-if="(projects.active as any).updated_at" class="mono-label">Updated {{ fmtRel((projects.active as any).updated_at) }}</span>
-                  <span v-if="(projects.active as any).archived_at" class="mono-label text-signal-amber">Archived</span>
-                  <span v-else class="mono-label text-signal-green">Active</span>
                 </div>
                 <ProjectOverviewChips :slug="projects.active.slug" class="mt-3" />
               </div>

@@ -5,12 +5,12 @@ Used by:
 - MCP vibecell_sync_repo tool (app.mcp.handlers.write)
 
 Idempotent: running twice on the same project with identical enrichment
-data won't duplicate stack rows, tags, or overwrite existing infra unless
-the new infra fields are non-null AND the existing field is null.
+data won't duplicate stack rows, tags, environments, commands, or links,
+and won't overwrite existing non-null infra fields.
 """
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -18,7 +18,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.ulid import new_ulid
 from app.models import (
     Project,
+    ProjectCommand,
+    ProjectEnvironment,
     ProjectInfra,
+    ProjectLink,
     ProjectStack,
     ProjectTag,
     StackItem,
@@ -32,15 +35,13 @@ class ApplyStats:
     """Summary of what was written. Useful for telling the user what happened."""
 
     pitch_updated: bool = False
-    stack_added: list[str] = None  # slugs that were newly linked
-    tags_added: list[str] = None  # names that were newly linked
+    emoji_updated: bool = False
     infra_updated: bool = False
-
-    def __post_init__(self) -> None:
-        if self.stack_added is None:
-            self.stack_added = []
-        if self.tags_added is None:
-            self.tags_added = []
+    stack_added: list[str] = field(default_factory=list)
+    tags_added: list[str] = field(default_factory=list)
+    environments_added: list[str] = field(default_factory=list)  # kinds added
+    commands_added: list[str] = field(default_factory=list)      # labels added
+    links_added: list[str] = field(default_factory=list)         # (kind:label) added
 
 
 async def apply_enrichment_to_project(
@@ -54,9 +55,13 @@ async def apply_enrichment_to_project(
     """Apply enrichment to a project.
 
     - pitch: set only if current is empty/short (<20 chars) AND overwrite_pitch_if_thin
+    - emoji: set only if current is missing or the default "📦"
     - tags: dedup across workspace; only links new ones
     - stack: dedup across global StackItem; only links new ones
     - infra: merges into ProjectInfra — per-field, only fills null fields
+    - environments: dedup by `kind`; inserts only kinds not yet present
+    - commands: dedup by `label` (case-insensitive); inserts only new labels
+    - extra_links: dedup by `url`; inserts only new URLs
     """
     stats = ApplyStats()
 
@@ -64,6 +69,12 @@ async def apply_enrichment_to_project(
     if enriched.pitch and overwrite_pitch_if_thin and (not project.pitch or len(project.pitch or "") < 20):
         project.pitch = enriched.pitch[:2000]
         stats.pitch_updated = True
+
+    # --- Emoji --- (overwrite only the default box)
+    if enriched.emoji and (not project.emoji or project.emoji == "📦"):
+        # Cap to 2 chars (most emojis are 1-2 codepoints; some flags are longer but model rarely returns those).
+        project.emoji = enriched.emoji[:16]
+        stats.emoji_updated = True
 
     # --- Tags ---
     for tag_name in (enriched.tags or [])[:8]:
@@ -132,8 +143,7 @@ async def apply_enrichment_to_project(
             select(ProjectInfra).where(ProjectInfra.project_id == project.id)
         )).scalar_one_or_none()
 
-        # Map from enrichment's loose keys to our model's columns. The enrichment
-        # schema uses "framework" (meta) and "db" — we store "db" under db_host.
+        # Map enrichment's loose keys to our model's columns.
         field_map = {
             "server_alias": "server_alias",
             "db": "db_host",
@@ -158,5 +168,78 @@ async def apply_enrichment_to_project(
                     if val:
                         setattr(existing_infra, dest_col, str(val)[:255])
                         stats.infra_updated = True
+
+    # --- Environments (dedup by kind) ---
+    existing_env_kinds = {
+        row.kind for row in (await db.execute(
+            select(ProjectEnvironment).where(ProjectEnvironment.project_id == project.id)
+        )).scalars().all()
+    }
+    for env in (enriched.environments or [])[:3]:
+        kind = env.get("kind")
+        url = env.get("url")
+        if kind not in {"local", "staging", "prod"} or not url:
+            continue
+        if kind in existing_env_kinds:
+            continue
+        db.add(ProjectEnvironment(
+            id=new_ulid(),
+            project_id=project.id,
+            kind=kind,
+            url=str(url)[:2000],
+            env_template_path=(env.get("env_template_path") or None),
+        ))
+        existing_env_kinds.add(kind)
+        stats.environments_added.append(kind)
+
+    # --- Commands (dedup by label, case-insensitive) ---
+    existing_cmd_labels = {
+        (row.label or "").lower()
+        for row in (await db.execute(
+            select(ProjectCommand).where(ProjectCommand.project_id == project.id)
+        )).scalars().all()
+    }
+    for cmd in (enriched.commands or [])[:8]:
+        label = (cmd.get("label") or "").strip()
+        command = (cmd.get("command") or "").strip()
+        run_in = cmd.get("run_in") or "terminal"
+        if not label or not command:
+            continue
+        if label.lower() in existing_cmd_labels:
+            continue
+        db.add(ProjectCommand(
+            id=new_ulid(),
+            project_id=project.id,
+            label=label[:200],
+            command=command[:4000],
+            run_in=run_in if run_in in {"terminal", "browser"} else "terminal",
+            confirm_required=0,  # LLM-suggested commands shouldn't gate on confirm by default
+        ))
+        existing_cmd_labels.add(label.lower())
+        stats.commands_added.append(label)
+
+    # --- Extra links (dedup by URL) ---
+    existing_link_urls = {
+        row.url for row in (await db.execute(
+            select(ProjectLink).where(ProjectLink.project_id == project.id)
+        )).scalars().all()
+    }
+    for lnk in (enriched.extra_links or [])[:4]:
+        url = (lnk.get("url") or "").strip()
+        label = (lnk.get("label") or "").strip()
+        kind = lnk.get("kind") or "other"
+        if not url or not label:
+            continue
+        if url in existing_link_urls:
+            continue
+        db.add(ProjectLink(
+            id=new_ulid(),
+            project_id=project.id,
+            kind=kind[:50],
+            label=label[:200],
+            url=url[:2000],
+        ))
+        existing_link_urls.add(url)
+        stats.links_added.append(f"{kind}:{label}")
 
     return stats

@@ -121,8 +121,13 @@ async def update_project(
         project.pitch = pitch
     if status is not None:
         project.status = status
+        # archived_at tracks the archive timestamp; clear it when the user
+        # un-archives the project so the UI no longer shows the "Archived"
+        # badge after status changes to something else.
         if status == "archived":
             project.archived_at = datetime.now(UTC)
+        else:
+            project.archived_at = None
     if is_public is not None:
         project.is_public = is_public
     await db.flush()
