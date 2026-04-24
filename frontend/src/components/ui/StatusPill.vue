@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { computed } from "vue";
+
 import SignalDot from "./SignalDot.vue";
 
 type Status = "idea" | "building" | "live" | "paused" | "shipped" | "archived" | "dead";
@@ -46,7 +48,11 @@ const colorVar: Record<Tone, string> = {
   muted: "var(--fg-muted)",
 };
 
-const cfg = mapping[props.status];
+// MUST be a computed — `const cfg = mapping[props.status]` runs once at
+// setup, which means the pill stays stuck on the initial status forever
+// even though the prop flows new values in. This was THE bug that made
+// status changes look non-functional in the UI.
+const cfg = computed(() => mapping[props.status]);
 </script>
 
 <template>

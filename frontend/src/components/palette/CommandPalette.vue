@@ -230,7 +230,7 @@ function rowIndex(kind: "project" | "action", id: string): number {
                 v-for="p in matchedProjects"
                 :key="p.id"
                 :selected="palette.selectedIndex === rowIndex('project', p.id)"
-                :icon="p.emoji || '📦'"
+                :orb-seed="p.slug"
                 :label="p.name"
                 :hint="p.slug"
                 @click="runRow({ kind: 'project', id: p.id, project: p })"
