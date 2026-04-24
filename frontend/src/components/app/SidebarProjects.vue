@@ -3,6 +3,7 @@ import { computed, onMounted, ref } from "vue";
 import { RouterLink, useRoute } from "vue-router";
 
 import LivePulse from "@/components/app/LivePulse.vue";
+import ProjectOrb from "@/components/ui/ProjectOrb.vue";
 import SignalDot from "@/components/ui/SignalDot.vue";
 import { useGroupsStore } from "@/stores/groups";
 import { usePresenceStore } from "@/stores/presence";
@@ -217,11 +218,7 @@ function rowClick() {
                 : 'text-fg-muted hover:bg-bg-surface hover:text-fg-body',
             ]"
           >
-            <span
-              class="text-[14px] leading-none shrink-0"
-              :style="route.params.slug === p.slug ? 'filter: saturate(1)' : 'filter: saturate(0.85)'"
-              aria-hidden="true"
-            >{{ p.emoji || "📦" }}</span>
+            <ProjectOrb :seed="p.slug" :size="16" />
             <span class="truncate flex-1">{{ p.slug }}</span>
             <!-- Claude is live → show ONLY the pulsing green dot (carries the "working now" signal).
                  Otherwise show the static status-tone dot. Two green dots side-by-side looked
@@ -277,11 +274,7 @@ function rowClick() {
                 : 'text-fg-muted hover:bg-bg-surface hover:text-fg-body',
             ]"
           >
-            <span
-              class="text-[14px] leading-none shrink-0"
-              :style="route.params.slug === p.slug ? 'filter: saturate(1)' : 'filter: saturate(0.85)'"
-              aria-hidden="true"
-            >{{ p.emoji || "📦" }}</span>
+            <ProjectOrb :seed="p.slug" :size="16" />
             <span class="truncate flex-1">{{ p.slug }}</span>
             <!-- Claude is live → show ONLY the pulsing green dot (carries the "working now" signal).
                  Otherwise show the static status-tone dot. Two green dots side-by-side looked

@@ -198,6 +198,35 @@ class CheckEnvDriftArgs(BaseModel):
     slug: str | None = None
 
 
+class AddEnvironmentArgs(BaseModel):
+    """Attach or update a ProjectEnvironment row."""
+
+    kind: str = Field(..., description="local | staging | prod | preview | edge | …")
+    url: str = Field(..., min_length=1, max_length=2000)
+    env_template_path: str | None = None
+    db_alias: str | None = None
+    slug: str | None = None
+
+
+class AddLinkArgs(BaseModel):
+    """Attach or update a ProjectLink row. Dedups by URL."""
+
+    kind: str = Field(default="other", description="docs | api | metrics | admin | live | github | other")
+    label: str = Field(..., min_length=1, max_length=200)
+    url: str = Field(..., min_length=1, max_length=2000)
+    slug: str | None = None
+
+
+class AddCommandArgs(BaseModel):
+    """Attach or update a ProjectCommand row. Dedups by label (case-insensitive)."""
+
+    label: str = Field(..., min_length=1, max_length=200)
+    command: str = Field(..., min_length=1, max_length=4000)
+    run_in: str = Field(default="terminal", description="terminal | browser")
+    confirm_required: bool = False
+    slug: str | None = None
+
+
 class CreateProjectArgs(BaseModel):
     """Spawn a new project from a concept, fully populated."""
 
@@ -365,6 +394,30 @@ TOOLS: list[Tool] = [
         "Use this when you want to know 'did my env change?' without triggering a re-enrichment. "
         "If you want to REFRESH stack/infra when drift is detected, call vibecell_sync_repo instead.",
         CheckEnvDriftArgs, r.handle_check_env_drift,
+    ),
+    Tool(
+        "vibecell_add_environment",
+        "Attach or update a ProjectEnvironment (local / staging / prod / preview). Idempotent: "
+        "if an environment with the same kind already exists we UPDATE its URL + env_template_path "
+        "rather than inserting a duplicate. Use this when the user or Claude deploys somewhere new "
+        "mid-project ('I just deployed staging at https://staging.foo.com').",
+        AddEnvironmentArgs, w.handle_add_environment,
+    ),
+    Tool(
+        "vibecell_add_link",
+        "Attach or update a ProjectLink (docs / api / metrics / admin / live / other). Idempotent: "
+        "dedups by URL — if the same URL already exists on the project we update its label + kind "
+        "instead of duplicating. Use this for adding non-github/non-homepage URLs — 'the API docs "
+        "live at …', 'Prometheus dashboard is at …', 'admin is at …'.",
+        AddLinkArgs, w.handle_add_link,
+    ),
+    Tool(
+        "vibecell_add_command",
+        "Attach or update a ProjectCommand (runnable script, e.g. 'pnpm dev' / 'make deploy'). "
+        "Idempotent: dedups by label (case-insensitive). Use this when a new script is added to "
+        "package.json / Makefile / justfile and you want the user to see it in the project's "
+        "Commands card.",
+        AddCommandArgs, w.handle_add_command,
     ),
     Tool(
         "vibecell_create_project",

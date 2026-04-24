@@ -13,6 +13,7 @@ import ProjectGridDashboard from "@/components/projects/ProjectGridDashboard.vue
 import ProjectStatusDropdown from "@/components/projects/ProjectStatusDropdown.vue";
 import Confetti from "@/components/projects/Confetti.vue";
 import CopyableValue from "@/components/ui/CopyableValue.vue";
+import ProjectOrb from "@/components/ui/ProjectOrb.vue";
 import { api } from "@/api/client";
 import { useProjectLive } from "@/composables/useProjectLive";
 import { useProjectsStore } from "@/stores/projects";
@@ -144,7 +145,7 @@ useProjectLive(
         <header class="mb-6">
           <div class="flex items-start justify-between gap-6">
             <div class="flex items-start gap-4 min-w-0">
-              <span class="text-[44px] leading-none" aria-hidden="true">{{ projects.active.emoji || "📦" }}</span>
+              <ProjectOrb :seed="projects.active.slug" :size="56" />
               <div class="min-w-0">
                 <div class="flex items-baseline gap-3 flex-wrap">
                   <h1 class="text-display text-fg-primary tracking-tight truncate">{{ projects.active.name }}</h1>

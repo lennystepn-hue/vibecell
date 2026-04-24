@@ -895,3 +895,163 @@ async def handle_create_project(args, ctx: MCPContext) -> str:
             "links_added": stats.links_added,
         },
     })
+
+
+# ---------------------------------------------------------------------------
+# Incremental project-metadata writers — after a project exists, let Claude
+# add environments / links / commands one at a time without going through
+# the full enrichment apply. These are the "I just deployed staging, add
+# the URL" / "I added a new script, remember it" / "here's the admin URL"
+# workflows.
+# ---------------------------------------------------------------------------
+
+async def handle_add_environment(args, ctx: MCPContext) -> str:
+    """Add a ProjectEnvironment row (local / staging / prod / …).
+
+    Idempotent: if an environment with the same `kind` already exists we
+    UPDATE its URL + env_template_path instead of inserting a duplicate —
+    typical use case is Claude re-deploying and the URL shifting.
+    """
+    from sqlalchemy import select
+
+    from app.core.ulid import new_ulid
+    from app.models.project import ProjectEnvironment
+
+    project = await _resolve_project(args, ctx)
+    kind = (getattr(args, "kind", "") or "").strip().lower()
+    url = (getattr(args, "url", "") or "").strip()
+    if not kind or not url:
+        raise RuntimeError("kind and url are required")
+    env_template_path = (getattr(args, "env_template_path", "") or None)
+    db_alias = (getattr(args, "db_alias", "") or None)
+
+    existing = (await ctx.db.execute(
+        select(ProjectEnvironment).where(
+            ProjectEnvironment.project_id == project.id,
+            ProjectEnvironment.kind == kind,
+        )
+    )).scalar_one_or_none()
+    if existing:
+        existing.url = url[:2000]
+        if env_template_path is not None:
+            existing.env_template_path = env_template_path
+        if db_alias is not None:
+            existing.db_alias = db_alias
+        action = "updated"
+        env_id = existing.id
+    else:
+        row = ProjectEnvironment(
+            id=new_ulid(),
+            project_id=project.id,
+            kind=kind[:20],
+            url=url[:2000],
+            env_template_path=env_template_path,
+            db_alias=db_alias,
+        )
+        ctx.db.add(row)
+        action = "created"
+        env_id = row.id
+
+    return json.dumps({
+        "id": env_id, "project_slug": project.slug, "kind": kind, "url": url, "action": action,
+    })
+
+
+async def handle_add_link(args, ctx: MCPContext) -> str:
+    """Add a ProjectLink (docs, api, metrics, admin, live, …).
+
+    Dedups by URL — if a link with the same URL already exists on the
+    project we just update its label/kind. This lets Claude re-announce
+    'the docs are at X' without producing duplicate rows.
+    """
+    from sqlalchemy import select
+
+    from app.core.ulid import new_ulid
+    from app.models import ProjectLink
+
+    project = await _resolve_project(args, ctx)
+    url = (getattr(args, "url", "") or "").strip()
+    label = (getattr(args, "label", "") or "").strip()
+    kind = (getattr(args, "kind", "") or "other").strip().lower()
+    if not url or not label:
+        raise RuntimeError("url and label are required")
+
+    existing = (await ctx.db.execute(
+        select(ProjectLink).where(
+            ProjectLink.project_id == project.id,
+            ProjectLink.url == url,
+        )
+    )).scalar_one_or_none()
+    if existing:
+        existing.label = label[:200]
+        existing.kind = kind[:50]
+        action = "updated"
+        link_id = existing.id
+    else:
+        row = ProjectLink(
+            id=new_ulid(),
+            project_id=project.id,
+            kind=kind[:50],
+            label=label[:200],
+            url=url[:2000],
+        )
+        ctx.db.add(row)
+        action = "created"
+        link_id = row.id
+
+    return json.dumps({
+        "id": link_id, "project_slug": project.slug, "kind": kind, "label": label, "url": url,
+        "action": action,
+    })
+
+
+async def handle_add_command(args, ctx: MCPContext) -> str:
+    """Add a ProjectCommand (runnable shell/browser command).
+
+    Dedups by `label` (case-insensitive). If a command with the same label
+    already exists we update its `command` text so re-runs ("the dev
+    command changed to pnpm turbo") don't spawn duplicates.
+    """
+    from sqlalchemy import func, select
+
+    from app.core.ulid import new_ulid
+    from app.models.project import ProjectCommand
+
+    project = await _resolve_project(args, ctx)
+    label = (getattr(args, "label", "") or "").strip()
+    command = (getattr(args, "command", "") or "").strip()
+    run_in = (getattr(args, "run_in", None) or "terminal")
+    if run_in not in {"terminal", "browser"}:
+        run_in = "terminal"
+    confirm_required = 1 if getattr(args, "confirm_required", False) else 0
+    if not label or not command:
+        raise RuntimeError("label and command are required")
+
+    existing = (await ctx.db.execute(
+        select(ProjectCommand).where(
+            ProjectCommand.project_id == project.id,
+            func.lower(ProjectCommand.label) == label.lower(),
+        )
+    )).scalar_one_or_none()
+    if existing:
+        existing.command = command[:4000]
+        existing.run_in = run_in
+        existing.confirm_required = confirm_required
+        action = "updated"
+        cmd_id = existing.id
+    else:
+        row = ProjectCommand(
+            id=new_ulid(),
+            project_id=project.id,
+            label=label[:200],
+            command=command[:4000],
+            run_in=run_in,
+            confirm_required=confirm_required,
+        )
+        ctx.db.add(row)
+        action = "created"
+        cmd_id = row.id
+
+    return json.dumps({
+        "id": cmd_id, "project_slug": project.slug, "label": label, "action": action,
+    })

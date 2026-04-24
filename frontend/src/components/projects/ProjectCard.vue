@@ -3,6 +3,7 @@ import { RouterLink } from "vue-router";
 
 import LivePulse from "@/components/app/LivePulse.vue";
 import ProjectPreviewImage from "@/components/projects/ProjectPreviewImage.vue";
+import ProjectOrb from "@/components/ui/ProjectOrb.vue";
 import StatusPill from "@/components/ui/StatusPill.vue";
 import { usePresenceStore } from "@/stores/presence";
 import type { components } from "@/api/types.gen";
@@ -42,11 +43,7 @@ const liveClass = () => (presence.isLive(props.project.slug)
     />
 
     <div class="flex items-start gap-3 mb-2">
-      <span
-        class="text-[28px] leading-none transition-[filter] duration-fast shrink-0"
-        style="filter: saturate(0.85)"
-        aria-hidden="true"
-      >{{ project.emoji || "📦" }}</span>
+      <ProjectOrb :seed="project.slug" :size="40" />
       <div class="flex-1 min-w-0">
         <div class="flex items-baseline justify-between gap-2">
           <!-- Name + optional GitHub icon inline, left side -->
@@ -85,8 +82,4 @@ const liveClass = () => (presence.isLive(props.project.slug)
   </RouterLink>
 </template>
 
-<style scoped>
-.group:hover span[aria-hidden="true"] {
-  filter: saturate(1) !important;
-}
-</style>
+<!-- orb has its own inherent vibe; no hover filter juggling needed anymore -->

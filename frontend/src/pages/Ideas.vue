@@ -2,6 +2,7 @@
 import { computed, onMounted, ref } from "vue";
 
 import PrimaryButton from "@/components/ui/PrimaryButton.vue";
+import ProjectOrb from "@/components/ui/ProjectOrb.vue";
 import TextArea from "@/components/ui/TextArea.vue";
 import { useIdeasStore, type IdeaStatus } from "@/stores/ideas";
 import { useProjectsStore } from "@/stores/projects";
@@ -202,7 +203,7 @@ function projectNameFor(id: string | null | undefined): string | null {
               class="w-full px-3 py-1.5 text-left hover:bg-bg-surface-hi flex items-center gap-2"
               @click="triageTo(p.slug)"
             >
-              <span>{{ p.emoji || '📦' }}</span>
+              <ProjectOrb :seed="p.slug" :size="18" />
               <span class="truncate">{{ p.name }}</span>
               <span class="font-mono text-[10px] text-fg-subtle ml-auto">{{ p.slug }}</span>
             </button>
