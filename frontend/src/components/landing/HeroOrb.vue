@@ -1,87 +1,46 @@
 <script setup lang="ts">
 /**
- * Hero orb — large glass sphere that:
- *   - continuously rotates on its Y-axis at a slow ambient pace
- *   - responds to cursor: tilt follows the pointer, specular highlight
- *     moves toward the cursor so the orb feels like a physical object
- *     you can nudge
- *   - returns to ambient rotation when the pointer leaves
+ * Hero orb — glass sphere that stays a clean circle at all times.
  *
- * Layers:
- *   1. Outer halo (pulsing glow)
- *   2. Rotating 3D container — the orb tilts here
- *   3. Core body (stationary radial-gradient blobs)
- *   4. Aurora (rotating conic-gradient overlay, color-dodge blend)
- *   5. Specular highlight (follows the cursor, falls back to slow drift)
- *   6. Inner rim (1px ring for edge definition)
+ * "Rotation" is faked INSIDE the orb (rotating aurora + drifting highlight
+ * band) rather than by 3D-rotating the 2D element, which just squishes it.
+ * Mouse interaction shifts the specular glint toward the cursor so the orb
+ * feels like a heavy glass ball you can push light across.
+ *
+ * Layers (z-stacked, all clipped to the orb circle):
+ *   1. halo — outer breathing glow
+ *   2. body — stationary radial-gradient blobs (mint/violet/pink/teal)
+ *   3. aurora — conic gradient rotating forever, color-dodge blended
+ *   4. band — a soft diagonal light-band that drifts so it reads as spin
+ *   5. specular — top-left highlight, follows cursor
+ *   6. rim — 1px ring for edge definition
  */
-import { computed, onBeforeUnmount, onMounted, ref } from "vue";
+import { computed, ref } from "vue";
 
 const root = ref<HTMLElement | null>(null);
 
-// Mouse-controlled tilt (-1..1). Smoothed by a CSS transition.
-const tiltX = ref(0);
-const tiltY = ref(0);
-// Auto Y-rotation — ticks continuously so the orb has presence even when
-// idle. Pauses while the cursor is inside so the user's tilt isn't fighting
-// the animation.
-const autoYaw = ref(0);
-const hovering = ref(false);
-// Normalised pointer position inside the orb (-0.5..0.5 on each axis),
-// used to place the specular highlight so the glint follows the cursor.
+// Normalised pointer position inside the orb (-0.5..0.5 on each axis).
+// Drives only the specular glint — the orb shape itself stays a circle.
 const pointerX = ref(0);
-const pointerY = ref(-0.15);  // initial: top-left-ish default position
-
-let rafId: number | null = null;
-let lastT = performance.now();
-
-function tick(now: number) {
-  const dt = (now - lastT) / 1000;
-  lastT = now;
-  if (!hovering.value) {
-    // 30-second full rotation
-    autoYaw.value = (autoYaw.value + dt * 12) % 360;
-  }
-  rafId = requestAnimationFrame(tick);
-}
-
-onMounted(() => {
-  rafId = requestAnimationFrame((t) => {
-    lastT = t;
-    tick(t);
-  });
-});
-onBeforeUnmount(() => {
-  if (rafId !== null) cancelAnimationFrame(rafId);
-});
+const pointerY = ref(-0.15);
+const hovering = ref(false);
 
 function onMove(e: MouseEvent) {
   if (!root.value) return;
   hovering.value = true;
   const rect = root.value.getBoundingClientRect();
-  const nx = (e.clientX - rect.left) / rect.width - 0.5;   // -0.5 .. 0.5
-  const ny = (e.clientY - rect.top) / rect.height - 0.5;
-  tiltX.value = -ny * 24;  // rotateX: pointer-down → front tips down
-  tiltY.value = nx * 28;   // rotateY: pointer-right → right edge comes forward
-  pointerX.value = nx;
-  pointerY.value = ny;
+  pointerX.value = (e.clientX - rect.left) / rect.width - 0.5;
+  pointerY.value = (e.clientY - rect.top) / rect.height - 0.5;
 }
 
 function onLeave() {
   hovering.value = false;
-  tiltX.value = 0;
-  tiltY.value = 0;
   pointerX.value = 0;
   pointerY.value = -0.15;
 }
 
-const orbTransform = computed(
-  () => `perspective(900px) rotateX(${tiltX.value}deg) rotateY(${tiltY.value + autoYaw.value}deg)`,
-);
-
+// Map -0.5..0.5 → 0..100% positioning for the specular element.
 const specularStyle = computed(() => ({
-  // Map normalised pointer (-0.5..0.5) → specular position (0..100%),
-  // slightly biased toward top-left so the default looks natural.
   top: `${18 + pointerY.value * 30}%`,
   left: `${22 + pointerX.value * 30}%`,
 }));
@@ -96,18 +55,18 @@ const specularStyle = computed(() => ({
     @mouseleave="onLeave"
   >
     <div class="halo" />
-    <div class="orb-container" :style="{ transform: orbTransform }">
-      <div class="aurora" />
+    <div class="orb-container">
       <div class="body" />
+      <div class="aurora" />
+      <div class="band" />
       <div class="specular" :style="specularStyle" />
       <div class="rim" />
     </div>
-    <!-- Micro cursor-hint, appears when pointer is near the orb -->
     <div
       class="cursor-hint"
       :class="{ 'cursor-hint-visible': hovering }"
       aria-hidden="true"
-    >drag me</div>
+    >move me</div>
   </div>
 </template>
 
@@ -120,22 +79,21 @@ const specularStyle = computed(() => ({
   align-items: center;
   justify-content: center;
   isolation: isolate;
-  cursor: grab;
-}
-.hero-orb:active {
-  cursor: grabbing;
+  cursor: crosshair;
 }
 
-/* ─── Outer halo — breathing, very soft, off the orb edge ────────────── */
+/* ─── Outer halo — breathing glow ──────────────────────────────────── */
 .halo {
   position: absolute;
-  inset: -10%;
+  width: 120%;
+  aspect-ratio: 1;
   border-radius: 50%;
   background: radial-gradient(
     circle,
-    rgba(92, 200, 164, 0.18) 0%,
-    rgba(181, 146, 255, 0.08) 35%,
-    transparent 65%
+    rgba(92, 200, 164, 0.22) 0%,
+    rgba(181, 146, 255, 0.12) 30%,
+    rgba(255, 107, 157, 0.06) 55%,
+    transparent 70%
   );
   filter: blur(60px);
   animation: halo-breathe 8s ease-in-out infinite;
@@ -143,7 +101,7 @@ const specularStyle = computed(() => ({
   z-index: 0;
 }
 
-/* ─── Main orb — tilts via inline transform ──────────────────────────── */
+/* ─── The sphere: always a perfect circle, never transformed in 3D ── */
 .orb-container {
   position: relative;
   width: 82%;
@@ -153,22 +111,20 @@ const specularStyle = computed(() => ({
   border-radius: 50%;
   overflow: hidden;
   z-index: 1;
-  transform-style: preserve-3d;
-  transition: transform 400ms cubic-bezier(0.22, 1, 0.36, 1);
   box-shadow:
-    0 40px 100px rgba(92, 200, 164, 0.22),
+    0 50px 100px rgba(92, 200, 164, 0.22),
     0 20px 50px rgba(181, 146, 255, 0.12),
     0 0 0 1px rgba(255, 255, 255, 0.08);
-  will-change: transform;
 }
 
+/* Radial blobs — violet, mint, soft-pink, teal over a deep mint→violet base */
 .body {
   position: absolute;
   inset: 0;
   border-radius: 50%;
   background:
     radial-gradient(circle at 30% 28%, #b592ff 0%, transparent 45%),
-    radial-gradient(circle at 70% 70%, #5cc8a4 0%, transparent 50%),
+    radial-gradient(circle at 72% 70%, #5cc8a4 0%, transparent 50%),
     radial-gradient(circle at 50% 95%, #ff6b9d 0%, transparent 55%),
     radial-gradient(circle at 80% 20%, #7dffd4 0%, transparent 35%),
     linear-gradient(135deg, #3a8f75 0%, #6b4aa8 100%);
@@ -178,26 +134,54 @@ const specularStyle = computed(() => ({
   z-index: 1;
 }
 
+/* Aurora — the main "spin". Conic gradient turning forever, blur + dodge
+   blend so it reads as iridescent atmosphere moving across the surface. */
 .aurora {
   position: absolute;
-  inset: -20%;
+  inset: -25%;
   border-radius: 50%;
   background: conic-gradient(
     from 0deg,
-    rgba(92, 200, 164, 0.35) 0%,
-    rgba(181, 146, 255, 0.25) 25%,
-    rgba(125, 255, 212, 0.35) 50%,
-    rgba(255, 107, 157, 0.25) 75%,
-    rgba(92, 200, 164, 0.35) 100%
+    rgba(92, 200, 164, 0.45) 0%,
+    rgba(181, 146, 255, 0.32) 25%,
+    rgba(125, 255, 212, 0.45) 50%,
+    rgba(255, 107, 157, 0.32) 75%,
+    rgba(92, 200, 164, 0.45) 100%
   );
-  animation: aurora-rotate 22s linear infinite;
+  animation: aurora-rotate 18s linear infinite;
   mix-blend-mode: color-dodge;
-  opacity: 0.55;
-  filter: blur(12px);
+  opacity: 0.7;
+  filter: blur(14px);
   z-index: 2;
   pointer-events: none;
 }
 
+/* Light-band — a diagonal bright sheen that drifts across the orb on a
+   slower schedule than the aurora. Combined, they sell "this is spinning". */
+.band {
+  position: absolute;
+  inset: -30%;
+  border-radius: 50%;
+  background: conic-gradient(
+    from 90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.25) 10%,
+    transparent 22%,
+    transparent 50%,
+    rgba(255, 255, 255, 0.12) 62%,
+    transparent 75%,
+    transparent 100%
+  );
+  animation: band-rotate 32s linear infinite;
+  mix-blend-mode: overlay;
+  opacity: 0.6;
+  filter: blur(8px);
+  z-index: 3;
+  pointer-events: none;
+}
+
+/* Specular — sits on top, follows cursor. Also gets a subtle drift when
+   the cursor is elsewhere via the default specularStyle top/left values. */
 .specular {
   position: absolute;
   width: 45%;
@@ -205,14 +189,14 @@ const specularStyle = computed(() => ({
   border-radius: 50%;
   background: radial-gradient(
     ellipse at 30% 20%,
-    rgba(255, 255, 255, 0.75) 0%,
+    rgba(255, 255, 255, 0.78) 0%,
     rgba(255, 255, 255, 0.2) 40%,
-    transparent 70%
+    transparent 72%
   );
   filter: blur(4px);
-  transition: top 250ms cubic-bezier(0.22, 1, 0.36, 1),
-              left 250ms cubic-bezier(0.22, 1, 0.36, 1);
-  z-index: 3;
+  transition: top 300ms cubic-bezier(0.22, 1, 0.36, 1),
+              left 300ms cubic-bezier(0.22, 1, 0.36, 1);
+  z-index: 4;
   pointer-events: none;
 }
 
@@ -223,25 +207,25 @@ const specularStyle = computed(() => ({
   box-shadow:
     inset 0 0 0 1px rgba(255, 255, 255, 0.15),
     inset 0 0 60px rgba(255, 255, 255, 0.05);
-  z-index: 4;
+  z-index: 5;
   pointer-events: none;
 }
 
-/* ─── Cursor hint ────────────────────────────────────────────────────── */
+/* Cursor hint — soft label at the bottom that fades in on hover */
 .cursor-hint {
   position: absolute;
-  bottom: 6%;
+  bottom: 8%;
   left: 50%;
   transform: translateX(-50%);
-  font-family: var(--font-mono, ui-monospace, monospace);
+  font-family: ui-monospace, "Geist Mono", monospace;
   font-size: 10px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: rgba(207, 212, 220, 0.5);
+  color: rgba(207, 212, 220, 0.4);
   opacity: 0;
   transition: opacity 300ms ease;
   pointer-events: none;
-  z-index: 5;
+  z-index: 6;
 }
 .cursor-hint-visible {
   opacity: 1;
@@ -252,19 +236,20 @@ const specularStyle = computed(() => ({
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
-
+@keyframes band-rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(-360deg); }
+}
 @keyframes halo-breathe {
-  0%, 100% { opacity: 0.55; transform: scale(1); }
-  50% { opacity: 1; transform: scale(1.08); }
+  0%, 100% { opacity: 0.6; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.06); }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .aurora,
+  .band,
   .halo {
     animation: none;
-  }
-  .orb-container {
-    transition: none;
   }
 }
 </style>
