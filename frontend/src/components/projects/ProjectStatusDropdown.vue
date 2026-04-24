@@ -45,30 +45,23 @@ function position() {
 
 async function pick(status: Status) {
   open.value = false;
-  // Optimistic update: flip the pill immediately so the UI feels instant.
-  // Stash the old value so we can roll back on failure.
+  // Optimistic update via store action — replaces `projects.active` with a
+  // shallow copy so Vue definitely re-renders every consumer (direct
+  // in-place mutation of .status didn't always propagate). Rolls back on
+  // error. Props are readonly in Vue so there's no point touching them.
   const prev = props.project.status;
-  (props.project as { status: string }).status = status;
-  if (projects.active && projects.active.slug === props.project.slug) {
-    (projects.active as { status: string }).status = status;
-  }
+  projects.patchActiveStatus(status);
 
   const { error } = await api.PATCH("/api/v1/projects/{slug}", {
     params: { path: { slug: props.project.slug } },
     body: { status },
   });
   if (error) {
-    // Roll back the optimistic change.
-    (props.project as { status: string }).status = prev;
-    if (projects.active && projects.active.slug === props.project.slug) {
-      (projects.active as { status: string }).status = prev;
-    }
+    projects.patchActiveStatus(prev);
     toast.push("Couldn't update status", "error");
     return;
   }
-  // Refresh in the background so any derived fields (e.g. archived_at on
-  // status=archived) are pulled in too. The pill already shows the right
-  // value from the optimistic update, so this is silent.
+  // Refresh in the background so derived fields (timestamps etc) are fresh.
   void projects.fetchProject(props.project.slug);
   toast.push(`Status → ${status}`, "success");
 }

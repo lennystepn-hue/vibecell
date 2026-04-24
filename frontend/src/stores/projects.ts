@@ -54,6 +54,28 @@ export const useProjectsStore = defineStore("projects", () => {
     return !error;
   }
 
+  /**
+   * Optimistically change the active project's status in BOTH the detail
+   * aggregate and the matching sidebar list row. Replaces the objects with
+   * new shallow copies so every component reading them re-renders. Deep
+   * in-place mutation (`active.value.status = 'live'`) sometimes failed to
+   * propagate because Vue tracked the refs but not all the consumers.
+   */
+  function patchActiveStatus(status: string): void {
+    if (active.value) {
+      const archived_at = status === "archived"
+        ? ((active.value as { archived_at?: string | null }).archived_at ?? new Date().toISOString())
+        : null;
+      active.value = { ...active.value, status, archived_at } as typeof active.value;
+    }
+    if (active.value) {
+      const idx = list.value.findIndex((p) => p.slug === active.value?.slug);
+      if (idx !== -1) {
+        list.value[idx] = { ...list.value[idx], status };
+      }
+    }
+  }
+
   return {
     list,
     active,
@@ -62,5 +84,6 @@ export const useProjectsStore = defineStore("projects", () => {
     fetchList,
     fetchProject,
     switchTo,
+    patchActiveStatus,
   };
 });
