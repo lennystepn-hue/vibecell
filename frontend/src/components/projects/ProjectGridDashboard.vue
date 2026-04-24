@@ -123,6 +123,10 @@ const contentEls = new Map<string, HTMLElement>();
 const observers = new Map<string, ResizeObserver>();
 const fitTimers = new Map<string, ReturnType<typeof setTimeout>>();
 const userSized = ref<Set<string>>(new Set());
+// Widgets whose h the auto-sizer is about to update. The layout-watch
+// below uses this to distinguish our own programmatic h changes from
+// changes driven by user resize.
+const autoFittingIds = new Set<string>();
 
 function registerContentEl(id: string, el: HTMLElement | null): void {
   if (!el) {
@@ -136,7 +140,6 @@ function registerContentEl(id: string, el: HTMLElement | null): void {
     const ro = new ResizeObserver(() => scheduleAutoFit(id));
     ro.observe(el);
     observers.set(id, ro);
-    // Kick off initial measurement after current tick.
     scheduleAutoFit(id);
   }
 }
@@ -151,31 +154,56 @@ function scheduleAutoFit(id: string): void {
 }
 
 function autoFit(id: string): void {
-  // Skip if the user has manually locked a size for this widget.
   if (userSized.value.has(id)) return;
   const el = contentEls.get(id);
   if (!el) return;
-  // scrollHeight returns intrinsic content height — what the card would
-  // be if nothing constrained it.
   const measured = el.scrollHeight;
-  if (measured === 0) return;  // not yet painted
+  if (measured === 0) return;
   // Inverse of grid-layout-plus's cell formula:
-  //   cellHeight = h * ROW_HEIGHT + (h-1) * MARGIN_V
-  //   h = (cellHeight + MARGIN_V) / (ROW_HEIGHT + MARGIN_V)
+  //   cellHeight = h * ROW_HEIGHT + (h - 1) * MARGIN_V
+  //   ⇒ h = (cellHeight + MARGIN_V) / (ROW_HEIGHT + MARGIN_V)
   const desiredH = Math.max(
     3,
     Math.ceil((measured + MARGIN_V) / (ROW_HEIGHT + MARGIN_V)),
   );
   const item = store.layout.find((l) => l.i === id);
   if (item && item.h !== desiredH) {
+    // Mark this h change as self-authored so the layout watch below
+    // doesn't misattribute it to a user resize.
+    autoFittingIds.add(id);
     item.h = desiredH;
+    // Clear on the NEXT tick. Double-nextTick is paranoid but cheap —
+    // gives grid-layout-plus a frame to paint before we stop guarding.
+    nextTick(() => nextTick(() => { autoFittingIds.delete(id); }));
   }
 }
 
+// Layout watcher. grid-layout-plus's `@item-resized` event is a Vue-2
+// emit-style that doesn't always reach us when using the slot pattern.
+// Instead we watch store.layout directly: whenever h or w for a widget
+// changes AND it isn't flagged as an auto-fit update, we assume the
+// user did it — that's when we lock auto-sizing for that widget.
+let lastSnapshot = new Map<string, { h: number; w: number }>();
+watch(
+  () => store.layout.map((l) => ({ i: String(l.i), h: l.h, w: l.w })),
+  (next) => {
+    const nextMap = new Map(next.map((n) => [n.i, { h: n.h, w: n.w }]));
+    for (const [id, now] of nextMap) {
+      const prev = lastSnapshot.get(id);
+      if (prev && (prev.h !== now.h || prev.w !== now.w)) {
+        if (!autoFittingIds.has(id)) {
+          userSized.value.add(id);
+        }
+      }
+    }
+    lastSnapshot = nextMap;
+  },
+  { deep: true, immediate: true, flush: "post" },
+);
+
 function onItemResized(i: string | number): void {
-  // Grid-layout-plus fires this when the user finishes dragging the
-  // resize corner/edge. Lock the widget so the auto-sizer doesn't
-  // immediately snap back.
+  // Kept as a safety-net handler in case grid-layout-plus's event does
+  // fire — the watcher above is the primary detection path.
   userSized.value.add(String(i));
 }
 
@@ -186,8 +214,7 @@ onBeforeUnmount(() => {
   fitTimers.clear();
 });
 
-// If the user right-click-picks an "auto-size" preset we can re-enable
-// auto-fit by removing the flag.
+// Re-enable auto-fit for a widget (from the right-click menu).
 function autoSizeAgain(id: string): void {
   userSized.value.delete(id);
   scheduleAutoFit(id);
