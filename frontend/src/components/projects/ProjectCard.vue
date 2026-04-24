@@ -19,14 +19,29 @@ const liveClass = () => (presence.isLive(props.project.slug)
 <template>
   <RouterLink
     :to="`/p/${project.slug}`"
-    class="group block glass rounded-lg p-4 transition-all duration-fast ease-out hover:bg-bg-surface-hi hover:border-border-strong relative"
+    class="group block glass rounded-lg p-4 transition-all duration-fast ease-out hover:bg-bg-surface-hi hover:border-border-strong relative overflow-hidden isolate"
     :class="liveClass()"
   >
-    <!-- Small preview tucked in the top-right corner. -->
-    <div class="absolute top-3 right-3 pointer-events-none">
-      <ProjectPreviewImage :slug="project.slug" variant="thumb" class="w-[92px] h-[58px] rounded object-cover opacity-80 group-hover:opacity-100 transition-opacity" />
-    </div>
-    <div class="flex items-start gap-3 mb-2 pr-[100px]">
+    <!-- Screenshot as a subtle card background. `hero` variant is absolute-
+         positioned, object-cover, opacity ~0.28, slightly blurred. On hover
+         we lift the opacity to 0.4 so you can see more of the site. The
+         gradient overlay underneath keeps text readable even when the
+         screenshot is busy. -->
+    <ProjectPreviewImage
+      :slug="project.slug"
+      variant="hero"
+      class="!opacity-[0.22] group-hover:!opacity-[0.38] transition-opacity duration-med -z-10"
+    />
+    <!-- Readability gradient: fades the bg-surface tone from left (where
+         the text is) to transparent on the right so the screenshot peeks
+         through more on that side. -->
+    <div
+      class="absolute inset-0 -z-10 pointer-events-none"
+      style="background: linear-gradient(to right, var(--bg-surface) 0%, var(--bg-surface) 30%, rgba(0,0,0,0) 100%)"
+      aria-hidden="true"
+    />
+
+    <div class="flex items-start gap-3 mb-2">
       <span
         class="text-[28px] leading-none transition-[filter] duration-fast shrink-0"
         style="filter: saturate(0.85)"
@@ -63,10 +78,10 @@ const liveClass = () => (presence.isLive(props.project.slug)
         <LivePulse :slug="project.slug" variant="pill" class="mt-1" />
       </div>
     </div>
-    <p v-if="project.pitch" class="text-small text-fg-muted line-clamp-2 mt-3">
+    <p v-if="project.pitch" class="text-small text-fg-muted line-clamp-2 mt-3 relative">
       {{ project.pitch }}
     </p>
-    <p v-else class="mono-label mt-3 opacity-50">// no pitch yet</p>
+    <p v-else class="mono-label mt-3 opacity-50 relative">// no pitch yet</p>
   </RouterLink>
 </template>
 
