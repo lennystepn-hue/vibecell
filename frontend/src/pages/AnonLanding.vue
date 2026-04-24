@@ -247,7 +247,9 @@ const steps = [
         <div>
           <h1 class="font-sans font-semibold mb-6 leading-[1.04] tracking-tight"
             style="font-size: clamp(2.6rem, 5.5vw, 4.4rem); letter-spacing: -0.04em; color: #ffffff">
-            Project memory for<br>
+            Project memory<br>
+            for
+            <!-- Gradient ties the headline into the hero orb's palette. -->
             <span
               class="bg-clip-text text-transparent"
               style="background-image: linear-gradient(120deg, #b592ff 0%, #7dffd4 45%, #ff6b9d 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent"
