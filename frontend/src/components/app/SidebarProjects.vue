@@ -218,8 +218,11 @@ function rowClick() {
               aria-hidden="true"
             >{{ p.emoji || "📦" }}</span>
             <span class="truncate flex-1">{{ p.slug }}</span>
+            <!-- Claude is live → show ONLY the pulsing green dot (carries the "working now" signal).
+                 Otherwise show the static status-tone dot. Two green dots side-by-side looked
+                 redundant when a "building" project had Claude active. -->
             <LivePulse :slug="p.slug" variant="dot" dense />
-            <SignalDot :tone="toneFor(p.status)" :glow="false" />
+            <SignalDot v-if="!presence.isLive(p.slug)" :tone="toneFor(p.status)" :glow="false" />
           </RouterLink>
         </div>
       </section>
@@ -275,8 +278,11 @@ function rowClick() {
               aria-hidden="true"
             >{{ p.emoji || "📦" }}</span>
             <span class="truncate flex-1">{{ p.slug }}</span>
+            <!-- Claude is live → show ONLY the pulsing green dot (carries the "working now" signal).
+                 Otherwise show the static status-tone dot. Two green dots side-by-side looked
+                 redundant when a "building" project had Claude active. -->
             <LivePulse :slug="p.slug" variant="dot" dense />
-            <SignalDot :tone="toneFor(p.status)" :glow="false" />
+            <SignalDot v-if="!presence.isLive(p.slug)" :tone="toneFor(p.status)" :glow="false" />
           </RouterLink>
           <p
             v-if="(grouped.get(g.id) ?? []).length === 0"
