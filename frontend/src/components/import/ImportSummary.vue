@@ -21,7 +21,7 @@ defineEmits<{ (e: "import"): void; (e: "clear"): void }>();
     <div
       v-if="count > 0 || importing"
       class="fixed bottom-6 left-1/2 -translate-x-1/2 z-30 glass rounded-xl shadow-modal px-5 py-3 flex items-center gap-4"
-      style="background: rgba(13, 18, 26, 0.95)"
+      style="background: var(--bg-chrome)"
     >
       <p class="text-body">
         <span class="tabular-nums text-fg-primary font-semibold">{{ count }}</span>

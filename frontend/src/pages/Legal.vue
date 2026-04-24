@@ -297,7 +297,7 @@ const termsSections: LegalSection[] = [
       leave-active-class="transition-all duration-200 ease-in">
       <div v-if="cookieBannerVisible"
         class="fixed bottom-0 left-0 right-0 z-50 px-6 py-4"
-        style="background: rgba(13,18,26,0.95); backdrop-filter: blur(12px); border-top: 1px solid rgba(138,180,255,0.1)">
+        style="background: var(--bg-chrome); backdrop-filter: blur(12px); border-top: 1px solid var(--border-subtle)">
         <div class="max-w-4xl mx-auto flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <p style="font-size: 12px; color: #8ba1bd">
             We use a single necessary session cookie to keep you signed in. No analytics, no tracking.

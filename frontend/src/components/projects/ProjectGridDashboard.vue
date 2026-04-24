@@ -253,7 +253,7 @@ function autoSizeAgain(id: string): void {
       class="sticky top-[44px] z-20 flex items-center gap-3 mb-4 px-3 h-10 rounded-md transition-colors"
       :style="store.editMode
         ? 'background: rgba(92,200,164,0.06); border: 1px solid rgba(92,200,164,0.25); backdrop-filter: blur(8px)'
-        : 'background: rgba(13,18,26,0.55); border: 1px solid var(--border-subtle); backdrop-filter: blur(8px)'"
+        : 'background: var(--bg-chrome); border: 1px solid var(--border-subtle); backdrop-filter: blur(8px)'"
     >
       <span class="mono-label text-fg-muted">// dashboard</span>
       <span v-if="store.editMode" class="text-[11px] text-signal-green font-mono">— edit mode</span>
@@ -282,7 +282,7 @@ function autoSizeAgain(id: string): void {
             <div
               v-if="addMenuOpen && hiddenWidgets.length > 0"
               class="absolute top-9 left-0 z-30 w-72 rounded-md overflow-hidden shadow-xl"
-              style="background: rgba(13,18,26,0.97); border: 1px solid rgba(138,180,255,0.14); backdrop-filter: blur(10px)"
+              style="background: var(--bg-chrome); border: 1px solid var(--border-default); backdrop-filter: blur(10px)"
             >
               <button
                 v-for="w in hiddenWidgets"
@@ -413,9 +413,9 @@ function autoSizeAgain(id: string): void {
       :style="{
         top: contextMenu.y + 'px',
         left: contextMenu.x + 'px',
-        background: 'rgba(13,18,26,0.97)',
+        background: 'var(--bg-chrome)',
         backdropFilter: 'blur(10px)',
-        border: '1px solid rgba(138,180,255,0.14)',
+        border: '1px solid var(--border-default)',
       }"
       @click.stop
       @contextmenu.prevent

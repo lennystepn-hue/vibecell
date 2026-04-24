@@ -79,7 +79,7 @@ onUnmounted(() => {
       <div
         v-if="open"
         class="absolute top-full left-0 mt-1 glass rounded-md overflow-hidden z-20 shadow-lg"
-        style="background: rgba(13, 18, 26, 0.95); min-width: 140px"
+        style="background: var(--bg-chrome); min-width: 140px"
         @click.stop
       >
         <button

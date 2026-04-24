@@ -306,7 +306,7 @@ function rowClick() {
       :style="{
         top: menu.y + 'px',
         left: menu.x + 'px',
-        background: 'rgba(13,18,26,0.97)',
+        background: 'var(--bg-chrome)',
         backdropFilter: 'blur(10px)',
         borderColor: 'var(--border-default)',
       }"
@@ -381,7 +381,7 @@ function rowClick() {
       >
         <div
           class="glass rounded-xl w-[400px] p-6 shadow-modal"
-          style="background: rgba(13,18,26,0.95)"
+          style="background: var(--bg-chrome)"
         >
           <h2 class="text-section text-fg-primary font-semibold mb-4">New group</h2>
           <div class="space-y-4">

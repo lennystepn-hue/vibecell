@@ -195,7 +195,7 @@ function rowIndex(kind: "project" | "action", id: string): number {
     >
       <div
         class="w-full max-w-[640px] glass rounded-xl overflow-hidden shadow-modal"
-        style="background: rgba(13, 18, 26, 0.85); border-color: var(--border-default)"
+        style="background: var(--bg-chrome); border-color: var(--border-default)"
         @click.stop
       >
         <div class="flex items-center gap-3 px-4 h-12 border-b border-border-subtle">

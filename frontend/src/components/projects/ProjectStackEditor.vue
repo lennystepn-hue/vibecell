@@ -114,7 +114,7 @@ async function detach(slug: string) {
       <div
         v-if="filteredResults.length > 0"
         class="absolute left-0 right-0 top-full mt-1 glass rounded-md overflow-hidden z-10 max-h-60 overflow-y-auto"
-        style="background: rgba(13, 18, 26, 0.95)"
+        style="background: var(--bg-chrome)"
       >
         <button
           v-for="(item, i) in filteredResults"

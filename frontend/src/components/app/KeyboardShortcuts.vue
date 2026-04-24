@@ -115,7 +115,7 @@ const groups: Array<{ title: string; items: Array<{ keys: string[]; label: strin
       >
         <div
           class="glass rounded-xl w-full max-w-md p-6 shadow-2xl"
-          style="background: rgba(13,18,26,0.96)"
+          style="background: var(--bg-chrome)"
         >
           <header class="flex items-start justify-between mb-4">
             <div>

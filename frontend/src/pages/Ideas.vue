@@ -177,7 +177,7 @@ function projectNameFor(id: string | null | undefined): string | null {
         v-if="menu.open"
         class="fixed z-50 glass rounded-md py-1 shadow-modal text-small"
         :style="{ left: `${menu.x}px`, top: `${menu.y}px`, minWidth: '200px' }"
-        style="background: rgba(13, 18, 26, 0.95); border-color: var(--border-default)"
+        style="background: var(--bg-chrome); border-color: var(--border-default)"
         @click.stop
       >
         <div class="relative">
@@ -193,7 +193,7 @@ function projectNameFor(id: string | null | undefined): string | null {
             v-if="triageSubmenuOpen"
             class="absolute left-full top-0 ml-1 glass rounded-md py-1 shadow-modal max-h-64 overflow-y-auto"
             :style="{ minWidth: '200px' }"
-            style="background: rgba(13, 18, 26, 0.95); border-color: var(--border-default)"
+            style="background: var(--bg-chrome); border-color: var(--border-default)"
           >
             <button
               v-for="p in projects.list"

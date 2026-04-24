@@ -56,7 +56,7 @@ watch(
         ref="dialogRef"
         :style="{ width, maxWidth: '100%' }"
         class="glass rounded-xl overflow-hidden shadow-modal"
-        style="background: rgba(13, 18, 26, 0.85); border-color: var(--border-default)"
+        style="background: var(--bg-chrome); border-color: var(--border-default)"
         role="dialog"
         aria-modal="true"
       >
