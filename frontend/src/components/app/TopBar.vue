@@ -64,7 +64,7 @@ const palette = useCommandPaletteStore();
 
     <div v-if="auth.isAuthed" class="ml-auto flex items-center gap-2">
       <button
-        class="flex items-center gap-3 h-7 px-3 rounded-md border border-border bg-bg-surface/50 text-fg-muted text-small transition-colors hover:bg-bg-surface-hi"
+        class="flex items-center gap-3 h-7 px-3 rounded-md border border-border bg-bg-surface text-fg-muted text-small transition-colors hover:bg-bg-surface-hi"
         @click="palette.toggle"
       >
         <span>switch project…</span>

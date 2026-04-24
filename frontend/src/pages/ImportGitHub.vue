@@ -188,7 +188,7 @@ onMounted(() => loadIntegrations());
         v-model="query"
         type="text"
         placeholder="filter by name or description…"
-        class="w-full h-10 px-3 mb-4 rounded-md font-sans text-body bg-bg-surface/60 border border-border text-fg-primary placeholder:text-fg-subtle"
+        class="w-full h-10 px-3 mb-4 rounded-md font-sans text-body bg-bg-surface border border-border text-fg-primary placeholder:text-fg-subtle"
       />
 
       <div class="glass rounded-lg overflow-hidden">
@@ -212,7 +212,7 @@ onMounted(() => loadIntegrations());
         <button
           v-if="hasMore"
           type="button"
-          class="h-9 px-4 rounded-md text-small border border-border bg-bg-surface/50 text-fg-muted hover:bg-bg-surface-hi hover:text-fg-body transition-colors"
+          class="h-9 px-4 rounded-md text-small border border-border bg-bg-surface text-fg-muted hover:bg-bg-surface-hi hover:text-fg-body transition-colors"
           :disabled="loadingMore"
           @click="loadMore"
         >{{ loadingMore ? "loading…" : "load more" }}</button>

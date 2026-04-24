@@ -89,13 +89,13 @@ const shipsCount = computed(() => ships.list.length);
     </header>
 
     <div>
-    <form v-if="editing" class="mb-5 p-4 rounded-md bg-bg-surface/40 space-y-3" @submit.prevent="onSubmit">
+    <form v-if="editing" class="mb-5 p-4 rounded-md bg-bg-surface space-y-3" @submit.prevent="onSubmit">
       <div class="grid grid-cols-3 gap-3">
         <div>
           <label class="mono-label">// platform</label>
           <select
             v-model="form.platform"
-            class="h-10 mt-1 w-full px-3 rounded-md font-sans text-body bg-bg-surface/60 border border-border text-fg-primary"
+            class="h-10 mt-1 w-full px-3 rounded-md font-sans text-body bg-bg-surface border border-border text-fg-primary"
           >
             <option value="ph">Product Hunt</option>
             <option value="hn">Hacker News</option>

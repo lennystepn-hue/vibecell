@@ -53,9 +53,13 @@ function toggleCollapse(groupKey: string) {
   localStorage.setItem(COLLAPSE_KEY, JSON.stringify([...next]));
 }
 
+// Keep the sidebar dots in lockstep with StatusPill's color mapping.
 const toneFor = (status: string) => {
   switch (status) {
+    case "idea":
+      return "violet" as const;
     case "building":
+      return "teal" as const;
     case "live":
       return "green" as const;
     case "paused":
@@ -64,6 +68,7 @@ const toneFor = (status: string) => {
       return "blue" as const;
     case "dead":
       return "red" as const;
+    case "archived":
     default:
       return "muted" as const;
   }
@@ -209,7 +214,7 @@ function rowClick() {
               draggingSlug === p.slug ? 'opacity-50' : '',
               route.params.slug === p.slug
                 ? 'bg-bg-surface-hi text-fg-primary'
-                : 'text-fg-muted hover:bg-bg-surface/60 hover:text-fg-body',
+                : 'text-fg-muted hover:bg-bg-surface hover:text-fg-body',
             ]"
           >
             <span
@@ -269,7 +274,7 @@ function rowClick() {
               draggingSlug === p.slug ? 'opacity-50' : '',
               route.params.slug === p.slug
                 ? 'bg-bg-surface-hi text-fg-primary'
-                : 'text-fg-muted hover:bg-bg-surface/60 hover:text-fg-body',
+                : 'text-fg-muted hover:bg-bg-surface hover:text-fg-body',
             ]"
           >
             <span
@@ -392,7 +397,7 @@ function rowClick() {
                 type="text"
                 placeholder="Client work"
                 autofocus
-                class="w-full h-10 px-3 rounded-md font-sans text-body bg-bg-surface/60 border border-border text-fg-primary placeholder:text-fg-subtle"
+                class="w-full h-10 px-3 rounded-md font-sans text-body bg-bg-surface border border-border text-fg-primary placeholder:text-fg-subtle"
                 @keydown.enter="submitNewGroup"
               />
             </div>

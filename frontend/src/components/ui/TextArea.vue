@@ -18,7 +18,7 @@ defineEmits<{ (e: "update:modelValue", v: string): void }>();
       :placeholder="placeholder"
       :rows="rows"
       :class="[
-        'px-3 py-2 rounded-md font-sans text-body bg-bg-surface/60 border',
+        'px-3 py-2 rounded-md font-sans text-body bg-bg-surface border',
         error ? 'border-signal-red' : 'border-border',
         'text-fg-primary placeholder:text-fg-subtle resize-y',
         'transition-colors duration-fast ease-out hover:bg-bg-surface-hi',

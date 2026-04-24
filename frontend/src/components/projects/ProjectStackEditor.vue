@@ -108,7 +108,7 @@ async function detach(slug: string) {
         v-model="query"
         type="text"
         placeholder="framework, service, model…"
-        class="w-full h-9 px-3 rounded-md font-sans text-small bg-bg-surface/60 border border-border text-fg-body placeholder:text-fg-subtle"
+        class="w-full h-9 px-3 rounded-md font-sans text-small bg-bg-surface border border-border text-fg-body placeholder:text-fg-subtle"
         @keydown.esc="cancelAdding"
       />
       <div
@@ -122,7 +122,7 @@ async function detach(slug: string) {
           type="button"
           :class="[
             'w-full px-3 py-1.5 text-left flex items-center justify-between gap-3',
-            i === highlightedIndex ? 'bg-bg-surface-hi' : 'hover:bg-bg-surface/60',
+            i === highlightedIndex ? 'bg-bg-surface-hi' : 'hover:bg-bg-surface',
           ]"
           @click="attach(item)"
           @mouseenter="highlightedIndex = i"

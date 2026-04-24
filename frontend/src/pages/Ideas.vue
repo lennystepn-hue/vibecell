@@ -153,7 +153,7 @@ function projectNameFor(id: string | null | undefined): string | null {
         <li
           v-for="idea in ideas.list"
           :key="idea.id"
-          class="p-3 rounded-md bg-bg-surface/40 hover:bg-bg-surface-hi transition-colors cursor-context-menu"
+          class="p-3 rounded-md bg-bg-surface hover:bg-bg-surface-hi transition-colors cursor-context-menu"
           @contextmenu="openMenu($event, idea.id)"
         >
           <p class="text-body text-fg-body whitespace-pre-wrap">{{ idea.body }}</p>

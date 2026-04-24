@@ -27,6 +27,8 @@ export default {
           amber: "var(--signal-amber)",
           red: "var(--signal-red)",
           blue: "var(--signal-blue)",
+          violet: "var(--signal-violet)",
+          teal: "var(--signal-teal)",
         },
         border: {
           subtle: "var(--border-subtle)",

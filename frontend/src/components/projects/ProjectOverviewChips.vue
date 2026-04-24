@@ -99,14 +99,14 @@ const hasAny = computed(() => stats.value !== null);
     v-if="hasAny"
     class="flex flex-wrap gap-2 text-small text-fg-muted"
   >
-    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-border bg-bg-surface/40">
+    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-border bg-bg-surface">
       <span class="w-1 h-1 rounded-full bg-signal-green" />
       <span class="mono-label">last session</span>
       <span class="text-fg-body">{{ relative(stats?.last_session_at ?? null) }}</span>
     </span>
     <span
       v-if="stats && stats.session_count_7d > 0"
-      class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-border bg-bg-surface/40"
+      class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-border bg-bg-surface"
     >
       <span class="mono-label">7d</span>
       <span class="tabular-nums text-fg-body">{{ stats.session_count_7d }}</span>
@@ -114,7 +114,7 @@ const hasAny = computed(() => stats.value !== null);
     </span>
     <span
       v-if="stats && stats.commits_7d > 0"
-      class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-border bg-bg-surface/40"
+      class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-border bg-bg-surface"
     >
       <span class="mono-label">7d</span>
       <span class="tabular-nums text-fg-body">{{ stats.commits_7d }}</span>
@@ -122,14 +122,14 @@ const hasAny = computed(() => stats.value !== null);
     </span>
     <span
       v-if="stats && stats.decision_count_total > 0"
-      class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-border bg-bg-surface/40"
+      class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-border bg-bg-surface"
     >
       <span class="tabular-nums text-fg-body">{{ stats.decision_count_total }}</span>
       <span>decisions</span>
     </span>
     <span
       v-if="stats && stats.secrets_count > 0"
-      class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-border bg-bg-surface/40"
+      class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-border bg-bg-surface"
     >
       <span class="tabular-nums text-fg-body">{{ stats.secrets_count }}</span>
       <span>secrets</span>

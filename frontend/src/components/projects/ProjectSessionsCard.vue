@@ -158,7 +158,7 @@ function commitsArr(s: SessionOut): unknown[] {
       >
         <button
           type="button"
-          class="w-full text-left flex items-center gap-3 py-2 hover:bg-bg-surface/40 rounded-sm transition-colors"
+          class="w-full text-left flex items-center gap-3 py-2 hover:bg-bg-surface rounded-sm transition-colors"
           @click="toggleExpand(s.id)"
         >
           <span class="font-mono text-small text-fg-subtle w-20 shrink-0">{{ relTime(s.started_at) }}</span>

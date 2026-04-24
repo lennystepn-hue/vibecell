@@ -87,7 +87,7 @@ const count = computed(() => decisions.list.length);
     </header>
 
     <div>
-    <form v-if="editing" class="space-y-3 mb-5 p-4 rounded-md bg-bg-surface/40" @submit.prevent="onSubmit">
+    <form v-if="editing" class="space-y-3 mb-5 p-4 rounded-md bg-bg-surface" @submit.prevent="onSubmit">
       <TextField v-model="form.title" label="title (required)" placeholder="Use Postgres over SQLite" />
       <TextArea v-model="form.context" label="context" placeholder="What forces led to this?" :rows="2" />
       <TextArea v-model="form.decision" label="decision (required)" placeholder="What did we decide?" :rows="2" />
@@ -112,7 +112,7 @@ const count = computed(() => decisions.list.length);
       <li
         v-for="d in decisions.list"
         :key="d.id"
-        class="p-4 rounded-md bg-bg-surface/40 border border-border-subtle"
+        class="p-4 rounded-md bg-bg-surface border border-border-subtle"
       >
         <header class="flex items-start justify-between gap-3 mb-2">
           <h3 class="text-section text-fg-primary font-semibold tracking-tight">{{ d.title }}</h3>

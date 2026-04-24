@@ -86,7 +86,7 @@ async function removeTag(tagId: string) {
         v-model="newTag"
         type="text"
         placeholder="tag name"
-        class="flex-1 h-9 px-3 rounded-md font-sans text-small bg-bg-surface/60 border border-border text-fg-body placeholder:text-fg-subtle"
+        class="flex-1 h-9 px-3 rounded-md font-sans text-small bg-bg-surface border border-border text-fg-body placeholder:text-fg-subtle"
         @keydown.esc="cancelAdding"
       />
       <button

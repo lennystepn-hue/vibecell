@@ -32,7 +32,7 @@ const id = props.id ?? `tf-${Math.random().toString(36).slice(2, 8)}`;
       :disabled="disabled"
       :required="required"
       :class="[
-        'h-10 px-3 rounded-md font-sans text-body bg-bg-surface/60 border',
+        'h-10 px-3 rounded-md font-sans text-body bg-bg-surface border',
         error ? 'border-signal-red' : 'border-border',
         'text-fg-primary placeholder:text-fg-subtle',
         'transition-colors duration-fast ease-out hover:bg-bg-surface-hi disabled:opacity-50',

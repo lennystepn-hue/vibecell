@@ -149,7 +149,7 @@ const entityLabels: Record<string, string> = {
         <input
           v-model="queryInput"
           type="search"
-          class="flex-1 h-11 px-4 rounded-md font-sans text-body bg-bg-surface/60 border border-border text-fg-primary placeholder:text-fg-subtle"
+          class="flex-1 h-11 px-4 rounded-md font-sans text-body bg-bg-surface border border-border text-fg-primary placeholder:text-fg-subtle"
           placeholder="Search anything…"
           autofocus
         />
@@ -203,7 +203,7 @@ const entityLabels: Record<string, string> = {
             <li
               v-for="hit in g.hits"
               :key="`${hit.entity}:${hit.entity_id}`"
-              class="p-3 rounded-md bg-bg-surface/40 hover:bg-bg-surface-hi transition-colors"
+              class="p-3 rounded-md bg-bg-surface hover:bg-bg-surface-hi transition-colors"
             >
               <RouterLink :to="resultLink(hit)" class="block">
                 <div class="flex items-start gap-3">

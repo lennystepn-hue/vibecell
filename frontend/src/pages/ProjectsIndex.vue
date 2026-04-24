@@ -34,7 +34,7 @@ onMounted(() => {
       <div class="flex gap-2">
         <RouterLink
           to="/import/github"
-          class="inline-flex h-10 items-center gap-2 rounded-md px-4 font-medium text-body border border-border bg-bg-surface/50 text-fg-body hover:bg-bg-surface-hi transition-colors"
+          class="inline-flex h-10 items-center gap-2 rounded-md px-4 font-medium text-body border border-border bg-bg-surface text-fg-body hover:bg-bg-surface-hi transition-colors"
         >
           <span aria-hidden="true">↗</span>
           <span>Import from GitHub</span>
@@ -79,7 +79,7 @@ onMounted(() => {
       <template #actions>
         <RouterLink
           to="/import/github"
-          class="inline-flex h-10 items-center gap-2 rounded-md px-4 font-medium text-body border border-border bg-bg-surface/50 text-fg-body hover:bg-bg-surface-hi transition-colors"
+          class="inline-flex h-10 items-center gap-2 rounded-md px-4 font-medium text-body border border-border bg-bg-surface text-fg-body hover:bg-bg-surface-hi transition-colors"
         >
           Import from GitHub
         </RouterLink>

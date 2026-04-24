@@ -25,7 +25,7 @@ function shortDate(iso: string | null | undefined): string {
       'transition-colors duration-fast ease-out',
       alreadyImported
         ? 'opacity-50 cursor-not-allowed'
-        : (selected ? 'bg-signal-green-bg' : 'hover:bg-bg-surface/60'),
+        : (selected ? 'bg-signal-green-bg' : 'hover:bg-bg-surface'),
     ]"
   >
     <input

@@ -158,7 +158,7 @@ onMounted(loadDevices);
                 autofocus
                 :class="[
                   'h-12 px-3 rounded-md text-section font-mono tracking-[0.18em]',
-                  'bg-bg-surface/60 border text-center uppercase',
+                  'bg-bg-surface border text-center uppercase',
                   error ? 'border-signal-red' : 'border-border',
                   'text-fg-primary placeholder:text-fg-subtle',
                   'transition-colors duration-fast ease-out hover:bg-bg-surface-hi disabled:opacity-50',

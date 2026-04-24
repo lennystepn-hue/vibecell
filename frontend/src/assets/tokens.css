@@ -24,6 +24,12 @@
   --signal-red-bg: rgba(255, 91, 91, 0.12);
   --signal-blue: #8ab4ff;
   --signal-blue-bg: rgba(138, 180, 255, 0.08);
+  /* Violet = early-stage / idea. Teal = building (distinct from the green
+     reserved for live/production). */
+  --signal-violet: #b592ff;
+  --signal-violet-bg: rgba(181, 146, 255, 0.12);
+  --signal-teal: #4fc8d6;
+  --signal-teal-bg: rgba(79, 200, 214, 0.12);
 
   /* borders */
   --border-subtle: rgba(138, 180, 255, 0.08);
@@ -67,6 +73,10 @@
   --signal-green-bg: rgba(125, 255, 180, 0.14);
   --signal-blue: #8dd9ae;
   --signal-blue-bg: rgba(141, 217, 174, 0.08);
+  --signal-violet: #c5b0ff;
+  --signal-violet-bg: rgba(197, 176, 255, 0.12);
+  --signal-teal: #7dffd4;
+  --signal-teal-bg: rgba(125, 255, 212, 0.10);
   --border-subtle: rgba(125, 255, 180, 0.08);
   --border-default: rgba(125, 255, 180, 0.14);
   --border-strong: rgba(125, 255, 180, 0.22);
@@ -94,6 +104,10 @@
   --signal-red-bg: rgba(196, 54, 47, 0.08);
   --signal-blue: #3968c4;
   --signal-blue-bg: rgba(57, 104, 196, 0.08);
+  --signal-violet: #7046d1;
+  --signal-violet-bg: rgba(112, 70, 209, 0.08);
+  --signal-teal: #0e8a9b;
+  --signal-teal-bg: rgba(14, 138, 155, 0.08);
   --border-subtle: rgba(20, 30, 40, 0.08);
   --border-default: rgba(20, 30, 40, 0.14);
   --border-strong: rgba(20, 30, 40, 0.22);

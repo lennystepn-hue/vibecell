@@ -18,7 +18,7 @@ defineEmits<{ (e: "click"): void; (e: "hover"): void }>();
       'w-full flex items-center gap-3 px-4 h-10 text-left',
       'font-sans text-body',
       'transition-colors duration-fast ease-out',
-      selected ? 'bg-bg-surface-hi text-fg-primary' : 'text-fg-body hover:bg-bg-surface/60',
+      selected ? 'bg-bg-surface-hi text-fg-primary' : 'text-fg-body hover:bg-bg-surface',
     ]"
     @click="$emit('click')"
     @mouseenter="$emit('hover')"

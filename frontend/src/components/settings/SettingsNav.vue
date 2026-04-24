@@ -23,7 +23,7 @@ const items = [
           'transition-colors duration-fast ease-out',
           route.path === i.path
             ? 'bg-bg-surface-hi text-fg-primary'
-            : 'text-fg-muted hover:bg-bg-surface/60 hover:text-fg-body',
+            : 'text-fg-muted hover:bg-bg-surface hover:text-fg-body',
         ]"
       >
         {{ i.label }}

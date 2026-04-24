@@ -71,7 +71,7 @@ const statusLabel = computed(() => {
         :value="localValue"
         placeholder="Free-form markdown. Auto-saves on pause + blur."
         rows="12"
-        class="w-full px-3 py-2 rounded-md font-mono text-small bg-bg-surface/60 border border-border text-fg-primary placeholder:text-fg-subtle resize-y"
+        class="w-full px-3 py-2 rounded-md font-mono text-small bg-bg-surface border border-border text-fg-primary placeholder:text-fg-subtle resize-y"
         @input="onInput"
         @blur="onBlur"
       />

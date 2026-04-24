@@ -161,7 +161,7 @@ async function onSubmit() {
           <li
             v-for="(draft, i) in tweetDrafts"
             :key="i"
-            class="p-3 rounded-md bg-bg-surface/40 border border-border-subtle text-small text-fg-body cursor-pointer hover:bg-bg-surface-hi transition-colors whitespace-pre-wrap"
+            class="p-3 rounded-md bg-bg-surface border border-border-subtle text-small text-fg-body cursor-pointer hover:bg-bg-surface-hi transition-colors whitespace-pre-wrap"
             :title="`Copy draft ${i + 1}`"
             @click="copy(draft)"
           >

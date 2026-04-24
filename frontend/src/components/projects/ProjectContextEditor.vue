@@ -110,7 +110,7 @@ async function save() {
           <input
             v-model="open_questions[i]"
             type="text"
-            class="flex-1 h-9 px-3 rounded-md font-sans text-body bg-bg-surface/60 border border-border text-fg-body placeholder:text-fg-subtle"
+            class="flex-1 h-9 px-3 rounded-md font-sans text-body bg-bg-surface border border-border text-fg-body placeholder:text-fg-subtle"
             placeholder="?"
           />
           <button

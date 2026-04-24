@@ -71,7 +71,7 @@ onProjectLiveEvent(["screenshot.captured", "ship.created"], () => void load(prop
 const miniClass = computed(() =>
   "block w-[180px] h-[112px] rounded-md overflow-hidden border border-border transition-all " +
   "hover:border-signal-green/50 hover:shadow-[0_0_16px_rgba(92,200,164,0.18)] " +
-  "bg-bg-surface/40",
+  "bg-bg-surface",
 );
 </script>
 
@@ -121,7 +121,7 @@ const miniClass = computed(() =>
   <!-- ─── panel: full 16:10 rectangle ────────────────────────────────────── -->
   <div
     v-else-if="variant === 'panel'"
-    class="relative w-full aspect-[16/10] rounded-lg overflow-hidden border border-border bg-bg-surface/40"
+    class="relative w-full aspect-[16/10] rounded-lg overflow-hidden border border-border bg-bg-surface"
   >
     <transition
       enter-active-class="transition-opacity duration-300"

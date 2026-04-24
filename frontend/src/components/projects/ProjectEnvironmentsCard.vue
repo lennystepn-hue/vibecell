@@ -90,14 +90,14 @@ async function removeEnv(envId: string) {
           v-model="formKind"
           type="text"
           placeholder="kind (production, staging…)"
-          class="flex-1 h-9 px-2 rounded-md font-sans text-small bg-bg-surface/60 border border-border text-fg-body placeholder:text-fg-subtle"
+          class="flex-1 h-9 px-2 rounded-md font-sans text-small bg-bg-surface border border-border text-fg-body placeholder:text-fg-subtle"
         />
       </div>
       <input
         v-model="formUrl"
         type="url"
         placeholder="https://…"
-        class="w-full h-9 px-2 rounded-md font-sans text-small bg-bg-surface/60 border border-border text-fg-body placeholder:text-fg-subtle"
+        class="w-full h-9 px-2 rounded-md font-sans text-small bg-bg-surface border border-border text-fg-body placeholder:text-fg-subtle"
       />
       <div class="flex gap-2 justify-end">
         <button

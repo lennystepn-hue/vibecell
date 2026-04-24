@@ -125,7 +125,7 @@ async function deleteCommand(cmdId: string) {
       <button
         :class="[
           'flex-1 h-10 px-5 text-left mono-label transition-colors duration-fast',
-          tab === 'links' ? 'text-fg-primary bg-bg-surface/40' : 'hover:text-fg-body',
+          tab === 'links' ? 'text-fg-primary bg-bg-surface' : 'hover:text-fg-body',
         ]"
         @click="tab = 'links'"
       >
@@ -134,7 +134,7 @@ async function deleteCommand(cmdId: string) {
       <button
         :class="[
           'flex-1 h-10 px-5 text-left mono-label transition-colors duration-fast',
-          tab === 'commands' ? 'text-fg-primary bg-bg-surface/40' : 'hover:text-fg-body',
+          tab === 'commands' ? 'text-fg-primary bg-bg-surface' : 'hover:text-fg-body',
         ]"
         @click="tab = 'commands'"
       >
@@ -170,14 +170,14 @@ async function deleteCommand(cmdId: string) {
           v-model="linkKind"
           type="text"
           placeholder="kind"
-          class="w-20 h-9 px-2 rounded-md font-mono text-small bg-bg-surface/60 border border-border text-fg-body placeholder:text-fg-subtle"
+          class="w-20 h-9 px-2 rounded-md font-mono text-small bg-bg-surface border border-border text-fg-body placeholder:text-fg-subtle"
           @keydown.esc="cancelLinkForm"
         />
         <input
           v-model="linkLabel"
           type="text"
           placeholder="label (opt)"
-          class="w-32 h-9 px-2 rounded-md font-sans text-small bg-bg-surface/60 border border-border text-fg-body placeholder:text-fg-subtle"
+          class="w-32 h-9 px-2 rounded-md font-sans text-small bg-bg-surface border border-border text-fg-body placeholder:text-fg-subtle"
           @keydown.esc="cancelLinkForm"
         />
         <input
@@ -185,7 +185,7 @@ async function deleteCommand(cmdId: string) {
           v-model="linkUrl"
           type="url"
           placeholder="https://…"
-          class="flex-1 h-9 px-2 rounded-md font-sans text-small bg-bg-surface/60 border border-border text-fg-body placeholder:text-fg-subtle"
+          class="flex-1 h-9 px-2 rounded-md font-sans text-small bg-bg-surface border border-border text-fg-body placeholder:text-fg-subtle"
           @keydown.esc="cancelLinkForm"
         />
         <button
@@ -238,12 +238,12 @@ async function deleteCommand(cmdId: string) {
             v-model="cmdLabel"
             type="text"
             placeholder="label (e.g. Deploy)"
-            class="flex-1 h-9 px-2 rounded-md font-sans text-small bg-bg-surface/60 border border-border text-fg-body placeholder:text-fg-subtle"
+            class="flex-1 h-9 px-2 rounded-md font-sans text-small bg-bg-surface border border-border text-fg-body placeholder:text-fg-subtle"
             @keydown.esc="cancelCmdForm"
           />
           <select
             v-model="cmdRunIn"
-            class="w-32 h-9 px-2 rounded-md font-mono text-small bg-bg-surface/60 border border-border text-fg-body"
+            class="w-32 h-9 px-2 rounded-md font-mono text-small bg-bg-surface border border-border text-fg-body"
           >
             <option value="terminal">terminal</option>
             <option value="background">background</option>
@@ -254,7 +254,7 @@ async function deleteCommand(cmdId: string) {
             v-model="cmdCommand"
             type="text"
             placeholder="$ command to run"
-            class="flex-1 h-9 px-2 rounded-md font-mono text-small bg-bg-surface/60 border border-border text-fg-body placeholder:text-fg-subtle"
+            class="flex-1 h-9 px-2 rounded-md font-mono text-small bg-bg-surface border border-border text-fg-body placeholder:text-fg-subtle"
             @keydown.esc="cancelCmdForm"
           />
           <button
