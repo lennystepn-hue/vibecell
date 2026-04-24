@@ -149,6 +149,7 @@ class ContextOut(BaseModel):
     open_questions: list[Any] = []
     known_issues: list[Any] = []
     blocked_by: str | None = None
+    env_fingerprint: dict[str, Any] = {}
 
 
 class ContextUpsert(BaseModel):

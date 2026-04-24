@@ -105,6 +105,10 @@ class ProjectContext(Base):
     open_questions: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, default=list, server_default="[]")
     known_issues: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, default=list, server_default="[]")
     blocked_by: Mapped[str | None] = mapped_column(Text)
+    # SHA-256 fingerprint of manifest files + timestamp of last scan.
+    # Shape: {"files": {"package.json": "<hex>", ...}, "scanned_at": "<iso>", "local_path": "<str>"}
+    # Populated by MCP vibecell_sync_repo. Enables drift detection on session start.
+    env_fingerprint: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, default=dict, server_default="{}")
     updated_at: Mapped[datetime] = mapped_column(
         TIMESTAMP(timezone=True), nullable=False, server_default=func.now()
     )
