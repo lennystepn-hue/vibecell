@@ -10,9 +10,9 @@ import ProjectContextEditor from "@/components/projects/ProjectContextEditor.vue
 import ShipButton from "@/components/projects/ShipButton.vue";
 import ProjectOverviewChips from "@/components/projects/ProjectOverviewChips.vue";
 import ProjectGridDashboard from "@/components/projects/ProjectGridDashboard.vue";
+import ProjectStatusDropdown from "@/components/projects/ProjectStatusDropdown.vue";
 import Confetti from "@/components/projects/Confetti.vue";
 import CopyableValue from "@/components/ui/CopyableValue.vue";
-import StatusPill from "@/components/ui/StatusPill.vue";
 import { api } from "@/api/client";
 import { useProjectLive } from "@/composables/useProjectLive";
 import { useProjectsStore } from "@/stores/projects";
@@ -148,7 +148,7 @@ useProjectLive(
               <div class="min-w-0">
                 <div class="flex items-baseline gap-3 flex-wrap">
                   <h1 class="text-display text-fg-primary tracking-tight truncate">{{ projects.active.name }}</h1>
-                  <StatusPill :status="projects.active.status as never" />
+                  <ProjectStatusDropdown :project="projects.active" />
                   <CopyableValue :value="projects.active.slug" mono small class="text-fg-subtle" />
                   <LivePulse :slug="projects.active.slug" variant="pill" />
                 </div>
