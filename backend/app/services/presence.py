@@ -38,7 +38,14 @@ async def mark_live(
     tool_name: str,
     session_id: str | None = None,
 ) -> None:
-    """Record that Claude just ran tool_name against project_slug in workspace_id."""
+    """Record that Claude just ran tool_name against project_slug in workspace_id.
+
+    Semantic: Claude can only be "live" on ONE project at a time from the user's
+    perspective — when a new tool-call touches project B we clear every other
+    entry for this workspace. Without this, the 120s TTL left stale dots on
+    previously-touched projects and the sidebar showed pulsing greens on
+    unrelated rows while Claude was only actually working on one.
+    """
     r = await get_redis()
     now_iso = datetime.now(UTC).isoformat()
     payload = json.dumps({
@@ -48,7 +55,19 @@ async def mark_live(
     })
     key = _entry_key(workspace_id, project_slug)
     idx = _index_key(workspace_id)
-    # Pipeline so entry + index update atomically.
+
+    # Clear every other project's presence entry so only the just-touched slug
+    # renders as live. Do this BEFORE the pipeline write so there's no race
+    # where two entries are briefly live together.
+    existing_slugs = await r.smembers(idx)
+    stale_slugs = [s for s in existing_slugs if s != project_slug]
+    if stale_slugs:
+        pipe = r.pipeline()
+        for s in stale_slugs:
+            pipe.delete(_entry_key(workspace_id, s))
+        pipe.srem(idx, *stale_slugs)
+        await pipe.execute()
+
     pipe = r.pipeline()
     pipe.set(key, payload, ex=PRESENCE_TTL_SECONDS)
     pipe.sadd(idx, project_slug)
