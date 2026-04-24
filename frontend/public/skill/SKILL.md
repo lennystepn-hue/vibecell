@@ -61,8 +61,45 @@ The goal: the user opens the dashboard and sees **visible progress
 ticking off in real time** instead of a wall of silent code edits. This
 is the core Vibecell UX — make AI work observable.
 
+## Auto-log after every git commit (MECHANICAL — no keywords required)
+
+Keyword-based session logging (see "On session end" below) is the FALLBACK.
+The primary trigger is **mechanical: every time you make a git commit, log
+immediately.** This closes the gap where long iterative fix sessions never
+hit a "done" / "ship it" phrase and therefore never get logged — the
+dashboard then silently drifts out of sync with what you actually built.
+
+Rule:
+
+1. After any successful `git commit` (or `git commit && git push`), BEFORE
+   you respond to the user or start the next task, call:
+   ```
+   vibecell_log_session({
+     summary: "<first line of the commit message>",
+     commits: [{ sha: "<7-char sha>", msg: "<commit subject>" }],
+     files_touched: [/* from `git status --short` output just before the commit */],
+     next_step: "<what's the immediate next thing? if nothing, leave null>"
+   })
+   ```
+2. If the commit closed an in_progress todo, also call
+   `vibecell_todo_complete({ todo_id, completion_note: "<commit subject>" })`
+   so the TodosCard ticks off in real time.
+3. If the commit represents a material decision (architecture, security,
+   public API, schema), record it with `vibecell_decision` — separate from
+   the session log. One commit can produce both a session-log entry AND a
+   decision entry.
+4. **Safety-net**: if you realise you've made ≥3 commits since the last
+   `vibecell_log_session` call, log now regardless — don't wait for the
+   next commit. Batch the unlogged commits into one session entry with all
+   their SHAs in the commits array.
+
+Session summaries from auto-log should be ONE sentence pulled from the
+commit subject. No prose. The project dashboard renders these live via
+SSE — they should be scannable, not essays.
+
 ## On session end (user says "done", "log this", "commit and stop", "ship it")
-- Summarize what was done in 1-3 sentences.
+- Summarize what was done in 1-3 sentences (more context than the per-commit
+  auto-logs above — these are the "wrap-up" logs).
 - Infer next_step from unfinished work.
 - vibecell_log_session({ summary, files_touched, commits, next_step }).
   - This call AUTOMATICALLY syncs current_focus (derived from the summary's
