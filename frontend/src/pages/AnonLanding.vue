@@ -29,58 +29,58 @@ const counters = ref([
   { value: 0, target: 0, label: "install", suffix: "" },
 ]);
 
-// MCP tool catalog — grouped by capability. Surface a few representative
-// names per group so the landing conveys scope without listing all 38.
+// MCP tool catalog — 6 capability cards for a clean 3×2 grid. Each card
+// gets ONE sentence of plain-English explanation + at most 3 chips so the
+// section reads as "here's what you get" not "here's an API dump".
 const mcpGroups = [
-  {
-    tag: "Read",
-    icon: "eye",
-    count: 11,
-    blurb: "Every tool call returns JSON Claude can reason over — no scraping, no context drift.",
-    chips: ["vibecell_active", "vibecell_search", "vibecell_brief", "vibecell_activity", "vibecell_claude_md"],
-  },
-  {
-    tag: "Write",
-    icon: "pen",
-    count: 8,
-    blurb: "Log what shipped, record decisions, ship a version — all from the Claude chat without breaking flow.",
-    chips: ["vibecell_log_session", "vibecell_decision", "vibecell_ship", "vibecell_update_context", "vibecell_note_append"],
-  },
   {
     tag: "Spawn",
     icon: "spark",
     count: 4,
-    blurb: "Create projects from a concept, catalog a repo, detect env drift — zero manual form-fill.",
-    chips: ["vibecell_create_project", "vibecell_sync_repo", "vibecell_check_env_drift", "vibecell_switch"],
+    blurb:
+      "Describe an idea in Claude — a project appears in the dashboard with stack, tags, pitch pre-filled.",
+    chips: ["vibecell_create_project", "vibecell_sync_repo", "vibecell_check_env_drift"],
     accent: true,
+  },
+  {
+    tag: "Read",
+    icon: "eye",
+    count: 11,
+    blurb:
+      "Claude can pull the full project aggregate, search your history, or get a resurrection brief.",
+    chips: ["vibecell_active", "vibecell_search", "vibecell_brief"],
+  },
+  {
+    tag: "Write",
+    icon: "pen",
+    count: 13,
+    blurb:
+      "Every session, decision, ship, URL, or script Claude touches lands in the dashboard as a one-line tool call.",
+    chips: ["vibecell_log_session", "vibecell_decision", "vibecell_add_environment"],
   },
   {
     tag: "Todos",
     icon: "check",
     count: 6,
-    blurb: "Plan work as visible batches. Claude starts a todo, does the work, ticks it with a commit note.",
-    chips: ["vibecell_todo_batch_add", "vibecell_todo_start", "vibecell_todo_complete", "vibecell_todo_match"],
-  },
-  {
-    tag: "Edit",
-    icon: "edit",
-    count: 5,
-    blurb: "Add a staging URL, stash a docs link, remember a new script — granular post-create mutations.",
-    chips: ["vibecell_add_environment", "vibecell_add_link", "vibecell_add_command", "vibecell_status"],
+    blurb:
+      "Plan work as visible batches. Claude ticks each one off with a commit note as it ships.",
+    chips: ["vibecell_todo_batch_add", "vibecell_todo_start", "vibecell_todo_complete"],
   },
   {
     tag: "Secrets",
     icon: "key",
     count: 4,
-    blurb: "Workspace-scoped. Stores 1Password / Bitwarden paths OR encrypts inline with a DEK. Never leaves your box in plaintext.",
-    chips: ["vibecell_secret_set", "vibecell_secret_get_value", "vibecell_secret_list", "vibecell_secret_rm"],
+    blurb:
+      "Workspace-scoped vault. References to 1Password / Bitwarden, or inline-encrypted with a DEK.",
+    chips: ["vibecell_secret_set", "vibecell_secret_get_value", "vibecell_secret_list"],
   },
   {
     tag: "AI",
     icon: "sparkles",
     count: 4,
-    blurb: "BYOK Anthropic key. Plan todos from a goal, draft launch copy, retros, morning resume brief.",
-    chips: ["vibecell_ai_plan_todos", "vibecell_ai_launch_copy", "vibecell_ai_retro", "vibecell_ai_resume_brief"],
+    blurb:
+      "BYOK Anthropic key. Goal-to-todos planning, launch copy, retros, morning resume brief.",
+    chips: ["vibecell_ai_plan_todos", "vibecell_ai_launch_copy", "vibecell_ai_retro"],
   },
 ];
 
@@ -292,7 +292,13 @@ const steps = [
             style="font-size: clamp(2.4rem, 5vw, 4rem); letter-spacing: -0.04em; color: #ffffff">
             Remember every<br>
             project<br>
-            <span style="color: #5cc8a4">you ship.</span>
+            <!-- Gradient that mirrors the hero orb's palette: violet →
+                 mint → pink. Ties the headline into the 3D object sitting
+                 next to it. -->
+            <span
+              class="bg-clip-text text-transparent"
+              style="background-image: linear-gradient(120deg, #b592ff 0%, #7dffd4 45%, #ff6b9d 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent"
+            >you ship.</span>
           </h1>
 
           <p class="mb-10 leading-relaxed max-w-md"
@@ -302,9 +308,11 @@ const steps = [
           </p>
 
           <div class="flex flex-wrap gap-3 mb-8">
+            <!-- Primary CTA — same gradient as the "you ship" text + the
+                 hero orb, with a soft multi-color glow ring. -->
             <button
-              class="px-6 py-3 rounded-lg font-mono font-semibold text-[13px] transition-all hover:opacity-90 hover:scale-[1.02] active:scale-[0.99]"
-              style="background: #5cc8a4; color: #070b10; box-shadow: 0 0 24px rgba(92,200,164,0.25)"
+              class="px-6 py-3 rounded-lg font-mono font-semibold text-[13px] transition-all hover:opacity-95 hover:scale-[1.02] active:scale-[0.99]"
+              style="background: linear-gradient(120deg, #b592ff 0%, #7dffd4 45%, #ff6b9d 100%); color: #070b10; box-shadow: 0 0 30px rgba(181,146,255,0.3), 0 0 50px rgba(125,255,212,0.18)"
               @click="goSignIn">
               {{ auth.isAuthed ? 'Open dashboard →' : 'Get started — free' }}
             </button>
