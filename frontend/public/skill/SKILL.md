@@ -63,6 +63,45 @@ in one `manifests` dict — one tool call, not one per file.
 - When user says "capture this idea: ..." -> vibecell_idea(text).
 - When user asks "what's on fire" -> vibecell_health() across projects.
 
+## Creating a new project from a concept
+When the user describes a new project idea with phrases like "I want to build X",
+"let's start a new project called Y", "erstelle ein projekt für Z", "baue ein neues
+projekt", "spawn a project", or any similar intent — do NOT wait for them to click
+"+ New project" in the UI. Instead:
+
+1. If the concept is still fuzzy, ask 1-2 clarifying questions (name? what does it
+   DO? any tech stack hint?). Keep it short — we want the project live before the
+   user loses flow.
+
+2. Once you have a name + a rough pitch, call `vibecell_create_project` with as much
+   structured info as the conversation gave you. Example:
+   ```
+   vibecell_create_project({
+     name: "Giftmakr Analytics",
+     pitch: "Dashboard for tracking gift recommendations + conversion rates",
+     emoji: "📊",
+     status: "idea",  // default
+     tags: ["analytics", "saas"],
+     stack: [
+       {slug: "vue-3", name: "Vue 3", kind: "framework", role: "frontend"},
+       {slug: "fastapi", name: "FastAPI", kind: "framework", role: "backend"}
+     ],
+     github_url: "https://github.com/user/giftmakr-analytics"  // optional
+   })
+   ```
+
+3. The tool returns `{slug, url, stats}`. Surface the URL to the user — "Created
+   **Giftmakr Analytics** → https://vibecell.dev/p/giftmakr-analytics (now your
+   active project). I pre-filled <N> stack items, <N> tags, <N> environments."
+
+4. The project is set as active by default. Follow-up work (todos, first session log,
+   decisions, etc.) goes to the new project without needing `vibecell_switch`.
+
+Be generous with inference: if the user mentions "Vue + Postgres + Docker" put all
+three in `stack`. If they say "will live at foo.com" set `environments: [{kind:
+"prod", url: "https://foo.com"}]`. The tool is idempotent via the same dedup writer
+as GitHub import, so over-specifying is safe.
+
 ## Auto-TODO flow (plan → work → tick)
 **When the user asks for something involving 3+ distinct steps** (a feature,
 a refactor, a migration, a launch push), do NOT silently start coding. Plan

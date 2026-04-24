@@ -198,6 +198,46 @@ class CheckEnvDriftArgs(BaseModel):
     slug: str | None = None
 
 
+class CreateProjectArgs(BaseModel):
+    """Spawn a new project from a concept, fully populated."""
+
+    name: str = Field(..., min_length=1, max_length=200)
+    slug: str | None = Field(default=None, max_length=50)
+    pitch: str | None = Field(default=None, max_length=2000)
+    emoji: str | None = Field(default=None, max_length=16)
+    status: str | None = Field(default="idea")
+    group: str | None = Field(
+        default=None,
+        description="Group name or ID. Auto-created if a name is given and doesn't exist.",
+    )
+    github_url: str | None = None
+    tags: list[str] = Field(default_factory=list)
+    stack: list[dict] = Field(
+        default_factory=list,
+        description="[{slug, name, kind, role}] — same shape as enrichment stack.",
+    )
+    infra: dict = Field(
+        default_factory=dict,
+        description="{db, server_alias, dns_provider, cdn, object_storage}",
+    )
+    environments: list[dict] = Field(
+        default_factory=list,
+        description="[{kind: 'local'|'staging'|'prod', url, env_template_path?}]",
+    )
+    commands: list[dict] = Field(
+        default_factory=list,
+        description="[{label, command, run_in: 'terminal'}]",
+    )
+    links: list[dict] = Field(
+        default_factory=list,
+        description="[{kind, label, url}] — docs, api, metrics, etc. (github/homepage handled separately)",
+    )
+    switch_to_active: bool = Field(
+        default=True,
+        description="Set this project as the active one after creation.",
+    )
+
+
 # ---- Registry ----
 
 Handler = Callable[[BaseModel, MCPContext], Awaitable[str]]
@@ -325,6 +365,17 @@ TOOLS: list[Tool] = [
         "Use this when you want to know 'did my env change?' without triggering a re-enrichment. "
         "If you want to REFRESH stack/infra when drift is detected, call vibecell_sync_repo instead.",
         CheckEnvDriftArgs, r.handle_check_env_drift,
+    ),
+    Tool(
+        "vibecell_create_project",
+        "Create a brand-new Vibecell project from a concept — in ONE call. Use this when the user "
+        "describes a new idea ('I want to build X', 'let's start a new project called Y', 'create a "
+        "project for Z') — gather name + pitch + any stack/tags/envs/commands/links/emoji you can "
+        "infer from the conversation, then call this tool. It provisions the project, applies the "
+        "enrichment pipeline (idempotent dedup), optionally creates a group, optionally records a "
+        "GitHub URL, and sets the new project as active by default. Returns the slug + a URL the "
+        "user can open immediately.",
+        CreateProjectArgs, w.handle_create_project,
     ),
 ]
 

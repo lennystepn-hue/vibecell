@@ -719,3 +719,179 @@ async def handle_sync_repo(args, ctx: MCPContext) -> str:
         },
         "fingerprinted_files": sorted((pctx.env_fingerprint or {}).get("files", {}).keys()),
     })
+
+
+# ---------------------------------------------------------------------------
+# Project creation — the "sexy" flow: Claude helps the user concept a new
+# project, then spawns it in Vibecell with one call. Accepts the full
+# enrichment shape so the dashboard is populated from the first paint.
+# ---------------------------------------------------------------------------
+
+def _derive_slug(name: str, taken: set[str]) -> str:
+    """Slugify name to [a-z0-9-], ensure uniqueness with numeric suffix."""
+    import re
+
+    clean = re.sub(r"[^a-z0-9-]", "-", (name or "").lower())
+    clean = re.sub(r"-+", "-", clean).strip("-")
+    if len(clean) < 2:
+        clean = f"proj-{clean}" if clean else "proj"
+    clean = clean[:50]
+    if clean not in taken:
+        return clean
+    i = 2
+    while True:
+        candidate = f"{clean}-{i}"[:50]
+        if candidate not in taken:
+            return candidate
+        i += 1
+
+
+async def handle_create_project(args, ctx: MCPContext) -> str:
+    """Create a new project + populate it with everything Claude gathered.
+
+    This is the one-shot project spawner. After brainstorming a concept with
+    the user, Claude calls this with as much structured info as it has
+    (name + pitch at minimum; stack/tags/envs/commands/links optionally) and
+    Vibecell provisions the full project page.
+
+    - Auto-derives slug from name if omitted.
+    - Auto-creates the group by name if `group` is given and doesn't exist.
+    - Applies the same idempotent enrichment-writer used by GitHub import
+      and sync_repo, so stack/tags/infra/envs/commands/links all go through
+      the same dedup'd path.
+    - Switches the active project to the new one by default (controllable
+      via `switch_to_active: false`).
+    """
+    from sqlalchemy import select
+
+    from app.core.ulid import new_ulid
+    from app.models import (
+        Project,
+        ProjectGroup,
+        ProjectLink,
+        ProjectRepo,
+    )
+    from app.services.enrichment import EnrichmentResult
+    from app.services.enrichment_apply import apply_enrichment_to_project
+    from app.services.project import create_project, set_active_project
+
+    name: str = (getattr(args, "name", "") or "").strip()
+    if not name:
+        raise RuntimeError("name is required")
+
+    # --- Resolve unique slug ---
+    requested_slug = (getattr(args, "slug", "") or "").strip().lower()
+    existing_slugs = set(
+        (await ctx.db.execute(
+            select(Project.slug).where(Project.workspace_id == ctx.workspace_id)
+        )).scalars()
+    )
+    slug = requested_slug if requested_slug and requested_slug not in existing_slugs else _derive_slug(name, existing_slugs)
+
+    # --- Resolve / create group ---
+    group_id: str | None = None
+    group_input = (getattr(args, "group", "") or "").strip()
+    if group_input:
+        # Try by id first, then by exact name, then create new.
+        grp = (await ctx.db.execute(
+            select(ProjectGroup).where(
+                ProjectGroup.workspace_id == ctx.workspace_id,
+                (ProjectGroup.id == group_input) | (ProjectGroup.name == group_input),
+            )
+        )).scalar_one_or_none()
+        if grp is None:
+            grp = ProjectGroup(
+                id=new_ulid(),
+                workspace_id=ctx.workspace_id,
+                name=group_input[:100],
+                color=None,
+            )
+            ctx.db.add(grp)
+            await ctx.db.flush()
+        group_id = grp.id
+
+    # --- Create project row ---
+    status = getattr(args, "status", None) or "idea"
+    if status not in _VALID_STATUSES:
+        status = "idea"
+    pitch = (getattr(args, "pitch", "") or "").strip() or None
+    emoji = (getattr(args, "emoji", "") or "").strip() or None
+
+    project = await create_project(
+        ctx.db,
+        workspace_id=ctx.workspace_id,
+        slug=slug,
+        name=name[:200],
+        emoji=emoji,
+        pitch=pitch,
+        status=status,
+    )
+    if group_id:
+        project.group_id = group_id
+
+    # --- Optional GitHub URL → ProjectRepo + ProjectLink ---
+    github_url = (getattr(args, "github_url", "") or "").strip()
+    if github_url:
+        ctx.db.add(ProjectRepo(
+            id=new_ulid(),
+            project_id=project.id,
+            role="monorepo",
+            git_url=github_url,
+            default_branch="main",
+        ))
+        ctx.db.add(ProjectLink(
+            id=new_ulid(),
+            project_id=project.id,
+            kind="github",
+            label="GitHub",
+            url=github_url,
+        ))
+
+    await ctx.db.flush()
+
+    # --- Feed everything else through the shared enrichment writer ---
+    # Convert the tool args into an EnrichmentResult; writer dedups + fills infra.
+    enriched = EnrichmentResult(
+        pitch=pitch,
+        emoji=emoji,
+        tags=list(getattr(args, "tags", None) or []),
+        stack=list(getattr(args, "stack", None) or []),
+        infra=dict(getattr(args, "infra", None) or {}),
+        environments=list(getattr(args, "environments", None) or []),
+        commands=list(getattr(args, "commands", None) or []),
+        extra_links=list(getattr(args, "links", None) or []),
+    )
+    stats = await apply_enrichment_to_project(
+        ctx.db,
+        project=project,
+        workspace_id=ctx.workspace_id,
+        enriched=enriched,
+        overwrite_pitch_if_thin=False,  # we already set pitch on the create
+    )
+
+    # --- Set as active project by default ---
+    switch_to_active = getattr(args, "switch_to_active", True)
+    if switch_to_active:
+        await set_active_project(
+            ctx.db,
+            workspace_id=ctx.workspace_id,
+            user_id=ctx.user_id,
+            project=project,
+        )
+
+    return json.dumps({
+        "id": project.id,
+        "slug": project.slug,
+        "name": project.name,
+        "status": project.status,
+        "url": f"https://vibecell.dev/p/{project.slug}",
+        "active": bool(switch_to_active),
+        "stats": {
+            "tags_added": stats.tags_added,
+            "stack_added": stats.stack_added,
+            "infra_updated": stats.infra_updated,
+            "environments_added": stats.environments_added,
+            "commands_added": stats.commands_added,
+            "links_added": stats.links_added,
+        },
+    })
