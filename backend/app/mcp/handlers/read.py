@@ -10,12 +10,7 @@ from app.mcp.auth import MCPContext
 from app.mcp.handlers.render import render_claude_md, render_handover
 from app.models import ActiveProject, Project
 from app.models.project import (
-    ProjectCommand,
-    ProjectContext,
-    ProjectEnvironment,
-    ProjectInfra,
     ProjectLink,
-    ProjectRepo,
 )
 from app.schemas.project import (
     CommandOut,
@@ -34,7 +29,6 @@ from app.services import secret as secret_svc
 from app.services.activity import fetch_activity
 from app.services.project import get_project, list_projects
 from app.services.search import union_search
-
 
 # ---------------------------------------------------------------------------
 # Internal helpers
@@ -127,7 +121,7 @@ async def _build_full_dict(project: Project, db: Any) -> dict[str, Any]:
 # Handler implementations
 # ---------------------------------------------------------------------------
 
-async def handle_ping(args: Any, ctx: MCPContext) -> str:  # noqa: ARG001
+async def handle_ping(args: Any, ctx: MCPContext) -> str:
     """Health check — returns ok, version, active_slug."""
     active_row = (await ctx.db.execute(
         select(ActiveProject).where(
@@ -144,7 +138,7 @@ async def handle_ping(args: Any, ctx: MCPContext) -> str:  # noqa: ARG001
     return json.dumps({"ok": True, "version": "0.1.0", "active_slug": active_slug})
 
 
-async def handle_active(args: Any, ctx: MCPContext) -> str:  # noqa: ARG001
+async def handle_active(args: Any, ctx: MCPContext) -> str:
     """Return the full aggregate of the currently-active project."""
     project = await _get_active_project(ctx)
     full = await _build_full_dict(project, ctx.db)

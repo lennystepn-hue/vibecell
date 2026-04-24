@@ -5,7 +5,7 @@ import json
 from datetime import UTC, datetime
 
 from app.mcp.auth import MCPContext
-from app.mcp.handlers.read import _get_active_project, _resolve_project  # noqa: PLC2701
+from app.mcp.handlers.read import _get_active_project, _resolve_project
 from app.services import secret as secret_svc
 
 _VALID_STATUSES = {"idea", "building", "live", "paused", "shipped", "archived", "dead"}
@@ -17,11 +17,16 @@ _VALID_STATUSES = {"idea", "building", "live", "paused", "shipped", "archived", 
 
 def _detect_kind(value: str) -> str:
     v = value.strip()
-    if v.startswith("op://"): return "op"
-    if v.startswith("bw://"): return "bw"
-    if v.startswith("ssh-agent://"): return "ssh_agent"
-    if v.startswith("env://"): return "env_path"
-    if v.startswith("keychain://"): return "keychain"
+    if v.startswith("op://"):
+        return "op"
+    if v.startswith("bw://"):
+        return "bw"
+    if v.startswith("ssh-agent://"):
+        return "ssh_agent"
+    if v.startswith("env://"):
+        return "env_path"
+    if v.startswith("keychain://"):
+        return "keychain"
     return "inline_encrypted"
 
 
@@ -237,9 +242,8 @@ async def handle_status(args, ctx: MCPContext) -> str:
 async def handle_secret_set(args, ctx: MCPContext) -> str:
     """Upsert a secret for the project. Auto-detects kind from value prefix."""
     # Resolve project (args.project is a slug; falls back to active)
-    from app.mcp.handlers.read import _get_active_project as _get_active  # noqa: PLC2701
-    from sqlalchemy import select
-    from app.models import Project
+
+    from app.mcp.handlers.read import _get_active_project as _get_active
     from app.services.project import get_project
 
     project_slug: str | None = getattr(args, "project", None)
@@ -395,6 +399,7 @@ async def handle_todo_match(args, ctx: MCPContext) -> str:
 async def _ai_project_context(db, project) -> str:
     """Build the same context blob the REST endpoints use."""
     from sqlalchemy import select
+
     from app.models import ProjectContext as PCtx
 
     ctx_row = (await db.execute(
@@ -443,6 +448,7 @@ async def handle_ai_plan_todos(args, ctx: MCPContext) -> str:
 async def handle_ai_launch_copy(args, ctx: MCPContext) -> str:
     """Generate platform-specific launch posts for a ship."""
     from sqlalchemy import select
+
     from app.models import Ship
     from app.services import ai as ai_svc
 
@@ -486,6 +492,7 @@ async def handle_ai_launch_copy(args, ctx: MCPContext) -> str:
 async def handle_ai_retro(args, ctx: MCPContext) -> str:
     """Generate a markdown retro covering activity since the last ship."""
     from sqlalchemy import select
+
     from app.models import Decision, Session, Ship
     from app.services import ai as ai_svc
 
@@ -538,6 +545,7 @@ async def handle_ai_retro(args, ctx: MCPContext) -> str:
 async def handle_ai_resume_brief(args, ctx: MCPContext) -> str:
     """Generate the funny 'where the fuck was I' morning brief."""
     from sqlalchemy import select
+
     from app.models import Decision, Session
     from app.services import ai as ai_svc
 
@@ -652,7 +660,7 @@ async def handle_sync_repo(args, ctx: MCPContext) -> str:
     if should_enrich and manifests:
         # Primary language hint: look for existing StackItem tagged kind=language.
         primary_lang = None
-        for si, ps in existing_stack:
+        for si, _ps in existing_stack:
             if si.kind == "language":
                 primary_lang = si.name
                 break
@@ -675,10 +683,7 @@ async def handle_sync_repo(args, ctx: MCPContext) -> str:
                 workspace_id=ctx.workspace_id,
                 enriched=enriched,
             )
-            if drift.never_scanned or naked:
-                mode = "initial_scan"
-            else:
-                mode = "drift_refresh"
+            mode = "initial_scan" if (drift.never_scanned or naked) else "drift_refresh"
         except Exception as e:
             import logging
             logging.getLogger(__name__).warning("sync_repo enrichment failed: %s", e)

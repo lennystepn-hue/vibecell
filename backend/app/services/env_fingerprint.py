@@ -19,7 +19,6 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Any
 
-
 # Max content size accepted per manifest (protects the Anthropic prompt +
 # keeps DB payloads sane). Matches fetch_repo_context in enrichment.py.
 MAX_MANIFEST_BYTES = 8000

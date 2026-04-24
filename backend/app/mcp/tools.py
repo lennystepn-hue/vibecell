@@ -1,15 +1,14 @@
 """MCP tool registry — 22 tools (vibecell.run excluded)."""
 from __future__ import annotations
 
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
-from typing import Awaitable, Callable
 
 from pydantic import BaseModel, Field
 
 from app.mcp.auth import MCPContext
 from app.mcp.handlers import read as r
 from app.mcp.handlers import write as w
-
 
 # ---- Argument schemas ----
 

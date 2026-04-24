@@ -61,10 +61,9 @@ async def apply_enrichment_to_project(
     stats = ApplyStats()
 
     # --- Pitch ---
-    if enriched.pitch:
-        if overwrite_pitch_if_thin and (not project.pitch or len(project.pitch or "") < 20):
-            project.pitch = enriched.pitch[:2000]
-            stats.pitch_updated = True
+    if enriched.pitch and overwrite_pitch_if_thin and (not project.pitch or len(project.pitch or "") < 20):
+        project.pitch = enriched.pitch[:2000]
+        stats.pitch_updated = True
 
     # --- Tags ---
     for tag_name in (enriched.tags or [])[:8]:

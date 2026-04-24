@@ -76,7 +76,7 @@ async def bulk_import(
 ) -> ImportResponse:
     from sqlalchemy import select
 
-    from app.models import ProjectLink, ProjectRepo, Tag, ProjectTag
+    from app.models import ProjectLink, ProjectRepo, ProjectTag, Tag
 
     token = await integ_svc.get_decrypted_token(
         db, workspace_id=auth.active_workspace_id, kind="github",
