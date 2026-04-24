@@ -352,8 +352,13 @@ function autoSizeAgain(id: string): void {
                SAME card height — edit mode adds only a ring + tiny corner
                icons (no top strip that pushes content down), so exiting
                edit doesn't leave phantom padding. -->
+          <!-- Stationary glass card. .glass on the article means the bg +
+               border + blur fill the WHOLE grid cell and don't travel
+               with the scroll inside. The component's own section.glass
+               is nulled out in CSS below so we don't render two stacked
+               glass panels. -->
           <article
-            class="widget relative h-full w-full overflow-hidden rounded-lg transition-shadow"
+            class="widget relative h-full w-full overflow-hidden rounded-lg transition-shadow glass"
             :class="store.editMode
               ? 'ring-1 ring-signal-green/30 cursor-move'
               : ''"
@@ -561,7 +566,22 @@ function autoSizeAgain(id: string): void {
   height: 0;
 }
 
+/* The card's glass bg lives on the STATIONARY <article class="widget glass">
+   — it fills the whole grid cell and never moves. The component cards
+   inside (ProjectSessionsCard, ProjectDecisionsCard, …) still render a
+   <section class="glass"> as their root, which would paint a SECOND
+   layer of bg / border / blur that travels with scroll. Null it out
+   here: same visual — one stationary bg — plus content scrolls cleanly
+   behind the card bg without exposing page-bg at the edges. */
+.widget .widget-scroll > .glass,
+.widget .widget-scroll > section.glass {
+  background: transparent !important;
+  border: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border-radius: 0 !important;
+}
+
 /* (Previous ::after bottom-fade removed — it was overlaying the resize
-   handle area and making the corner grab-zone harder to spot in edit
-   mode. The hidden-scrollbar already signals overflow well enough.) */
+   handle area and making the corner grab-zone harder to spot.) */
 </style>
