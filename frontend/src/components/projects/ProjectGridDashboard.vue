@@ -157,7 +157,15 @@ function autoFit(id: string): void {
   if (userSized.value.has(id)) return;
   const el = contentEls.get(id);
   if (!el) return;
-  const measured = el.scrollHeight;
+  // Measure the component's own root element — that's the glass panel
+  // at its natural height. Measuring `el` (the .widget-scroll wrapper)
+  // would give us the clamped height once the cell is fixed, not the
+  // content's intrinsic size. firstElementChild = the section.glass root
+  // of the underlying card component.
+  const child = el.firstElementChild as HTMLElement | null;
+  const measured = child
+    ? (child.scrollHeight || child.getBoundingClientRect().height)
+    : el.scrollHeight;
   if (measured === 0) return;
   // Inverse of grid-layout-plus's cell formula:
   //   cellHeight = h * ROW_HEIGHT + (h - 1) * MARGIN_V
@@ -355,18 +363,25 @@ function autoSizeAgain(id: string): void {
               >✕</button>
             </template>
 
-            <!-- Scroll container fills the cell (h-full). Content inside
-                 is measured by registerContentEl so the auto-sizer can
-                 keep the cell right-sized for the content. Hidden
-                 scrollbar kicks in only if the user has manually sized
-                 the card smaller than its content. -->
+            <!-- Scroll container fills the cell (h-full). Whether the
+                 inner component's root ALSO gets h-full depends on who's
+                 in charge of the card's height:
+                   - Auto-fit mode (default): component renders at its
+                     natural height; the cell shrinks to match via the
+                     auto-sizer below. No h-full on the component so
+                     scrollHeight measurements stay truthful.
+                   - User-sized mode (after manual resize): h-full is
+                     forwarded so the card's own glass panel fills the
+                     grid cell exactly — the edge goes where the user
+                     dragged, even when content is shorter. -->
             <div
               class="widget-scroll h-full overflow-y-auto"
-              :ref="(el: any) => registerContentEl(String(item.i), el as HTMLElement | null)"
+              :ref="(el: unknown) => registerContentEl(String(item.i), el as HTMLElement | null)"
             >
               <component
                 :is="widgetById(String(item.i))!.component"
                 v-bind="widgetById(String(item.i))!.props(project)"
+                :class="userSized.has(String(item.i)) ? 'h-full block' : ''"
               />
             </div>
           </article>
