@@ -68,20 +68,31 @@ async def resolve_capture_url(db: AsyncSession, project: Project) -> str | None:
     """Pick the best URL to screenshot for a project.
 
     Priority:
-      1. ProjectLink with kind="landing"
+      1. ProjectLink with kind in {"landing", "live", "homepage", "website"}
+         (the GitHub importer writes "live" for a repo's Homepage URL, which
+         we want to screenshot; "landing" is what Vibecell uses internally
+         for a dedicated landing page.)
       2. ProjectEnvironment with kind="prod"
-      3. Any healthcheck link stripped of a trailing /healthz/status
+      3. Healthcheck link stripped of its /healthz/status path (last resort —
+         screenshots the root origin).
       4. None — project has no public surface.
     """
-    # (1) explicit landing link
-    landing = (await db.execute(
+    # (1) explicit public-URL links. Try preferred kinds in order.
+    public_kinds = ("landing", "live", "homepage", "website")
+    public = (await db.execute(
         select(ProjectLink).where(
             ProjectLink.project_id == project.id,
-            ProjectLink.kind == "landing",
-        ).limit(1)
-    )).scalar_one_or_none()
-    if landing and landing.url:
-        return landing.url
+            ProjectLink.kind.in_(public_kinds),
+        )
+    )).scalars().all()
+    if public:
+        # Pick the first link whose kind appears earliest in the priority tuple.
+        ordered = sorted(
+            (p for p in public if p.url),
+            key=lambda lnk: public_kinds.index(lnk.kind) if lnk.kind in public_kinds else 99,
+        )
+        if ordered:
+            return ordered[0].url
 
     # (2) prod environment
     prod = (await db.execute(
