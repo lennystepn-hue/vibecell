@@ -66,3 +66,17 @@ else
   fi
   exit 1
 fi
+
+# 6. Post-deploy cleanup. Every backend image is ~3GB and we build one per
+# deploy — without pruning, a busy day fills a 38GB root disk and postgres
+# starts panicking on checkpoint writes (happened once, learnt the hard way).
+# Keep the two most recent images per tag prefix; drop everything else.
+echo "==> Pruning old Docker images + build cache"
+docker image prune -a --force --filter "until=48h" > /dev/null 2>&1 || true
+docker builder prune -f --filter "until=48h" > /dev/null 2>&1 || true
+
+# Warn if root disk is still tight so we see it before it bites.
+DISK_PCT=$(df / --output=pcent | tail -1 | tr -d ' %')
+if [[ -n "$DISK_PCT" && "$DISK_PCT" -gt 85 ]]; then
+  echo "==> WARNING: root disk is ${DISK_PCT}% full. Consider a deeper cleanup."
+fi
