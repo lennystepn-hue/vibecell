@@ -2,6 +2,7 @@
 import { ref, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import HeroOrb from "@/components/landing/HeroOrb.vue";
+import DashboardPreview from "@/components/landing/DashboardPreview.vue";
 import UserMenu from "@/components/app/UserMenu.vue";
 import ProjectOrb from "@/components/ui/ProjectOrb.vue";
 import { useAuthStore } from "@/stores/auth";
@@ -227,59 +228,38 @@ const steps = [
     </header>
 
     <!-- ─── Hero ─────────────────────────────────────────────────────────── -->
-    <section class="relative min-h-screen flex items-center overflow-hidden pt-16">
+    <section class="relative flex items-center overflow-hidden pt-20 pb-12 min-h-[88vh]">
       <!-- Subtle grid background -->
       <div class="absolute inset-0 pointer-events-none"
         style="background-image: linear-gradient(rgba(138,180,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(138,180,255,0.03) 1px, transparent 1px); background-size: 60px 60px" />
-      <!-- Top-left gradient bloom -->
-      <div class="absolute -top-40 -left-40 w-[700px] h-[700px] rounded-full pointer-events-none"
-        style="background: radial-gradient(circle, rgba(92,200,164,0.06) 0%, transparent 70%)" />
+      <!-- Orb-palette gradient blooms — soft violet + mint + pink washes that
+           tie the hero bg into the orb's own colors. -->
+      <div class="absolute -top-40 -left-40 w-[780px] h-[780px] rounded-full pointer-events-none"
+        style="background: radial-gradient(circle, rgba(181,146,255,0.10) 0%, transparent 65%); filter: blur(20px)" />
+      <div class="absolute top-1/3 right-[-20%] w-[700px] h-[700px] rounded-full pointer-events-none"
+        style="background: radial-gradient(circle, rgba(92,200,164,0.09) 0%, transparent 65%); filter: blur(20px)" />
+      <div class="absolute bottom-0 left-1/2 -translate-x-1/2 w-[900px] h-[400px] rounded-full pointer-events-none"
+        style="background: radial-gradient(ellipse, rgba(255,107,157,0.06) 0%, transparent 70%); filter: blur(30px)" />
 
-      <div class="relative z-10 w-full max-w-7xl mx-auto px-6 grid lg:grid-cols-2 gap-12 items-center py-24">
+      <div class="relative z-10 w-full max-w-7xl mx-auto px-6 grid lg:grid-cols-2 gap-12 items-center py-20">
 
-        <!-- Left: copy -->
+        <!-- Left: copy — ruthlessly trimmed. H1 + one-line subhead + CTAs. -->
         <div>
-          <!-- Badge -->
-          <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border mb-8 font-mono text-[11px] tracking-[0.08em] uppercase"
-            style="border-color: rgba(92,200,164,0.25); color: #5cc8a4; background: rgba(92,200,164,0.07)">
-            <span class="w-1.5 h-1.5 rounded-full bg-signal-green animate-pulse" />
-            Now in early access
-          </div>
-
-          <h1 class="font-sans font-semibold mb-6 leading-[1.07] tracking-tight"
-            style="font-size: clamp(2.4rem, 5vw, 4rem); letter-spacing: -0.04em; color: #ffffff">
+          <h1 class="font-sans font-semibold mb-6 leading-[1.04] tracking-tight"
+            style="font-size: clamp(2.6rem, 5.5vw, 4.4rem); letter-spacing: -0.04em; color: #ffffff">
             Project memory for<br>
-            <!-- Gradient pulls from the hero orb's palette: violet → mint →
-                 pink. Ties the headline into the 3D object sitting next to it. -->
             <span
               class="bg-clip-text text-transparent"
               style="background-image: linear-gradient(120deg, #b592ff 0%, #7dffd4 45%, #ff6b9d 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent"
             >Claude &amp; Cursor.</span>
           </h1>
 
-          <p class="mb-6 leading-relaxed max-w-md"
-            style="font-size: 1.05rem; color: #cfd4dc; line-height: 1.6">
-            A dashboard plus <strong style="color: #ffffff; font-weight: 600">38 MCP tools</strong>
-            that keep your AI in sync with every project you ship. Set it up once, never
-            re-explain your codebase to Claude again.
+          <p class="mb-9 leading-relaxed max-w-md"
+            style="font-size: 1.1rem; color: #cfd4dc; line-height: 1.55">
+            A dashboard and
+            <strong style="color: #ffffff; font-weight: 600">38 MCP tools</strong>
+            that keep your AI in sync with every project you ship.
           </p>
-
-          <!-- Concrete what-it-does bullets — tells a scanning visitor what
-               lives inside before they scroll. -->
-          <ul class="mb-9 space-y-2" style="font-size: 13px; color: #8ba1bd">
-            <li class="flex items-start gap-2.5">
-              <span class="mt-[7px] w-1 h-1 rounded-full shrink-0" style="background: #5cc8a4"></span>
-              <span>Import your whole GitHub org — stack, tags, pitch auto-filled by AI</span>
-            </li>
-            <li class="flex items-start gap-2.5">
-              <span class="mt-[7px] w-1 h-1 rounded-full shrink-0" style="background: #b592ff"></span>
-              <span>Claude logs a session row on every git commit. No manual diary.</span>
-            </li>
-            <li class="flex items-start gap-2.5">
-              <span class="mt-[7px] w-1 h-1 rounded-full shrink-0" style="background: #ff6b9d"></span>
-              <span>Plugs into Claude Code, Cursor, Zed &mdash; any MCP client. 10-second setup.</span>
-            </li>
-          </ul>
 
           <div class="flex flex-wrap gap-3 mb-8">
             <!-- Primary CTA — same gradient as the "you ship" text + the
@@ -311,6 +291,71 @@ const steps = [
             <HeroOrb class="w-full h-full" />
           </div>
         </div>
+      </div>
+    </section>
+
+    <!-- ─── "Works with" logo strip ────────────────────────────────────── -->
+    <section class="relative px-6 py-8 -mt-8">
+      <div class="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-center gap-6 sm:gap-10">
+        <p class="font-mono text-[10px] tracking-[0.18em] uppercase" style="color: #5e7088">
+          Works with
+        </p>
+        <div class="flex flex-wrap items-center justify-center gap-x-8 gap-y-4 opacity-80">
+          <!-- Claude (Anthropic 4-point star) -->
+          <span class="flex items-center gap-2 transition-opacity hover:opacity-100" style="color: #cfd4dc; font-size: 14px">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M12 2 L13.5 10.5 L22 12 L13.5 13.5 L12 22 L10.5 13.5 L2 12 L10.5 10.5 Z"/>
+            </svg>
+            <span class="font-mono text-[13px]">Claude</span>
+          </span>
+          <!-- Cursor (curl icon) -->
+          <span class="flex items-center gap-2 transition-opacity hover:opacity-100" style="color: #cfd4dc; font-size: 14px">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M4 4 L20 12 L4 20 L12 12 Z" fill="currentColor" fill-opacity="0.2"/>
+              <path d="M4 4 L20 12 L4 20 L12 12 Z"/>
+            </svg>
+            <span class="font-mono text-[13px]">Cursor</span>
+          </span>
+          <!-- OpenAI (hex flower) -->
+          <span class="flex items-center gap-2 transition-opacity hover:opacity-100" style="color: #cfd4dc; font-size: 14px">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+              <circle cx="12" cy="8" r="3.5"/>
+              <circle cx="7.2" cy="14.5" r="3.5"/>
+              <circle cx="16.8" cy="14.5" r="3.5"/>
+            </svg>
+            <span class="font-mono text-[13px]">OpenAI</span>
+          </span>
+          <!-- Zed (stylised Z) -->
+          <span class="flex items-center gap-2 transition-opacity hover:opacity-100" style="color: #cfd4dc; font-size: 14px">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M5 6 H19 L5 18 H19" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span class="font-mono text-[13px]">Zed</span>
+          </span>
+          <!-- Continue -->
+          <span class="flex items-center gap-2 transition-opacity hover:opacity-100" style="color: #cfd4dc; font-size: 14px">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M6 4 L18 12 L6 20" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M2 4 L14 12 L2 20" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.45"/>
+            </svg>
+            <span class="font-mono text-[13px]">Continue</span>
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── Dashboard preview — SEE what you get, don't just read it. ───── -->
+    <section class="relative px-6 pb-24">
+      <!-- Ambient glow under the preview frame -->
+      <div class="absolute inset-x-0 top-1/2 -translate-y-1/2 h-[500px] pointer-events-none"
+        style="background: radial-gradient(ellipse 60% 60% at 50% 50%, rgba(92,200,164,0.06) 0%, transparent 70%)" />
+      <div class="relative max-w-[1280px] mx-auto">
+        <DashboardPreview />
+        <!-- Caption under the mockup -->
+        <p class="text-center mt-6 font-mono text-[11px] tracking-[0.1em] uppercase"
+          style="color: #5e7088">
+          Your actual dashboard — live, realtime, Claude-driven
+        </p>
       </div>
     </section>
 
