@@ -1,61 +1,69 @@
 # backend/app/main.py
-from contextlib import asynccontextmanager
 from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from fastapi import FastAPI
 
+# Activity timeline
+from app.api.v1.activity import router as activity_router
+
+# BYOK AI features
+from app.api.v1.ai import router as ai_router
 from app.api.v1.auth import router as auth_router
+
+# Spec 4 — Launch-Enabler
+from app.api.v1.billing import router as billing_router
 from app.api.v1.cli import router as cli_router
+from app.api.v1.connections import router as connections_router
 from app.api.v1.decisions import router as decisions_router
 from app.api.v1.dev import router as dev_router
+
+# Live project events (SSE stream)
+from app.api.v1.events import router as events_router
 from app.api.v1.github_repos import router as github_repos_router
 from app.api.v1.groups import router as groups_router
+
+# Spec 5A — Auto-Signals
+from app.api.v1.health import router as health_router
 from app.api.v1.ideas import router as ideas_router
 from app.api.v1.integrations import router as integrations_router
 from app.api.v1.launches import router as launches_router
 from app.api.v1.lifecycle import router as lifecycle_router
 from app.api.v1.me import router as me_router
 from app.api.v1.notes import router as notes_router
+from app.api.v1.passkey import router as passkey_router
+
+# Spec 5B — Portfolio-Intel
+from app.api.v1.portfolio import router as portfolio_router
 from app.api.v1.project_children import router as project_children_router
 from app.api.v1.projects import router as projects_router
+from app.api.v1.screenshots import preview_router as screenshots_preview_router
+
+# Visual previews — live-preview + ship-shot timeline
+from app.api.v1.screenshots import router as screenshots_router
 from app.api.v1.search import router as search_router
 from app.api.v1.secrets import router as secrets_router
 from app.api.v1.sessions import router as sessions_router
 from app.api.v1.ships import router as ships_router
 from app.api.v1.stack_items import router as stack_items_router
 from app.api.v1.tags import router as tags_router
+
+# Per-project TODOs
+from app.api.v1.todos import router as todos_router
 from app.api.v1.workspaces import router as workspaces_router
-from app.oauth.discovery import router as oauth_discovery_router
-from app.oauth.server import router as oauth_server_router
-from app.mcp.server import router as mcp_router
-from app.api.v1.connections import router as connections_router
 from app.core.audit import install_audit_listener
 from app.core.middleware import install_session_middleware
 from app.core.problem import install_problem_handler
-from app.metrics.endpoint import router as metrics_router
-from app.jobs.oauth_cleanup import run_once as oauth_cleanup_run_once
-from app.jobs.oauth_cleanup import refresh_active_connections_gauge
-# Spec 4 — Launch-Enabler
-from app.api.v1.billing import router as billing_router
-from app.api.v1.passkey import router as passkey_router
-# Spec 5A — Auto-Signals
-from app.api.v1.health import router as health_router
+from app.jobs.commit_sync import schedule_commit_sync_jobs
 from app.jobs.health_cron import schedule_health_jobs
-# Spec 5B — Portfolio-Intel
-from app.api.v1.portfolio import router as portfolio_router
-# Activity timeline
-from app.api.v1.activity import router as activity_router
-# Visual previews — live-preview + ship-shot timeline
-from app.api.v1.screenshots import router as screenshots_router
-from app.api.v1.screenshots import preview_router as screenshots_preview_router
+from app.jobs.oauth_cleanup import refresh_active_connections_gauge
+from app.jobs.oauth_cleanup import run_once as oauth_cleanup_run_once
 from app.jobs.screenshot_cron import schedule_screenshot_jobs
-# Live project events (SSE stream)
-from app.api.v1.events import router as events_router
-# Per-project TODOs
-from app.api.v1.todos import router as todos_router
-# BYOK AI features
-from app.api.v1.ai import router as ai_router
+from app.mcp.server import router as mcp_router
+from app.metrics.endpoint import router as metrics_router
+from app.oauth.discovery import router as oauth_discovery_router
+from app.oauth.server import router as oauth_server_router
 
 _scheduler = AsyncIOScheduler()
 
@@ -79,6 +87,10 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     schedule_health_jobs(_scheduler)
     # Visual previews — hourly project-wide refresh
     schedule_screenshot_jobs(_scheduler)
+    # Commit sync — safety net that logs session rows from GitHub commits
+    # every 10 min, regardless of whether Claude called vibecell_log_session
+    # or not. Keeps dashboards accurate even when the SKILL rule is missed.
+    schedule_commit_sync_jobs(_scheduler)
     _scheduler.start()
     yield
     _scheduler.shutdown(wait=False)

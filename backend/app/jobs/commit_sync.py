@@ -1,0 +1,234 @@
+"""GitHub commit → session-row sync cron.
+
+Fires every 10 minutes. For each workspace with a GitHub integration,
+walks every project that has a GitHub URL and pulls the recent commit
+list via the GitHub REST API. Any commit SHA NOT already referenced by
+an existing session row gets its own auto-session with source="github".
+
+This is the safety net behind the SKILL.md commit-log rule. Even if Claude
+skips a log (or the user isn't using Claude at all, just pushing from
+the terminal), the dashboard still catches up within ~10 minutes.
+
+Idempotency: match by exact SHA across every session's `commits` JSONB
+array. Once a SHA is logged by EITHER the skill or this cron, we don't
+duplicate it. First-time sync for a project is bounded to the last 7
+days so we don't backfill years of history into fake "sessions".
+"""
+from __future__ import annotations
+
+import logging
+import re
+from datetime import UTC, datetime, timedelta
+
+import httpx
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from sqlalchemy import func, select
+
+from app.core.db import session_scope
+from app.core.ulid import new_ulid
+from app.models import Project, ProjectLink, Session, Workspace
+from app.services import integration as integ_svc
+
+logger = logging.getLogger(__name__)
+
+_GITHUB_COMMITS_URL = "https://api.github.com/repos/{owner}/{repo}/commits"
+_LOOKBACK_DAYS = 7
+
+
+def _parse_owner_repo(url: str) -> tuple[str, str] | None:
+    """Pull (owner, repo) out of a GitHub HTTPS or SSH URL."""
+    m = re.search(r"github\.com[:/]([^/]+)/([^/.\s]+)", url or "")
+    if not m:
+        return None
+    return m.group(1), m.group(2)
+
+
+async def _existing_shas_for_project(db, project_id: str) -> set[str]:
+    """Return every commit SHA ever referenced by a session on this project.
+
+    Uses Postgres JSONB array containment by flattening to a set. Cheap for
+    the volumes we expect (<1000 sessions/project).
+    """
+    rows = (await db.execute(
+        select(Session.commits).where(Session.project_id == project_id)
+    )).scalars().all()
+    shas: set[str] = set()
+    for commits in rows:
+        if not isinstance(commits, list):
+            continue
+        for c in commits:
+            if isinstance(c, dict):
+                sha = c.get("sha")
+                if isinstance(sha, str) and sha:
+                    shas.add(sha[:40])
+    return shas
+
+
+async def _fetch_recent_commits(
+    token: str,
+    owner: str,
+    repo: str,
+    since_iso: str,
+    max_pages: int = 3,
+) -> list[dict]:
+    """Pull commits newer than `since_iso` from GitHub. Caps at 3 pages x 100."""
+    out: list[dict] = []
+    async with httpx.AsyncClient(timeout=20) as client:
+        for page in range(1, max_pages + 1):
+            try:
+                r = await client.get(
+                    _GITHUB_COMMITS_URL.format(owner=owner, repo=repo),
+                    headers={
+                        "Authorization": f"Bearer {token}",
+                        "Accept": "application/vnd.github+json",
+                        "X-GitHub-Api-Version": "2022-11-28",
+                    },
+                    params={"since": since_iso, "per_page": 100, "page": page},
+                )
+            except Exception:
+                break
+            if r.status_code != 200:
+                break
+            batch = r.json()
+            if not batch:
+                break
+            out.extend(batch)
+            if len(batch) < 100:
+                break
+    return out
+
+
+async def _sync_project(db, workspace_id: str, project: Project, token: str) -> int:
+    """Sync commits for one project. Returns the number of sessions inserted."""
+    # Resolve owner/repo from the first github-kind link
+    gh_link = (await db.execute(
+        select(ProjectLink).where(
+            ProjectLink.project_id == project.id,
+            ProjectLink.kind == "github",
+        ).limit(1)
+    )).scalar_one_or_none()
+    if gh_link is None:
+        return 0
+    pair = _parse_owner_repo(gh_link.url or "")
+    if not pair:
+        return 0
+    owner, repo = pair
+
+    # Cursor: the newest commit SHA we've already logged → fetch everything
+    # since the project was imported, capped at 7 days for the first run.
+    since = datetime.now(UTC) - timedelta(days=_LOOKBACK_DAYS)
+    existing = await _existing_shas_for_project(db, project.id)
+    # If we already have some commits logged, narrow the window to the last
+    # of our stored commit dates (small win on rate limit, safe because the
+    # existing-SHA set dedups regardless).
+    if existing:
+        latest_session_at = (await db.execute(
+            select(func.max(Session.started_at)).where(
+                Session.project_id == project.id
+            )
+        )).scalar_one_or_none()
+        if latest_session_at is not None:
+            # Back off a day to catch anything that came in out-of-order.
+            narrowed = latest_session_at - timedelta(days=1)
+            if narrowed > since:
+                since = narrowed
+
+    commits = await _fetch_recent_commits(
+        token, owner, repo, since_iso=since.isoformat()
+    )
+    if not commits:
+        return 0
+
+    inserted = 0
+    for c in commits:
+        sha = c.get("sha")
+        if not isinstance(sha, str) or not sha:
+            continue
+        if sha in existing:
+            continue
+        existing.add(sha)
+        commit_obj = c.get("commit") or {}
+        msg = (commit_obj.get("message") or "").strip()
+        if not msg:
+            continue
+        # first line of the commit message = session summary
+        first_line = msg.split("\n", 1)[0][:500]
+        # Use the actual commit author date as the session's started_at so
+        # older commits don't all cluster at "now".
+        author = commit_obj.get("author") or {}
+        ts_iso = author.get("date") or datetime.now(UTC).isoformat()
+        try:
+            started_at = datetime.fromisoformat(ts_iso.replace("Z", "+00:00"))
+        except ValueError:
+            started_at = datetime.now(UTC)
+
+        db.add(Session(
+            id=new_ulid(),
+            project_id=project.id,
+            started_at=started_at,
+            ended_at=started_at,
+            summary=first_line,
+            files_touched=[],
+            commits=[{"sha": sha[:40], "msg": first_line}],
+            next_step=None,
+            source="github",
+        ))
+        inserted += 1
+
+    if inserted:
+        logger.info(
+            "commit_sync: +%s session(s) for workspace=%s project=%s",
+            inserted, workspace_id, project.slug,
+        )
+    return inserted
+
+
+async def _run_sync_all() -> None:
+    """Cron entry point: walk every workspace with a GitHub token + sync."""
+    try:
+        async with session_scope() as db:
+            workspaces = (await db.execute(select(Workspace))).scalars().all()
+            total = 0
+            for ws in workspaces:
+                try:
+                    token = await integ_svc.get_decrypted_token(
+                        db, workspace_id=ws.id, kind="github",
+                    )
+                except Exception:
+                    # Workspace has no GitHub integration → nothing to sync
+                    continue
+                if not token:
+                    continue
+                projects = (await db.execute(
+                    select(Project).where(
+                        Project.workspace_id == ws.id,
+                        Project.archived_at.is_(None),
+                    )
+                )).scalars().all()
+                for p in projects:
+                    try:
+                        total += await _sync_project(db, ws.id, p, token)
+                    except Exception:
+                        logger.exception(
+                            "commit_sync: project sync crashed ws=%s slug=%s",
+                            ws.id, p.slug,
+                        )
+            if total:
+                await db.commit()
+                logger.info("commit_sync: inserted %s total session(s)", total)
+    except Exception:
+        logger.exception("commit_sync: _run_sync_all crashed")
+
+
+def schedule_commit_sync_jobs(scheduler: AsyncIOScheduler) -> None:
+    """Register the 10-min commit-sync cron."""
+    scheduler.add_job(
+        _run_sync_all,
+        "interval",
+        minutes=10,
+        id="commit_sync_all",
+        replace_existing=True,
+        max_instances=1,
+        coalesce=True,
+    )
+    logger.info("commit_sync: registered commit_sync_all every 10m")
