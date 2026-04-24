@@ -11,11 +11,16 @@
  *   remove, restore-all), open the "+ add widget" popover to bring hidden
  *   cards back.
  */
-import { computed, onBeforeUnmount, ref, watch } from "vue";
+import { computed, onBeforeUnmount, ref, watch, nextTick } from "vue";
 import { GridLayout } from "grid-layout-plus";
 
 import { useDashboardLayoutStore } from "@/stores/dashboard-layout";
 import { DEFAULT_LAYOUT, widgetById } from "./widget-registry";
+
+// Grid spacing constants — match the <GridLayout> props below so the
+// auto-sizer's math reproduces grid-layout-plus's own geometry.
+const ROW_HEIGHT = 40;
+const MARGIN_V = 16;
 
 const props = defineProps<{ project: { slug: string; [k: string]: unknown } }>();
 
@@ -59,12 +64,14 @@ function onGlobalClick() {
 window.addEventListener("click", onGlobalClick);
 onBeforeUnmount(() => window.removeEventListener("click", onGlobalClick));
 
-// Convenient sizing presets from the context menu.
+// Convenient sizing presets from the context menu. Any explicit size pick
+// counts as user-driven, so lock the auto-sizer for that widget.
 function resize(id: string, w: number, h: number) {
   const widget = store.layout.find((l) => l.i === id);
   if (!widget) return;
   widget.w = Math.max(widget.minW ?? 1, w);
   widget.h = Math.max(widget.minH ?? 1, h);
+  userSized.value.add(id);
   closeContextMenu();
 }
 function setFullWidth(id: string) {
@@ -72,6 +79,7 @@ function setFullWidth(id: string) {
   if (!widget) return;
   widget.w = 12;
   widget.x = 0;
+  userSized.value.add(id);
   closeContextMenu();
 }
 function removeWidget(id: string) {
@@ -91,10 +99,100 @@ const addMenuOpen = ref(false);
 function addWidget(id: string) {
   store.showWidget(id);
   addMenuOpen.value = false;
+  // Freshly-shown widget should size to content, not keep its stale h.
+  userSized.value.delete(id);
+  nextTick(() => autoFit(id));
 }
 
-// We only want grid-layout-plus to react to drag/resize when editMode is on —
-// setting isDraggable + isResizable to false keeps it a plain static grid.
+// ── Auto-sizing ────────────────────────────────────────────────────────────
+//
+// Every widget gets a ResizeObserver on its measured-content element.
+// When that content's natural height doesn't match the grid cell height,
+// we update layout[i].h so the cell hugs the content exactly — no more
+// "big empty glass box below short content" problem.
+//
+// Auto-sizing stops for a widget the moment the user manually resizes it
+// (tracked in `userSized`). That way dragging the corner to set a custom
+// height sticks. `addWidget` clears the flag so re-added widgets go back
+// to auto-fit by default.
+//
+// A per-widget debounce prevents resize → layout-change → re-measure →
+// resize feedback loops. 60ms is enough to settle Vue's render cycle.
+
+const contentEls = new Map<string, HTMLElement>();
+const observers = new Map<string, ResizeObserver>();
+const fitTimers = new Map<string, ReturnType<typeof setTimeout>>();
+const userSized = ref<Set<string>>(new Set());
+
+function registerContentEl(id: string, el: HTMLElement | null): void {
+  if (!el) {
+    const existing = observers.get(id);
+    if (existing) { existing.disconnect(); observers.delete(id); }
+    contentEls.delete(id);
+    return;
+  }
+  contentEls.set(id, el);
+  if (!observers.has(id)) {
+    const ro = new ResizeObserver(() => scheduleAutoFit(id));
+    ro.observe(el);
+    observers.set(id, ro);
+    // Kick off initial measurement after current tick.
+    scheduleAutoFit(id);
+  }
+}
+
+function scheduleAutoFit(id: string): void {
+  const existing = fitTimers.get(id);
+  if (existing) clearTimeout(existing);
+  fitTimers.set(id, setTimeout(() => {
+    fitTimers.delete(id);
+    autoFit(id);
+  }, 60));
+}
+
+function autoFit(id: string): void {
+  // Skip if the user has manually locked a size for this widget.
+  if (userSized.value.has(id)) return;
+  const el = contentEls.get(id);
+  if (!el) return;
+  // scrollHeight returns intrinsic content height — what the card would
+  // be if nothing constrained it.
+  const measured = el.scrollHeight;
+  if (measured === 0) return;  // not yet painted
+  // Inverse of grid-layout-plus's cell formula:
+  //   cellHeight = h * ROW_HEIGHT + (h-1) * MARGIN_V
+  //   h = (cellHeight + MARGIN_V) / (ROW_HEIGHT + MARGIN_V)
+  const desiredH = Math.max(
+    3,
+    Math.ceil((measured + MARGIN_V) / (ROW_HEIGHT + MARGIN_V)),
+  );
+  const item = store.layout.find((l) => l.i === id);
+  if (item && item.h !== desiredH) {
+    item.h = desiredH;
+  }
+}
+
+function onItemResized(i: string | number): void {
+  // Grid-layout-plus fires this when the user finishes dragging the
+  // resize corner/edge. Lock the widget so the auto-sizer doesn't
+  // immediately snap back.
+  userSized.value.add(String(i));
+}
+
+onBeforeUnmount(() => {
+  observers.forEach((ro) => ro.disconnect());
+  observers.clear();
+  fitTimers.forEach((t) => clearTimeout(t));
+  fitTimers.clear();
+});
+
+// If the user right-click-picks an "auto-size" preset we can re-enable
+// auto-fit by removing the flag.
+function autoSizeAgain(id: string): void {
+  userSized.value.delete(id);
+  scheduleAutoFit(id);
+  closeContextMenu();
+}
 </script>
 
 <template>
@@ -187,14 +285,17 @@ function addWidget(id: string) {
 
     <GridLayout
       v-model:layout="store.layout"
+      :class="{ 'grid-is-editing': store.editMode }"
       :col-num="12"
-      :row-height="40"
+      :row-height="ROW_HEIGHT"
       :is-draggable="store.editMode"
       :is-resizable="store.editMode"
-      :margin="[16, 16]"
+      :margin="[16, MARGIN_V]"
       :use-css-transforms="true"
       :vertical-compact="true"
-      drag-allow-from=".widget-drag-handle"
+      :resizable-handles="['s', 'e', 'se']"
+      :drag-ignore-from="'input, textarea, select, button, a, label, .no-drag, [contenteditable]'"
+      @item-resized="onItemResized"
     >
       <template #item="{ item }">
         <!-- Skip rendering hidden widgets entirely. -->
@@ -205,16 +306,15 @@ function addWidget(id: string) {
                icons (no top strip that pushes content down), so exiting
                edit doesn't leave phantom padding. -->
           <article
-            class="widget relative max-h-full w-full overflow-hidden rounded-lg transition-shadow"
+            class="widget relative h-full w-full overflow-hidden rounded-lg transition-shadow"
             :class="store.editMode
               ? 'ring-1 ring-signal-green/30 cursor-move'
               : ''"
             @contextmenu="onWidgetContextMenu($event, String(item.i))"
           >
             <!-- Edit-mode corner affordances: tiny drag hint (top-left,
-                 pointer-events-none so it can't swallow clicks) + remove
-                 button (top-right, .no-drag so the grid won't treat the
-                 click as the start of a drag). -->
+                 pointer-events-none) + remove button (top-right,
+                 .no-drag so clicks don't start a drag). -->
             <template v-if="store.editMode">
               <span
                 class="absolute top-1.5 left-2 z-20 font-mono text-[10px] text-signal-green/70 pointer-events-none select-none tracking-widest"
@@ -228,9 +328,15 @@ function addWidget(id: string) {
               >✕</button>
             </template>
 
-            <!-- Scrollable inner container — content-height by default,
-                 caps at grid-cell (max-h-full). Scrollbar is hidden. -->
-            <div class="widget-scroll max-h-full overflow-y-auto">
+            <!-- Scroll container fills the cell (h-full). Content inside
+                 is measured by registerContentEl so the auto-sizer can
+                 keep the cell right-sized for the content. Hidden
+                 scrollbar kicks in only if the user has manually sized
+                 the card smaller than its content. -->
+            <div
+              class="widget-scroll h-full overflow-y-auto"
+              :ref="(el: any) => registerContentEl(String(item.i), el as HTMLElement | null)"
+            >
               <component
                 :is="widgetById(String(item.i))!.component"
                 v-bind="widgetById(String(item.i))!.props(project)"
@@ -256,6 +362,9 @@ function addWidget(id: string) {
       @contextmenu.prevent
     >
       <div class="mono-label px-3 py-1 opacity-60">// {{ widgetById(contextMenu.widgetId)?.title }}</div>
+      <button class="w-full text-left px-3 py-1.5 text-small text-signal-green hover:bg-white/5 transition-colors"
+        @click="autoSizeAgain(contextMenu.widgetId)">auto-size to content</button>
+      <div class="border-t my-1" style="border-color: rgba(138,180,255,0.08)" />
       <button class="w-full text-left px-3 py-1.5 text-small text-fg-body hover:bg-white/5 transition-colors"
         @click="setFullWidth(contextMenu.widgetId)">full width</button>
       <button class="w-full text-left px-3 py-1.5 text-small text-fg-body hover:bg-white/5 transition-colors"
@@ -282,10 +391,15 @@ function addWidget(id: string) {
   transition: all 220ms cubic-bezier(0.2, 0.6, 0.2, 1);
   touch-action: none;
 }
-.vue-grid-item.vue-grid-placeholder {
-  background: rgba(92, 200, 164, 0.15) !important;
-  border: 2px dashed rgba(92, 200, 164, 0.45);
-  opacity: 1;
+/* grid-layout-plus emits the placeholder WITHOUT the vue-grid-item class,
+   so we have to target just .vue-grid-placeholder. The previous
+   compound selector never matched and the library's default red-ish
+   tone leaked through. Override with signal-green so the drop-zone
+   preview matches the rest of the edit-mode UI. */
+.vue-grid-placeholder {
+  background: rgba(92, 200, 164, 0.16) !important;
+  border: 2px dashed rgba(92, 200, 164, 0.5) !important;
+  opacity: 1 !important;
   transition-duration: 80ms;
   border-radius: 8px;
   z-index: 2;
@@ -334,6 +448,44 @@ function addWidget(id: string) {
 .grid-is-editing .vue-grid-item:hover > .vue-resizable-handle,
 .vue-grid-item.resizing > .vue-resizable-handle {
   opacity: 1;
+}
+
+/* Side-edge resize handles (south + east). grid-layout-plus adds each as
+   a sibling .vue-resizable-handle with a direction-specific class. We
+   want them to be invisible grab-zones along the edges, not diagonal
+   corners. */
+.vue-grid-item > .vue-resizable-handle-s {
+  background-image: none;
+  width: 100%;
+  height: 10px;
+  left: 0;
+  right: 0;
+  bottom: -2px;
+  cursor: s-resize;
+  opacity: 0;
+  transition: opacity 120ms;
+  border-radius: 0 0 8px 8px;
+}
+.vue-grid-item > .vue-resizable-handle-e {
+  background-image: none;
+  width: 10px;
+  height: 100%;
+  top: 0;
+  right: -2px;
+  bottom: 0;
+  cursor: e-resize;
+  opacity: 0;
+  transition: opacity 120ms;
+  border-radius: 0 8px 8px 0;
+}
+.grid-is-editing .vue-grid-item:hover > .vue-resizable-handle-s,
+.grid-is-editing .vue-grid-item:hover > .vue-resizable-handle-e {
+  /* Subtle signal-green tint so you can see the grab zone lights up. */
+  background: linear-gradient(to bottom, transparent, rgba(92, 200, 164, 0.25));
+  opacity: 0.9;
+}
+.grid-is-editing .vue-grid-item:hover > .vue-resizable-handle-e {
+  background: linear-gradient(to right, transparent, rgba(92, 200, 164, 0.25));
 }
 
 /* ─── Widget-internal scrolling ─────────────────────────────────────────
