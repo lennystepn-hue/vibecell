@@ -65,13 +65,13 @@ window.addEventListener("click", onGlobalClick);
 onBeforeUnmount(() => window.removeEventListener("click", onGlobalClick));
 
 // Convenient sizing presets from the context menu. Any explicit size pick
-// counts as user-driven, so lock the auto-sizer for that widget.
+// counts as user-driven, so lock the auto-sizer for that widget (persisted).
 function resize(id: string, w: number, h: number) {
   const widget = store.layout.find((l) => l.i === id);
   if (!widget) return;
   widget.w = Math.max(widget.minW ?? 1, w);
   widget.h = Math.max(widget.minH ?? 1, h);
-  userSized.value.add(id);
+  widget.userSized = true;
   closeContextMenu();
 }
 function setFullWidth(id: string) {
@@ -79,7 +79,7 @@ function setFullWidth(id: string) {
   if (!widget) return;
   widget.w = 12;
   widget.x = 0;
-  userSized.value.add(id);
+  widget.userSized = true;
   closeContextMenu();
 }
 function removeWidget(id: string) {
@@ -99,8 +99,9 @@ const addMenuOpen = ref(false);
 function addWidget(id: string) {
   store.showWidget(id);
   addMenuOpen.value = false;
-  // Freshly-shown widget should size to content, not keep its stale h.
-  userSized.value.delete(id);
+  // Freshly-shown widget should size to content, not keep a stale user-h.
+  const item = store.layout.find((l) => l.i === id);
+  if (item) item.userSized = false;
   nextTick(() => autoFit(id));
 }
 
@@ -122,11 +123,18 @@ function addWidget(id: string) {
 const contentEls = new Map<string, HTMLElement>();
 const observers = new Map<string, ResizeObserver>();
 const fitTimers = new Map<string, ReturnType<typeof setTimeout>>();
-const userSized = ref<Set<string>>(new Set());
 // Widgets whose h the auto-sizer is about to update. The layout-watch
 // below uses this to distinguish our own programmatic h changes from
-// changes driven by user resize.
+// changes driven by user resize. (In-memory only — it's a per-tick
+// guard, not user state.)
 const autoFittingIds = new Set<string>();
+
+/** Is this widget currently locked to a user-chosen size?
+ *  The `userSized` flag lives on each WidgetLayout row and therefore
+ *  persists through page reloads via localStorage. */
+function isUserSized(id: string): boolean {
+  return store.layout.find((l) => String(l.i) === id)?.userSized === true;
+}
 
 function registerContentEl(id: string, el: HTMLElement | null): void {
   if (!el) {
@@ -154,7 +162,7 @@ function scheduleAutoFit(id: string): void {
 }
 
 function autoFit(id: string): void {
-  if (userSized.value.has(id)) return;
+  if (isUserSized(id)) return;
   const el = contentEls.get(id);
   if (!el) return;
   // Measure the component's own root element — that's the glass panel
@@ -190,7 +198,8 @@ function autoFit(id: string): void {
 // emit-style that doesn't always reach us when using the slot pattern.
 // Instead we watch store.layout directly: whenever h or w for a widget
 // changes AND it isn't flagged as an auto-fit update, we assume the
-// user did it — that's when we lock auto-sizing for that widget.
+// user did it — that's when we set userSized on the layout row so the
+// lock survives a reload.
 let lastSnapshot = new Map<string, { h: number; w: number }>();
 watch(
   () => store.layout.map((l) => ({ i: String(l.i), h: l.h, w: l.w })),
@@ -200,7 +209,8 @@ watch(
       const prev = lastSnapshot.get(id);
       if (prev && (prev.h !== now.h || prev.w !== now.w)) {
         if (!autoFittingIds.has(id)) {
-          userSized.value.add(id);
+          const item = store.layout.find((l) => String(l.i) === id);
+          if (item) item.userSized = true;
         }
       }
     }
@@ -210,9 +220,10 @@ watch(
 );
 
 function onItemResized(i: string | number): void {
-  // Kept as a safety-net handler in case grid-layout-plus's event does
-  // fire — the watcher above is the primary detection path.
-  userSized.value.add(String(i));
+  // Safety-net handler in case grid-layout-plus's event does fire —
+  // the watcher above is the primary detection path.
+  const item = store.layout.find((l) => String(l.i) === String(i));
+  if (item) item.userSized = true;
 }
 
 onBeforeUnmount(() => {
@@ -224,7 +235,8 @@ onBeforeUnmount(() => {
 
 // Re-enable auto-fit for a widget (from the right-click menu).
 function autoSizeAgain(id: string): void {
-  userSized.value.delete(id);
+  const item = store.layout.find((l) => String(l.i) === id);
+  if (item) item.userSized = false;
   scheduleAutoFit(id);
   closeContextMenu();
 }
@@ -381,7 +393,7 @@ function autoSizeAgain(id: string): void {
               <component
                 :is="widgetById(String(item.i))!.component"
                 v-bind="widgetById(String(item.i))!.props(project)"
-                :class="userSized.has(String(item.i)) ? 'h-full block' : ''"
+                :class="isUserSized(String(item.i)) ? 'h-full block' : ''"
               />
             </div>
           </article>

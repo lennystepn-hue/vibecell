@@ -20,6 +20,13 @@ export interface WidgetLayout {
   h: number;
   /** True = hidden from the grid. Still in the array so "add widget" can re-show. */
   hidden?: boolean;
+  /**
+   * Set to true the first time the user manually resizes this widget.
+   * When true the auto-sizer stops touching h so the user-chosen size
+   * survives a page reload. Cleared by the right-click "auto-size to
+   * content" action or on show-from-hidden.
+   */
+  userSized?: boolean;
   /** Optional per-widget min/max overrides (from registry by default). */
   minW?: number;
   minH?: number;
