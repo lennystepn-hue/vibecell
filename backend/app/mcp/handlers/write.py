@@ -569,3 +569,148 @@ async def handle_ai_resume_brief(args, ctx: MCPContext) -> str:
     except ai_svc.AIConfigError as exc:
         return json.dumps({"error": "no_ai_key", "message": str(exc)})
     return json.dumps({"brief": text, "meta": meta})
+
+
+# ---------------------------------------------------------------------------
+# Repo sync — called from SKILL.md session-start hook for local repos.
+# ---------------------------------------------------------------------------
+
+async def handle_sync_repo(args, ctx: MCPContext) -> str:
+    """Scan a local repo: persist local_path, enrich stack/infra/tags/pitch,
+    store fingerprints so we can detect drift on the next session.
+
+    The MCP server runs on vibecell.dev and can't read the user's filesystem.
+    So Claude reads the manifest files locally (Read tool) and passes their
+    content in `manifests` — {path: content}. We compute the fingerprint
+    server-side + call enrichment on the same content.
+
+    Smart behavior:
+    - First time (never_scanned OR stack+infra both empty) → full enrich
+    - Subsequent call but no drift → no-op, just touch scanned_at
+    - Subsequent call with drift → re-enrich (refresh stack/infra/tags)
+    """
+    from sqlalchemy import select
+
+    from app.models import ProjectRepo
+    from app.models.project import ProjectContext
+    from app.services import project_children as children_svc
+    from app.services.enrichment import enrich_from_repo
+    from app.services.enrichment_apply import apply_enrichment_to_project
+    from app.services.env_fingerprint import (
+        build_fingerprint,
+        compute_drift,
+    )
+
+    project = await _resolve_project(args, ctx)
+    manifests: dict[str, str] = dict(getattr(args, "manifests", {}) or {})
+    local_path: str | None = getattr(args, "local_path", None)
+    force: bool = bool(getattr(args, "force", False))
+
+    # --- 1. Persist local_path on the monorepo/first ProjectRepo row ---
+    repo = (await ctx.db.execute(
+        select(ProjectRepo).where(ProjectRepo.project_id == project.id).limit(1)
+    )).scalar_one_or_none()
+    if repo is None:
+        # No repo row yet — create a bare one so local_path has somewhere to live.
+        from app.core.ulid import new_ulid
+        repo = ProjectRepo(
+            id=new_ulid(),
+            project_id=project.id,
+            role="monorepo",
+            local_path=local_path,
+        )
+        ctx.db.add(repo)
+        await ctx.db.flush()
+    elif local_path and repo.local_path != local_path:
+        repo.local_path = local_path
+
+    # --- 2. Load / create ProjectContext so we can read stored fingerprint ---
+    pctx = (await ctx.db.execute(
+        select(ProjectContext).where(ProjectContext.project_id == project.id)
+    )).scalar_one_or_none()
+    if pctx is None:
+        pctx = ProjectContext(project_id=project.id)
+        ctx.db.add(pctx)
+        await ctx.db.flush()
+
+    stored_fp = pctx.env_fingerprint or {}
+
+    # --- 3. Compute drift BEFORE re-enriching ---
+    drift = compute_drift(stored_fp, manifests)
+
+    # --- 4. Decide whether to enrich ---
+    # Count existing enrichment signals to know if project is "naked".
+    existing_stack = await children_svc.list_stack(ctx.db, project)
+    existing_infra = await children_svc.get_infra(ctx.db, project)
+    naked = (not existing_stack) and (existing_infra is None)
+
+    should_enrich = force or drift.never_scanned or drift.drifted or naked
+
+    mode = "no_change"
+    stats = None
+
+    if should_enrich and manifests:
+        # Primary language hint: look for existing StackItem tagged kind=language.
+        primary_lang = None
+        for si, ps in existing_stack:
+            if si.kind == "language":
+                primary_lang = si.name
+                break
+        if not primary_lang:
+            primary_lang = (repo.primary_lang if repo else None)
+
+        try:
+            # Cap manifest content before shipping to the LLM.
+            capped = {p: (c[:8000] if c else "") for p, c in manifests.items() if c}
+            enriched = await enrich_from_repo(
+                name=project.name,
+                description=project.pitch,
+                language=primary_lang,
+                topics=[],  # existing tags are already persisted
+                fetched_files=capped,
+            )
+            stats = await apply_enrichment_to_project(
+                ctx.db,
+                project=project,
+                workspace_id=ctx.workspace_id,
+                enriched=enriched,
+            )
+            if drift.never_scanned or naked:
+                mode = "initial_scan"
+            else:
+                mode = "drift_refresh"
+        except Exception as e:
+            import logging
+            logging.getLogger(__name__).warning("sync_repo enrichment failed: %s", e)
+            mode = "enrich_failed"
+
+    # --- 5. Always update the fingerprint (even on no-op — refreshes scanned_at) ---
+    if manifests:
+        pctx.env_fingerprint = build_fingerprint(manifests, local_path=local_path)
+
+    return json.dumps({
+        "mode": mode,
+        "drift": {
+            "never_scanned": drift.never_scanned,
+            "drifted": drift.drifted,
+            "changed_files": drift.changed_files,
+            "new_files": drift.new_files,
+            "removed_files": drift.removed_files,
+            "last_scanned": drift.last_scanned,
+        },
+        "enrichment": (
+            {
+                "pitch_updated": stats.pitch_updated,
+                "stack_added": stats.stack_added,
+                "tags_added": stats.tags_added,
+                "infra_updated": stats.infra_updated,
+            }
+            if stats
+            else None
+        ),
+        "project": {
+            "slug": project.slug,
+            "local_path": repo.local_path if repo else None,
+        },
+        "fingerprinted_files": sorted((pctx.env_fingerprint or {}).get("files", {}).keys()),
+    })

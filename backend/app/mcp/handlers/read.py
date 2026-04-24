@@ -106,6 +106,20 @@ async def _build_full_dict(project: Project, db: Any) -> dict[str, Any]:
         for si, ps in stack
     ]
     base["tags"] = [TagOut.model_validate(t).model_dump(mode="json") for t in tags]
+
+    # env_status: derived hint so Claude can decide whether to scan/refresh.
+    # needs_initial_scan = project has no stack AND no infra AND no fingerprint yet.
+    # local_path / last_scanned pulled from env_fingerprint for convenience.
+    fingerprint = (ctx_row.env_fingerprint if ctx_row else {}) or {}
+    has_fingerprint = bool(fingerprint.get("files"))
+    naked = (not stack) and (infra_row is None)
+    base["env_status"] = {
+        "needs_initial_scan": (naked and not has_fingerprint),
+        "has_fingerprint": has_fingerprint,
+        "last_scanned": fingerprint.get("scanned_at"),
+        "local_path": fingerprint.get("local_path") or (repos[0].local_path if repos else None),
+        "tracked_files": sorted(list(fingerprint.get("files", {}).keys())) if has_fingerprint else [],
+    }
     return base
 
 
@@ -328,4 +342,46 @@ async def handle_secret_get_value(args: Any, ctx: MCPContext) -> str:
         "kind": row.kind,
         "reference": row.reference,
         "note": f"This is a {row.kind} reference. The value lives in the user's {row.kind} vault — not retrievable server-side. Use the path with `op read` / `bw get` / etc. on the user's machine.",
+    })
+
+
+# ---------------------------------------------------------------------------
+# Environment drift — read-only check: did manifests change since last scan?
+# ---------------------------------------------------------------------------
+
+async def handle_check_env_drift(args: Any, ctx: MCPContext) -> str:
+    """Compare fresh manifest contents against the stored fingerprint.
+
+    Pure read: no DB writes. Use this when you want to know 'did my repo's
+    env change?' without triggering a re-enrichment. If you want to REFRESH
+    the fingerprint + stack/infra when drift is detected, call vibecell_sync_repo
+    instead (it handles both cases).
+
+    Returns:
+        {
+          "drifted": bool,
+          "never_scanned": bool,
+          "changed_files": [...],
+          "new_files": [...],
+          "removed_files": [...],
+          "last_scanned": iso | null
+        }
+    """
+    from app.services.env_fingerprint import compute_drift
+
+    project = await _resolve_project(args, ctx)
+    ctx_row = await children_svc.get_context(ctx.db, project)
+    stored_fp = (ctx_row.env_fingerprint if ctx_row else {}) or {}
+
+    manifests: dict[str, str] = dict(getattr(args, "manifests", {}) or {})
+    drift = compute_drift(stored_fp, manifests)
+
+    return json.dumps({
+        "drifted": drift.drifted,
+        "never_scanned": drift.never_scanned,
+        "changed_files": drift.changed_files,
+        "new_files": drift.new_files,
+        "removed_files": drift.removed_files,
+        "last_scanned": drift.last_scanned,
+        "local_path": stored_fp.get("local_path"),
     })

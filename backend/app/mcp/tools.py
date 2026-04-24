@@ -170,6 +170,35 @@ class AIResumeBriefArgs(BaseModel):
     project: str | None = None
 
 
+# ---- Repo sync / drift args ----
+
+class SyncRepoArgs(BaseModel):
+    """Scan a local repo to populate stack/infra/tags/pitch + fingerprint manifests.
+
+    The MCP server can't read the client's filesystem, so the client (Claude) reads
+    the curated list of manifest files locally with its Read tool and sends their
+    content here. The server computes SHA-256 fingerprints + runs Haiku enrichment.
+    """
+    local_path: str = Field(..., min_length=1, max_length=1024)
+    manifests: dict[str, str] = Field(
+        default_factory=dict,
+        description="{filename: content} e.g. {'package.json': '...', 'pyproject.toml': '...'}. "
+                    "Max 8000 chars per file.",
+    )
+    slug: str | None = None  # defaults to active
+    force: bool = False  # if True, re-enrich even when no drift detected
+
+
+class CheckEnvDriftArgs(BaseModel):
+    """Compare fresh manifest contents against the stored fingerprint — read-only."""
+
+    manifests: dict[str, str] = Field(
+        default_factory=dict,
+        description="Same shape as vibecell_sync_repo.manifests.",
+    )
+    slug: str | None = None
+
+
 # ---- Registry ----
 
 Handler = Callable[[BaseModel, MCPContext], Awaitable[str]]
@@ -277,6 +306,26 @@ TOOLS: list[Tool] = [
         "vibecell_ai_resume_brief",
         "Generate the funny 'where the fuck was I' morning-brief — ~150 words summarising last session + next step + open questions + a single concrete action to take first.",
         AIResumeBriefArgs, w.handle_ai_resume_brief,
+    ),
+    # Repo sync / drift — THE session-start workhorse.
+    Tool(
+        "vibecell_sync_repo",
+        "Scan a local repo: persist local_path, enrich stack/infra/tags/pitch from manifests, "
+        "and store SHA-256 fingerprints so drift can be detected on the next session. "
+        "The client reads manifest files (package.json, pyproject.toml, Dockerfile, "
+        "compose.yml, README.md, etc.) and passes {path: content} via 'manifests'. "
+        "Smart: on first call → full enrich; on subsequent calls → only re-enrich if drift "
+        "detected (or force=true). Call this ONCE per session when vibecell_active says "
+        "env_status.needs_initial_scan=true, or whenever you notice stack/infra are empty.",
+        SyncRepoArgs, w.handle_sync_repo,
+    ),
+    Tool(
+        "vibecell_check_env_drift",
+        "Read-only check: compare fresh manifest contents against the stored fingerprint. "
+        "Returns {drifted, never_scanned, changed_files, new_files, removed_files, last_scanned}. "
+        "Use this when you want to know 'did my env change?' without triggering a re-enrichment. "
+        "If you want to REFRESH stack/infra when drift is detected, call vibecell_sync_repo instead.",
+        CheckEnvDriftArgs, r.handle_check_env_drift,
     ),
 ]
 
