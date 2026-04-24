@@ -13,11 +13,48 @@ description: >
 ## On session start (first action of every session)
 1. vibecell_ping(). If unreachable, surface a subtle note and continue without context.
 2. vibecell_active() -> internalize identity, stack, infra, current_focus, next_step,
-   user_wants, open_questions, last 3 sessions.
+   user_wants, open_questions, last 3 sessions, **env_status**.
 3. If repo.local_path does not match the current working directory, warn the user
    and ask whether to switch active project.
-4. Open with: "Working on **<name>**. Last session (<when>): <summary>.
+4. **Auto-catalog / drift check** — branch on `env_status`:
+   - `env_status.needs_initial_scan === true` → this project has never been scanned
+     (naked stack/infra, no fingerprint). Read the manifest files that exist in
+     `cwd` (see "Which manifests to read" below) and call `vibecell_sync_repo({
+       local_path: <cwd>,
+       manifests: { "<path>": "<file-content>", ... }
+     })`. This is a ONE-TIME catalog — you're teaching Vibecell what this project
+     actually IS (stack, infra, pitch) without the user having to type it.
+   - `env_status.has_fingerprint === true` → project already catalogued. Read the
+     SAME manifest set and call `vibecell_check_env_drift({ manifests: {...} })`.
+     If `drifted: true` → summarise what changed (e.g. "package.json added: react-query,
+     pyproject.toml removed: requests") and offer `vibecell_sync_repo(..., force:false)`
+     to refresh stack/infra. If `drifted: false` → silent, continue.
+   - `env_status.needs_initial_scan === false` && `has_fingerprint === false` → the
+     project has stack/infra already but no fingerprint (legacy GitHub-imported project).
+     Call `vibecell_sync_repo` once with `force:false` to establish a baseline fingerprint
+     for future drift checks.
+5. Open with: "Working on **<name>**. Last session (<when>): <summary>.
    Next step: <next_step>. Open questions: <open_questions summary>. Continue?"
+   (If initial_scan ran, add one line: "Catalogued <N> stack items, <M> tags.")
+   (If drift detected, add one line: "⚠️ env changed since last session: <files>.")
+
+### Which manifests to read (curated list)
+Read whichever of these exist in `cwd` with the Read tool (skip missing ones, don't fail):
+
+- `README.md` (primary — describes what the project is)
+- `package.json` (Node/TS deps + scripts)
+- `pyproject.toml` OR `requirements.txt` (Python)
+- `Cargo.toml` (Rust)
+- `go.mod` (Go)
+- `composer.json` (PHP)
+- `Gemfile` (Ruby)
+- `Dockerfile`, `docker-compose.yml` / `compose.yml` (runtime infra)
+- `.env.example` / `env.example` (env-var contract — NEVER the real `.env`)
+
+Cap each file at ~8000 chars before sending (the server caps anyway). Send them all
+in one `manifests` dict — one tool call, not one per file.
+
+**Never read `.env` itself.** Only `.env.example`.
 
 ## During session
 - When user mentions past work, consult vibecell_search(q) before answering from memory.
