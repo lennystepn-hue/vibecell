@@ -14,7 +14,12 @@ description: >
 1. vibecell_ping(). If unreachable, surface a subtle note and continue without context.
 2. vibecell_active() -> internalize identity, stack, infra, current_focus, next_step,
    user_wants, open_questions, last 3 sessions, **env_status**.
-3. If repo.local_path does not match the current working directory, warn the user
+3. **vibecell_audit()** -> get the pre-flight gap list. Every `gap` in the result has
+   a concrete `action` pointing to the tool that fixes it. Work through them OR flag
+   the top 2-3 to the user ("btw: no environments recorded, no current_focus set") so
+   the project card stays complete WITHOUT the user having to notice and ask. Non-
+   negotiable for the first session on a project; skip only if all gaps are `[]`.
+4. If repo.local_path does not match the current working directory, warn the user
    and ask whether to switch active project.
 4. **Auto-catalog / drift check** — branch on `env_status`:
    - `env_status.needs_initial_scan === true` → this project has never been scanned

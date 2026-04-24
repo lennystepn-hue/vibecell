@@ -26,13 +26,15 @@ from sqlalchemy import func, select
 
 from app.core.db import session_scope
 from app.core.ulid import new_ulid
-from app.models import Project, ProjectLink, Session, Workspace
+from app.models import Project, ProjectLink, Session, Ship, Workspace
 from app.services import integration as integ_svc
 
 logger = logging.getLogger(__name__)
 
 _GITHUB_COMMITS_URL = "https://api.github.com/repos/{owner}/{repo}/commits"
+_GITHUB_TAGS_URL = "https://api.github.com/repos/{owner}/{repo}/tags"
 _LOOKBACK_DAYS = 7
+_VERSION_TAG = re.compile(r"^v?\d+\.\d+(\.\d+)?([-.][a-z0-9.-]+)?$", re.IGNORECASE)
 
 
 def _parse_owner_repo(url: str) -> tuple[str, str] | None:
@@ -178,6 +180,99 @@ async def _sync_project(db, workspace_id: str, project: Project, token: str) -> 
     if inserted:
         logger.info(
             "commit_sync: +%s session(s) for workspace=%s project=%s",
+            inserted, workspace_id, project.slug,
+        )
+    # Also sync tags → ships for the same project while we have the token +
+    # owner/repo resolved.
+    inserted += await _sync_tags_for_project(db, workspace_id, project, token, owner, repo)
+    return inserted
+
+
+async def _fetch_tags(token: str, owner: str, repo: str) -> list[dict]:
+    """Pull the 100 most recent tags from GitHub."""
+    try:
+        async with httpx.AsyncClient(timeout=15) as client:
+            r = await client.get(
+                _GITHUB_TAGS_URL.format(owner=owner, repo=repo),
+                headers={
+                    "Authorization": f"Bearer {token}",
+                    "Accept": "application/vnd.github+json",
+                    "X-GitHub-Api-Version": "2022-11-28",
+                },
+                params={"per_page": 100},
+            )
+        if r.status_code == 200:
+            return r.json()
+    except Exception:
+        return []
+    return []
+
+
+async def _sync_tags_for_project(
+    db, workspace_id: str, project: Project, token: str, owner: str, repo: str,
+) -> int:
+    """For each version-style tag (v1.2.3) not yet in `ships`, insert a Ship
+    row with version=<tag>, summary derived from the pointed commit subject.
+    """
+    existing_versions = {
+        v for v in (await db.execute(
+            select(Ship.version).where(Ship.project_id == project.id)
+        )).scalars().all()
+        if v
+    }
+    tags = await _fetch_tags(token, owner, repo)
+    inserted = 0
+    for t in tags:
+        name = (t.get("name") or "").strip()
+        if not name or not _VERSION_TAG.match(name):
+            continue
+        # Dedup both the raw tag and a v-stripped variant, since users sometimes
+        # ship as "1.2.3" once and "v1.2.3" another time.
+        normalised = name.lstrip("vV")
+        if name in existing_versions or normalised in existing_versions or f"v{normalised}" in existing_versions:
+            continue
+        sha = (t.get("commit") or {}).get("sha")
+        # Use the tagged commit's author date so ship timestamps stay chronological.
+        shipped_at = datetime.now(UTC)
+        summary = None
+        if sha:
+            async with httpx.AsyncClient(timeout=10) as client:
+                try:
+                    cr = await client.get(
+                        _GITHUB_COMMITS_URL.format(owner=owner, repo=repo) + f"/{sha}",
+                        headers={
+                            "Authorization": f"Bearer {token}",
+                            "Accept": "application/vnd.github+json",
+                        },
+                    )
+                    if cr.status_code == 200:
+                        data = cr.json()
+                        msg = ((data.get("commit") or {}).get("message") or "").strip()
+                        if msg:
+                            summary = msg.split("\n", 1)[0][:500]
+                        date_iso = ((data.get("commit") or {}).get("author") or {}).get("date")
+                        if date_iso:
+                            try:
+                                shipped_at = datetime.fromisoformat(date_iso.replace("Z", "+00:00"))
+                            except ValueError:
+                                pass
+                except Exception:
+                    pass
+
+        db.add(Ship(
+            id=new_ulid(),
+            project_id=project.id,
+            shipped_at=shipped_at,
+            version=name[:50],
+            summary=summary or f"tagged {name}",
+            changelog_md=None,
+        ))
+        existing_versions.add(name)
+        inserted += 1
+
+    if inserted:
+        logger.info(
+            "commit_sync: +%s ship(s) from git tags for ws=%s project=%s",
             inserted, workspace_id, project.slug,
         )
     return inserted

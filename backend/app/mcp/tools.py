@@ -388,6 +388,15 @@ TOOLS: list[Tool] = [
         SyncRepoArgs, w.handle_sync_repo,
     ),
     Tool(
+        "vibecell_audit",
+        "Return a structured audit of what's stale / unsynced / missing on the active "
+        "project: empty pitch, missing stack, no environments, empty current_focus, "
+        "stale sessions, never-scanned env, etc. Each gap has {kind, message, action} "
+        "so Claude knows exactly which tool to call next to fix it. ALWAYS call this "
+        "early in every session after vibecell_active — it's your pre-flight checklist.",
+        SlugArg, r.handle_audit,
+    ),
+    Tool(
         "vibecell_check_env_drift",
         "Read-only check: compare fresh manifest contents against the stored fingerprint. "
         "Returns {drifted, never_scanned, changed_files, new_files, removed_files, last_scanned}. "

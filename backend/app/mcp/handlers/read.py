@@ -379,3 +379,171 @@ async def handle_check_env_drift(args: Any, ctx: MCPContext) -> str:
         "last_scanned": drift.last_scanned,
         "local_path": stored_fp.get("local_path"),
     })
+
+
+# ---------------------------------------------------------------------------
+# Audit — single call Claude runs at session start to see what's out of sync.
+# Answers: "what cards on this project's dashboard are stale / missing?"
+# ---------------------------------------------------------------------------
+
+async def handle_audit(args: Any, ctx: MCPContext) -> str:
+    """Return a structured audit of what's stale or unsynced on the project.
+
+    Designed to be called on session start so Claude can proactively catch
+    gaps — decisions not recorded, ships not tagged, context fields empty,
+    env never scanned, etc. Every field is a concrete hint Claude can act on.
+
+    Shape:
+        {
+          "project_slug": str,
+          "gaps": [{"kind": "…", "message": "…", "action": "…"}],
+          "stats": {
+            "sessions_7d": int,
+            "decisions_total": int,
+            "ships_total": int,
+            "todos_open": int,
+            "ideas_open": int,
+          },
+          "last_activity": iso | null
+        }
+    """
+    from datetime import UTC, datetime, timedelta
+
+    from app.models import Decision, Idea, Ship
+    from app.models import Session as SessionRow
+    from app.models.project import ProjectCommand, ProjectEnvironment
+    from app.models.project_todo import ProjectTodo
+
+    project = await _resolve_project(args, ctx)
+    ctx_row = await children_svc.get_context(ctx.db, project)
+    stack = await children_svc.list_stack(ctx.db, project)
+    infra_row = await children_svc.get_infra(ctx.db, project)
+
+    # Counts
+    now = datetime.now(UTC)
+    seven_ago = now - timedelta(days=7)
+
+    sessions_7d_q = await ctx.db.execute(
+        select(SessionRow).where(
+            SessionRow.project_id == project.id,
+            SessionRow.started_at >= seven_ago,
+        )
+    )
+    sessions_7d = len(sessions_7d_q.scalars().all())
+
+    latest_session = (await ctx.db.execute(
+        select(SessionRow).where(SessionRow.project_id == project.id)
+        .order_by(SessionRow.started_at.desc()).limit(1)
+    )).scalar_one_or_none()
+
+    decisions = (await ctx.db.execute(
+        select(Decision).where(Decision.project_id == project.id)
+    )).scalars().all()
+    ships = (await ctx.db.execute(
+        select(Ship).where(Ship.project_id == project.id)
+    )).scalars().all()
+    todos_open = (await ctx.db.execute(
+        select(ProjectTodo).where(
+            ProjectTodo.project_id == project.id,
+            ProjectTodo.status.in_(["open", "in_progress"]),
+        )
+    )).scalars().all()
+    ideas = (await ctx.db.execute(
+        select(Idea).where(Idea.project_id == project.id)
+    )).scalars().all()
+    environments = (await ctx.db.execute(
+        select(ProjectEnvironment).where(ProjectEnvironment.project_id == project.id)
+    )).scalars().all()
+    commands = (await ctx.db.execute(
+        select(ProjectCommand).where(ProjectCommand.project_id == project.id)
+    )).scalars().all()
+
+    # Gap detection
+    gaps: list[dict[str, str]] = []
+
+    if not project.pitch or len(project.pitch or "") < 20:
+        gaps.append({
+            "kind": "pitch_missing",
+            "message": "Project has no pitch or it's too short.",
+            "action": "Ask the user for a 1-sentence pitch and call vibecell_update_context or create_project/sync_repo.",
+        })
+
+    if not stack:
+        gaps.append({
+            "kind": "stack_empty",
+            "message": "No stack items. User can't see what this project is made of.",
+            "action": "Read local manifests + call vibecell_sync_repo, or ask the user about the stack.",
+        })
+
+    if infra_row is None or not any([infra_row.db_host, infra_row.server_alias, infra_row.cdn]):
+        gaps.append({
+            "kind": "infra_sparse",
+            "message": "Infra card is empty (no db_host, server, or cdn).",
+            "action": "Call vibecell_sync_repo to infer from manifests, or ask user about hosting.",
+        })
+
+    if not environments:
+        gaps.append({
+            "kind": "no_environments",
+            "message": "No environments recorded (local/prod URLs).",
+            "action": "Call vibecell_add_environment with at least the prod URL if the project has one.",
+        })
+
+    if not commands:
+        gaps.append({
+            "kind": "no_commands",
+            "message": "No runnable commands (dev/build/test).",
+            "action": "Read package.json or Makefile and add via vibecell_add_command.",
+        })
+
+    fp = (ctx_row.env_fingerprint if ctx_row else {}) or {}
+    if not fp.get("files"):
+        gaps.append({
+            "kind": "never_scanned",
+            "message": "Repo never scanned — env drift detection is off until a baseline exists.",
+            "action": "Call vibecell_sync_repo with the local manifests to establish a fingerprint.",
+        })
+
+    if ctx_row is None or not ctx_row.current_focus:
+        gaps.append({
+            "kind": "no_current_focus",
+            "message": "current_focus is empty — future sessions can't resume.",
+            "action": "Call vibecell_update_context with a 1-sentence focus.",
+        })
+
+    if ctx_row is None or not ctx_row.next_step:
+        gaps.append({
+            "kind": "no_next_step",
+            "message": "next_step is empty.",
+            "action": "Call vibecell_update_context with a concrete next step.",
+        })
+
+    if latest_session is not None and latest_session.started_at is not None:
+        age_h = (now - latest_session.started_at).total_seconds() / 3600
+        if age_h > 48:
+            gaps.append({
+                "kind": "stale_sessions",
+                "message": f"Last session was {int(age_h)}h ago. Project might be stale.",
+                "action": "Confirm with user if still active; consider status change via vibecell_status.",
+            })
+    elif latest_session is None:
+        gaps.append({
+            "kind": "no_sessions_yet",
+            "message": "No sessions logged. The dashboard will look empty.",
+            "action": "Log the first session via vibecell_log_session after any work.",
+        })
+
+    return json.dumps({
+        "project_slug": project.slug,
+        "gaps": gaps,
+        "stats": {
+            "sessions_7d": sessions_7d,
+            "decisions_total": len(decisions),
+            "ships_total": len(ships),
+            "todos_open": len(todos_open),
+            "ideas_open": len(ideas),
+            "environments_count": len(environments),
+            "commands_count": len(commands),
+        },
+        "last_activity": latest_session.started_at.isoformat() if latest_session and latest_session.started_at else None,
+    })
