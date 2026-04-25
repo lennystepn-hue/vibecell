@@ -177,15 +177,15 @@ async def gather_user_data(session: AsyncSession, user_id: str) -> dict[str, Any
             select(Project.id).where(Project.workspace_id.in_(workspace_ids))
         )).all()
     ]
-    out["projects"] = [
-        _row_to_dict(r)
-        for r in (await session.execute(
-            select(Project).where(Project.id.in_(project_ids) if project_ids else False)
-        )).scalars().all()
-    ]
 
     # ---- Project-scoped tables ------------------------------------------
     if project_ids:
+        out["projects"] = [
+            _row_to_dict(r)
+            for r in (await session.execute(
+                select(Project).where(Project.id.in_(project_ids))
+            )).scalars().all()
+        ]
         for key, model, fk_col in [
             ("project_contexts",     ProjectContext,     ProjectContext.project_id),
             ("project_environments", ProjectEnvironment, ProjectEnvironment.project_id),

@@ -14,7 +14,15 @@ from app.core.crypto import generate_dek, wrap_dek
 from app.core.errors import UnauthorizedError, ValidationError
 from app.core.session import SessionPayload, create_session
 from app.core.ulid import new_ulid
-from app.models import MagicLinkToken, User, Workspace, WorkspaceKey, WorkspaceMember
+from app.models import (
+    MagicLinkToken,
+    Plan,
+    Subscription,
+    User,
+    Workspace,
+    WorkspaceKey,
+    WorkspaceMember,
+)
 
 _MAGIC_LINK_TTL_MINUTES = 15
 _SLUG_RE = re.compile(r"[^a-z0-9-]")
@@ -110,6 +118,26 @@ async def verify_magic_link(session: AsyncSession, *, raw_token: str) -> str:
         wrapped = wrap_dek(dek, master_key_b64=get_settings().master_key)
         session.add(WorkspaceKey(workspace_id=workspace.id, dek_ciphertext=wrapped))
         await session.flush()
+
+        # Spec-6 B1: bootstrap a Subscription row pointing at the default
+        # plan (pro), state=trialing with trial_ends_at set per plan.
+        # Stripe customer/subscription linkage is filled in later when the
+        # user actually goes through Stripe Checkout.
+        default_plan = (
+            await session.execute(select(Plan).where(Plan.slug == "pro"))
+        ).scalar_one_or_none()
+        if default_plan is not None:
+            now = datetime.now(UTC)
+            session.add(
+                Subscription(
+                    id=new_ulid(),
+                    user_id=user.id,
+                    plan_id=default_plan.id,
+                    status="trialing",
+                    trial_ends_at=now + timedelta(days=default_plan.trial_period_days),
+                )
+            )
+            await session.flush()
     else:
         user = existing_user
         # Find this user's first workspace (they may have more later)
