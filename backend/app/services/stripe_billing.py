@@ -262,5 +262,5 @@ async def _apply_event(session: AsyncSession, event: dict[str, Any]) -> None:
             try:
                 billing_url = f"{_gs().base_url.rstrip('/')}/settings/billing"
                 await send_payment_failed_email(to=user.email, billing_url=billing_url)
-            except Exception as e:  # noqa: BLE001
+            except Exception as e:
                 logger.warning("payment_failed email send blew up: %s", e)
