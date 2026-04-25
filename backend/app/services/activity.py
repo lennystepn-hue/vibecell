@@ -141,10 +141,18 @@ async def fetch_activity(
             "meta": le.detail or {},
         })
 
-    # MCP tool calls (workspace-scoped)
+    # MCP tool calls — filtered to the EXACT project this feed is for.
+    # Previously this query was workspace-scoped, which leaked every tool
+    # call (incl. ones for sibling projects) onto every project's activity
+    # page. Now we match on project_slug stamped at dispatch time;
+    # workspace-scoped tools (ping/list/search/switch) have NULL slug and
+    # are correctly skipped from project feeds.
     tool_rows = (await db.execute(
         select(McpAuditLog)
-        .where(McpAuditLog.workspace_id == project.workspace_id)
+        .where(
+            McpAuditLog.workspace_id == project.workspace_id,
+            McpAuditLog.project_slug == project.slug,
+        )
         .order_by(McpAuditLog.called_at.desc()).limit(limit)
     )).scalars().all()
     for tc in tool_rows:

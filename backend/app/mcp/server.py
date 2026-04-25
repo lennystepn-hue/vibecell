@@ -16,7 +16,6 @@ from app.mcp.tools import TOOLS, resolve_tool
 from app.metrics.registry import mcp_tool_calls
 from app.services import presence as presence_svc
 
-
 router = APIRouter()
 
 
@@ -81,15 +80,31 @@ async def _dispatch_tool_call(ctx: MCPContext, req_id: Any, params: dict) -> dic
     except ValidationError as e:
         return _err(req_id, -32602, f"Invalid arguments: {e.errors()}")
 
+    # Resolve which project this tool touched BEFORE running it, so the audit
+    # log row (and downstream presence ping) is correctly attributed. Tools
+    # that take an explicit slug / project arg win over the active-project
+    # fallback. Workspace-scoped tools (list, search, switch, ping, …) leave
+    # this NULL so the activity feed doesn't smear them across projects.
+    touched_slug: str | None = (
+        getattr(args_model, "slug", None)
+        or getattr(args_model, "project", None)
+    )
+    if not touched_slug and _is_project_scoped(name or ""):
+        try:
+            touched_slug = await _active_project_slug(ctx)
+        except Exception:
+            touched_slug = None
+
     t0 = time.monotonic()
     try:
         text = await tool.handler(args_model, ctx)
         status = "ok"
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         await ctx.db.rollback()
         await log_tool_call(
             db=ctx.db, client_id=ctx.client_id, workspace_id=ctx.workspace_id, user_id=ctx.user_id,
             tool_name=name, duration_ms=int((time.monotonic() - t0) * 1000), status="error",
+            project_slug=touched_slug,
         )
         await ctx.db.commit()
         mcp_tool_calls.labels(tool_name=name, status="error").inc()
@@ -98,30 +113,42 @@ async def _dispatch_tool_call(ctx: MCPContext, req_id: Any, params: dict) -> dic
     await log_tool_call(
         db=ctx.db, client_id=ctx.client_id, workspace_id=ctx.workspace_id, user_id=ctx.user_id,
         tool_name=name, duration_ms=int((time.monotonic() - t0) * 1000), status=status,
+        project_slug=touched_slug,
     )
     await ctx.db.commit()
     mcp_tool_calls.labels(tool_name=name, status=status).inc()
 
-    # Best-effort presence ping — which project did this tool actually touch?
-    # Use explicit args.slug / args.project if present, else the currently-active
-    # project. Failures here must never break the tool-call response.
-    try:
-        touched_slug = (
-            getattr(args_model, "slug", None)
-            or getattr(args_model, "project", None)
-            or await _active_project_slug(ctx)
-        )
-        if touched_slug:
+    # Presence ping — same touched_slug we just stamped on the audit row.
+    if touched_slug:
+        try:
             await presence_svc.mark_live(
                 workspace_id=ctx.workspace_id,
                 project_slug=touched_slug,
                 tool_name=name,
                 session_id=ctx.client_id,
             )
-    except Exception:  # noqa: BLE001 — presence is advisory, never fail a tool call
-        pass
+        except Exception:
+            pass
 
     return _ok(req_id, {"content": [{"type": "text", "text": text}]})
+
+
+# Tools that operate on the WORKSPACE, not on a specific project. For these
+# we don't fall back to the active-project slug — leaving project_slug NULL
+# means "this tool wasn't about any single project" so the per-project
+# activity feed correctly excludes them.
+_WORKSPACE_SCOPED_TOOLS: frozenset[str] = frozenset({
+    "vibecell_ping",
+    "vibecell_list",
+    "vibecell_search",
+    "vibecell_recent_projects",
+    "vibecell_switch",  # changes which project IS active; not "about" the new one in audit terms
+})
+
+
+def _is_project_scoped(tool_name: str) -> bool:
+    """Should a NULL slug fall back to the active project for this tool?"""
+    return tool_name not in _WORKSPACE_SCOPED_TOOLS
 
 
 async def _active_project_slug(ctx: MCPContext) -> str | None:
