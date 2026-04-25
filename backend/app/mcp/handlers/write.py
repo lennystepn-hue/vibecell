@@ -171,6 +171,118 @@ async def handle_set_focus(args, ctx: MCPContext) -> str:
     })
 
 
+# ---------------------------------------------------------------------------
+# Field-level context tools — one tool per field for friction-free use.
+# Add/resolve helpers for list fields, set helpers for scalar fields.
+# ---------------------------------------------------------------------------
+
+async def _append_to_list_field(
+    ctx: MCPContext, project, field: str, value: str,
+) -> list[str]:
+    """Append `value` to a list field on ProjectContext, dedup'd by exact match."""
+    from app.services import project_children as children_svc
+
+    existing_ctx = await children_svc.get_context(ctx.db, project)
+    current: list[str] = list(getattr(existing_ctx, field, None) or []) if existing_ctx else []
+    value = value.strip()
+    if value and value not in current:
+        current.append(value)
+    await children_svc.upsert_context(ctx.db, project, **{field: current})
+    return current
+
+
+async def _remove_from_list_field(
+    ctx: MCPContext, project, field: str, needle: str,
+) -> tuple[list[str], int]:
+    """Remove items from a list field whose text contains `needle` (case-insensitive)."""
+    from app.services import project_children as children_svc
+
+    existing_ctx = await children_svc.get_context(ctx.db, project)
+    current: list[str] = list(getattr(existing_ctx, field, None) or []) if existing_ctx else []
+    needle_l = needle.strip().lower()
+    if not needle_l:
+        return current, 0
+    kept = [item for item in current if needle_l not in str(item).lower()]
+    removed = len(current) - len(kept)
+    if removed:
+        await children_svc.upsert_context(ctx.db, project, **{field: kept})
+    return kept, removed
+
+
+async def handle_add_open_question(args, ctx: MCPContext) -> str:
+    project = await _resolve_project(args, ctx)
+    new_list = await _append_to_list_field(ctx, project, "open_questions", args.text)
+    return json.dumps({
+        "project_slug": project.slug, "open_questions": new_list,
+    })
+
+
+async def handle_resolve_open_question(args, ctx: MCPContext) -> str:
+    project = await _resolve_project(args, ctx)
+    new_list, removed = await _remove_from_list_field(ctx, project, "open_questions", args.text)
+    return json.dumps({
+        "project_slug": project.slug, "removed_count": removed, "open_questions": new_list,
+    })
+
+
+async def handle_add_known_issue(args, ctx: MCPContext) -> str:
+    project = await _resolve_project(args, ctx)
+    new_list = await _append_to_list_field(ctx, project, "known_issues", args.text)
+    return json.dumps({
+        "project_slug": project.slug, "known_issues": new_list,
+    })
+
+
+async def handle_resolve_known_issue(args, ctx: MCPContext) -> str:
+    project = await _resolve_project(args, ctx)
+    new_list, removed = await _remove_from_list_field(ctx, project, "known_issues", args.text)
+    return json.dumps({
+        "project_slug": project.slug, "removed_count": removed, "known_issues": new_list,
+    })
+
+
+async def handle_set_blocked(args, ctx: MCPContext) -> str:
+    """Set or clear blocked_by. Pass `reason=null` (or omit) to unblock."""
+    from app.services import project_children as children_svc
+
+    project = await _resolve_project(args, ctx)
+    reason = (getattr(args, "reason", None) or "").strip() or None
+    ctx_row = await children_svc.upsert_context(ctx.db, project, blocked_by=reason)
+    return json.dumps({
+        "project_slug": project.slug,
+        "blocked_by": ctx_row.blocked_by,
+        "is_blocked": ctx_row.blocked_by is not None,
+    })
+
+
+async def handle_set_user_wants(args, ctx: MCPContext) -> str:
+    """Overwrite user_wants in one call — for when the user's meta-goal shifts."""
+    from app.services import project_children as children_svc
+
+    project = await _resolve_project(args, ctx)
+    text = args.text.strip()
+    ctx_row = await children_svc.upsert_context(ctx.db, project, user_wants=text)
+    return json.dumps({
+        "project_slug": project.slug, "user_wants": ctx_row.user_wants,
+    })
+
+
+async def handle_rename_project(args, ctx: MCPContext) -> str:
+    """Update the project's name and/or emoji. At least one of the two required."""
+    project = await _resolve_project(args, ctx)
+    name = (getattr(args, "name", None) or "").strip() or None
+    emoji = (getattr(args, "emoji", None) or "").strip() or None
+    if not name and not emoji:
+        raise RuntimeError("at least one of name / emoji must be provided")
+    if name:
+        project.name = name[:200]
+    if emoji:
+        project.emoji = emoji[:16]
+    return json.dumps({
+        "project_slug": project.slug, "name": project.name, "emoji": project.emoji,
+    })
+
+
 async def handle_decision(args, ctx: MCPContext) -> str:
     """Record an ADR-lite decision on the active project."""
     from app.services.decision_svc import create_decision

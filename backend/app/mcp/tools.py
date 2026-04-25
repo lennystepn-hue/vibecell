@@ -63,6 +63,31 @@ class SetFocusArgs(BaseModel):
     slug: str | None = None
 
 
+class TextItemArgs(BaseModel):
+    """Generic add/resolve a freeform text entry from a list field."""
+    text: str = Field(..., min_length=1, max_length=500)
+    slug: str | None = None
+
+
+class SetBlockedArgs(BaseModel):
+    """Set or clear the blocked_by reason. Pass null/empty to unblock."""
+    reason: str | None = Field(default=None, max_length=500)
+    slug: str | None = None
+
+
+class SetUserWantsArgs(BaseModel):
+    """Overwrite user_wants — the user's meta-goal / workflow preference."""
+    text: str = Field(..., min_length=1, max_length=2000)
+    slug: str | None = None
+
+
+class RenameProjectArgs(BaseModel):
+    """Rename / re-emoji a project. At least one of name / emoji required."""
+    name: str | None = Field(default=None, min_length=1, max_length=200)
+    emoji: str | None = Field(default=None, max_length=16)
+    slug: str | None = None
+
+
 class DecisionArgs(BaseModel):
     title: str
     decision: str
@@ -310,6 +335,51 @@ TOOLS: list[Tool] = [
         "= 1 sentence, present tense, what's happening RIGHT NOW. next_step = "
         "concrete-action that comes after the current move.",
         SetFocusArgs, w.handle_set_focus,
+    ),
+    Tool(
+        "vibecell_add_open_question",
+        "Append a question to the project's open_questions list when something "
+        "comes up in conversation that you can't answer right now. Idempotent — "
+        "exact-match dedup so the same question won't appear twice.",
+        TextItemArgs, w.handle_add_open_question,
+    ),
+    Tool(
+        "vibecell_resolve_open_question",
+        "Remove a question from open_questions when it gets answered. Matches "
+        "case-insensitively on substring — pass enough of the original text to "
+        "make a unique match.",
+        TextItemArgs, w.handle_resolve_open_question,
+    ),
+    Tool(
+        "vibecell_add_known_issue",
+        "Append a bug or limitation to known_issues. For things you've noticed "
+        "but can't / won't fix right now. Idempotent — dedup by exact match.",
+        TextItemArgs, w.handle_add_known_issue,
+    ),
+    Tool(
+        "vibecell_resolve_known_issue",
+        "Remove a known issue when it gets fixed. Substring case-insensitive match.",
+        TextItemArgs, w.handle_resolve_known_issue,
+    ),
+    Tool(
+        "vibecell_set_blocked",
+        "Set or clear the blocked_by reason. Pass `reason` to mark blocked, "
+        "omit/null to clear (project unblocked).",
+        SetBlockedArgs, w.handle_set_blocked,
+    ),
+    Tool(
+        "vibecell_set_user_wants",
+        "Overwrite user_wants — the user's meta-goal / workflow preference for "
+        "this project. Use sparingly: only when the user reveals a new fundamental "
+        "preference (e.g. 'autopilot mode, no questions', 'minimal dependencies').",
+        SetUserWantsArgs, w.handle_set_user_wants,
+    ),
+    Tool(
+        "vibecell_rename_project",
+        "Rename and/or re-emoji a project. Project-level dashboard fields. "
+        "At least one of name / emoji required. Slug stays the same (slug "
+        "rename is intentionally not supported — too disruptive to URLs/MCP).",
+        RenameProjectArgs, w.handle_rename_project,
     ),
     Tool("vibecell_decision", "Record an ADR-lite decision on the active project.", DecisionArgs, w.handle_decision),
     Tool("vibecell_idea", "Capture an idea. Workspace inbox if project omitted.", IdeaArgs, w.handle_idea),

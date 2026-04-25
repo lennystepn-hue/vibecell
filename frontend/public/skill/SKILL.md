@@ -122,13 +122,14 @@ below SHOULD trigger the matching tool call without prompting.
 | What just happened in conversation | Tool to call | Field touched |
 |---|---|---|
 | Conversation pivots to a new piece of work | **`vibecell_set_focus`** | `current_focus` + `next_step` |
-| User reveals a meta-goal / workflow preference | `vibecell_update_context` | `user_wants` |
-| User asks a question we can't answer yet | `vibecell_update_context` | `open_questions` (add) |
-| Open question gets resolved | `vibecell_update_context` | `open_questions` (remove) |
-| Bug or limitation surfaces (won't fix now) | `vibecell_update_context` | `known_issues` (add) |
-| Known issue fixed | `vibecell_update_context` | `known_issues` (remove) |
-| External blocker appears (waiting on X) | `vibecell_update_context` | `blocked_by` |
-| Blocker resolved | `vibecell_update_context` | `blocked_by` = null |
+| User reveals a meta-goal / workflow preference | `vibecell_set_user_wants` | `user_wants` |
+| User asks a question we can't answer yet | `vibecell_add_open_question` | `open_questions` (append) |
+| Open question gets resolved | `vibecell_resolve_open_question` | `open_questions` (remove by substring) |
+| Bug or limitation surfaces (won't fix now) | `vibecell_add_known_issue` | `known_issues` (append) |
+| Known issue fixed | `vibecell_resolve_known_issue` | `known_issues` (remove by substring) |
+| External blocker appears (waiting on X) | `vibecell_set_blocked` | `blocked_by` (set with reason) |
+| Blocker resolved | `vibecell_set_blocked` | `blocked_by` = null (omit reason) |
+| Project renamed / emoji change | `vibecell_rename_project` | `name` / `emoji` |
 | Project lifecycle changes (idea→building→live→shipped→dead) | `vibecell_status` | `status` |
 | Architectural / non-trivial design choice | `vibecell_decision` | new decision row |
 | Idea pops up but it's NOT for the current project | `vibecell_idea` | workspace idea inbox |
