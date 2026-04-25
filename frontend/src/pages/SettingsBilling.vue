@@ -31,12 +31,15 @@ async function loadSubscription() {
     const r = await fetch("/api/v1/me/subscription", { credentials: "include" });
     if (r.ok) {
       sub.value = await r.json();
-    } else if (r.status === 503) {
-      stripeNotConfigured.value = true;
-    } else if (r.status === 404) {
-      // /me/subscription not yet implemented — fall back to feature-flag UI
+    } else {
+      // Any non-2xx (404 endpoint missing, 422 no-sub-row, 503 Stripe
+      // unconfigured, 5xx unexpected) — show the same fallback "Pro plan,
+      // try checkout" view rather than a blank page. The /billing/checkout
+      // call will fail loudly if Stripe isn't actually configured.
       stripeNotConfigured.value = true;
     }
+  } catch {
+    stripeNotConfigured.value = true;
   } finally {
     loadingSub.value = false;
   }
@@ -128,12 +131,22 @@ onMounted(loadSubscription);
 
         <div v-else-if="stripeNotConfigured">
           <SettingsSection
-            title="Stripe not configured yet"
-            subtitle="Billing endpoints return 503 until the operator wires Stripe credentials. This is fine for self-hosted deployments that don't sell to external users."
+            title="Vibecell Pro"
+            subtitle="€8.99 per month · 7-day trial · no credit card required for trial"
           >
+            <ul class="space-y-2 mb-5 mono-label opacity-80">
+              <li>// unlimited projects</li>
+              <li>// AI enrichment from GitHub repos</li>
+              <li>// MCP server access for Claude / Cursor / Zed</li>
+              <li>// auto-screenshot + commit-sync cron jobs</li>
+              <li>// 365-day session retention</li>
+            </ul>
             <PrimaryButton :disabled="checkingOut" :loading="checkingOut" @click="startCheckout">
-              Try anyway (will fail with a 503 toast)
+              Start 7-day trial
             </PrimaryButton>
+            <p class="mono-label opacity-50 mt-3">
+              // payment method is requested only when the trial ends
+            </p>
           </SettingsSection>
         </div>
 
