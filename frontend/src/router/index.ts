@@ -53,6 +53,11 @@ const router = createRouter({
       meta: { anonymous: true },
     },
     {
+      path: "/settings/billing",
+      name: "settings-billing",
+      component: () => import("@/pages/SettingsBilling.vue"),
+    },
+    {
       path: "/p",
       name: "projects-index",
       component: () => import("@/pages/ProjectsIndex.vue"),

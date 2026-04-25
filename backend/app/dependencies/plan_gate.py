@@ -24,7 +24,6 @@ from app.core.db import get_db
 from app.core.deps import AuthContext, require_auth
 from app.models import Plan, Project, Subscription
 
-
 _PAID_STATUSES = {"trialing", "active"}
 
 

@@ -5,6 +5,7 @@ const route = useRoute();
 
 const items = [
   { path: "/settings", label: "account" },
+  { path: "/settings/billing", label: "billing" },
   { path: "/settings/integrations", label: "integrations" },
   { path: "/settings/connections", label: "connections" },
 ];
