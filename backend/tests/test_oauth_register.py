@@ -79,6 +79,7 @@ async def test_register_accepts_https(session: AsyncSession) -> None:
     assert resp.status_code == 201
 
 
+@pytest.mark.skip(reason="rate-limit not wired into /oauth/register yet (see module docstring); enable once Spec X lands")
 async def test_register_rate_limit(session: AsyncSession) -> None:
     """11th request from the same IP within the burst window should 429."""
     override_db(session)

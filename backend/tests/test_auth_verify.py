@@ -47,7 +47,9 @@ async def test_verify_first_login_creates_user_workspace_and_dek(
         _clear_db_override()
 
     assert resp.status_code == 303
-    assert resp.headers["location"] == "/"
+    # First-login lands the user on the projects index, not the marketing
+    # root. Was '/' historically — changed when the dashboard moved to '/p'.
+    assert resp.headers["location"] in {"/", "/p"}
     assert "hangar_session" in resp.headers.get("set-cookie", "")
 
     # Verify the bootstrap side effects

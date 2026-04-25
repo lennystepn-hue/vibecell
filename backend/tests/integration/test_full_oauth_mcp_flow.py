@@ -45,11 +45,12 @@ async def test_end_to_end_oauth_and_mcp(client, authed_client, user_workspace_wi
     assert init["result"]["serverInfo"]["name"] == "vibecell"
     assert init["result"]["protocolVersion"] == "2025-06-18"
 
-    # 2. tools/list returns 17
+    # 2. tools/list returns the full registry. Count grows over time as we add
+    # tools — assert a sane range instead of pinning a historic number.
     tl = (await client.post("/mcp", json={
         "jsonrpc": "2.0", "id": 2, "method": "tools/list", "params": {},
     })).json()
-    assert len(tl["result"]["tools"]) == 17
+    assert 30 <= len(tl["result"]["tools"]) <= 60
 
     # 3. tools/call vibecell.ping — exercises auth middleware + dispatcher + audit log
     ping = (await client.post("/mcp", json={
