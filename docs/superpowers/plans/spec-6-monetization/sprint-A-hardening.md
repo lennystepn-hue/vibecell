@@ -11,132 +11,87 @@
 
 ---
 
-## Phase A1 — Email Verification
+## Phase A1 — Email Verification (DRASTICALLY REDUCED — see audit)
 
-**Why:** Without verification, signup is a fraud vector. Stripe will refuse to onboard customers with unverified email; payment-failed emails will bounce; we get put on spam blocklists.
+> **2026-04-25 audit finding:** Magic-link auth already proves email ownership.
+> Decision doc: [`docs/superpowers/decisions/2026-04-25-email-verification-already-implicit.md`](../../decisions/2026-04-25-email-verification-already-implicit.md).
+> Original 8-step plan replaced with: add column + set on verify + backfill.
+> Time savings: ~4 hours.
+
+**Why:** Stripe and downstream tooling need a single source of truth for "is this user's email confirmed". Magic-link already confirms it; we just need to **record** that fact.
 
 **Files:**
-- Create: `backend/app/services/email_verification.py`
-- Create: `backend/app/routes/email_verify.py`
-- Modify: `backend/app/routes/auth.py` (signup → trigger verification email)
-- Modify: `backend/app/models/user.py` (already has `email_verified_at: datetime | None` — verify, add column if missing)
-- Migration: `backend/alembic/versions/0015_email_verification_tokens.py`
-- Frontend: `frontend/src/pages/EmailVerify.vue` (new page at `/auth/verify-email/:token`)
-- Email template: `backend/app/email_templates/verify_email.html`
-- Test: `backend/tests/integration/test_email_verification.py`
+- Modify: `backend/app/models/user.py` (add `email_verified_at: Mapped[datetime | None]`)
+- Migration: `backend/alembic/versions/0015_user_email_verified_at.py`
+- Modify: `backend/app/services/login.py::verify_magic_link` (set the field)
+- Test: `backend/tests/integration/test_email_verified_at.py`
 
-- [ ] **Step 1: Migration for verification tokens table**
+- [ ] **Step 1: Migration — add column + backfill**
 
 ```python
-# 0015_email_verification_tokens.py
+# 0015_user_email_verified_at.py
+import sqlalchemy as sa
+from alembic import op
+
 def upgrade() -> None:
-    op.create_table(
-        "email_verification_token",
-        sa.Column("id", sa.String(26), primary_key=True),  # ULID
-        sa.Column("user_id", sa.String(26), sa.ForeignKey("user.id", ondelete="CASCADE"), nullable=False),
-        sa.Column("token_hash", sa.String(64), nullable=False, unique=True),  # SHA-256 of raw token
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
-        sa.Column("expires_at", sa.DateTime(timezone=True), nullable=False),
-        sa.Column("consumed_at", sa.DateTime(timezone=True), nullable=True),
+    op.add_column(
+        "user",
+        sa.Column("email_verified_at", sa.DateTime(timezone=True), nullable=True),
     )
-    op.create_index("ix_email_verification_user", "email_verification_token", ["user_id"])
+    # Backfill: every existing user logged in via magic-link, so their email
+    # was verified at account-creation time. Use User.created_at as the proxy.
+    op.execute('UPDATE "user" SET email_verified_at = created_at WHERE email_verified_at IS NULL')
+
+def downgrade() -> None:
+    op.drop_column("user", "email_verified_at")
 ```
 
-- [ ] **Step 2: Service module**
+- [ ] **Step 2: Add column to User model**
 
 ```python
-# backend/app/services/email_verification.py
-import hashlib
-import secrets
-from datetime import datetime, timedelta, timezone
-
-TOKEN_TTL = timedelta(hours=24)
-
-async def issue_token(session, user) -> str:
-    raw = secrets.token_urlsafe(32)
-    token_hash = hashlib.sha256(raw.encode()).hexdigest()
-    session.add(EmailVerificationToken(
-        id=ulid_new(),
-        user_id=user.id,
-        token_hash=token_hash,
-        expires_at=datetime.now(timezone.utc) + TOKEN_TTL,
-    ))
-    await send_verification_email(user.email, raw)  # raw token only sent in email
-    return raw
-
-async def consume(session, raw_token: str) -> User | None:
-    token_hash = hashlib.sha256(raw_token.encode()).hexdigest()
-    row = await session.execute(
-        select(EmailVerificationToken)
-        .where(EmailVerificationToken.token_hash == token_hash)
-        .where(EmailVerificationToken.consumed_at.is_(None))
-        .where(EmailVerificationToken.expires_at > datetime.now(timezone.utc))
-    )
-    row = row.scalar_one_or_none()
-    if not row:
-        return None
-    row.consumed_at = datetime.now(timezone.utc)
-    user = await session.get(User, row.user_id)
-    user.email_verified_at = datetime.now(timezone.utc)
-    return user
+# backend/app/models/user.py — inside class User(Base):
+email_verified_at: Mapped[datetime | None] = mapped_column(
+    DateTime(timezone=True), nullable=True
+)
 ```
 
-- [ ] **Step 3: Route**
+- [ ] **Step 3: Set on first verify**
+
+In `backend/app/services/login.py::verify_magic_link`, after `token.consumed_at = datetime.now(UTC)`:
 
 ```python
-# backend/app/routes/email_verify.py
-@router.post("/auth/verify-email")
-async def verify_email(token: str, session: SessionDep):
-    user = await email_verification.consume(session, token)
-    if not user:
-        raise HTTPException(400, "invalid or expired token")
+if user.email_verified_at is None:
+    user.email_verified_at = datetime.now(UTC)
+```
+
+(Idempotent — only writes the first time.)
+
+- [ ] **Step 4: Integration test**
+
+```python
+# backend/tests/integration/test_email_verified_at.py
+async def test_first_magic_link_sets_email_verified_at(session):
+    raw = await issue_magic_link(session, email="test@example.com")
     await session.commit()
-    return {"ok": True, "email": user.email}
-
-@router.post("/auth/verify-email/resend")
-async def resend(current_user: UserDep, session: SessionDep):
-    if current_user.email_verified_at:
-        return {"ok": True, "already_verified": True}
-    await email_verification.issue_token(session, current_user)
+    await verify_magic_link(session, raw_token=raw)
     await session.commit()
-    return {"ok": True}
+    user = (await session.execute(
+        select(User).where(User.email == "test@example.com")
+    )).scalar_one()
+    assert user.email_verified_at is not None
+
+async def test_second_verify_does_not_reset_timestamp(session):
+    # ...sign up, capture timestamp t1, sign in again, assert == t1
 ```
 
-- [ ] **Step 4: Email template + send via Resend**
+Run: `uv run pytest backend/tests/integration/test_email_verified_at.py -v`. Expected: PASS.
 
-Plain HTML, single button to `https://vibecell.dev/auth/verify-email/{token}`. Subject: `Confirm your email for Vibecell`.
-
-- [ ] **Step 5: Frontend page**
-
-`/auth/verify-email/:token` — on mount, POST `/auth/verify-email` with the token from URL params. Show success state with "go to dashboard" button or error state with "request new link".
-
-- [ ] **Step 6: Trigger on signup**
-
-Modify `app/routes/auth.py` magic-link flow: after creating a user record, call `email_verification.issue_token`. (Actually — magic-link auth already proves email ownership at signup, so we may already be covered. Audit this in Phase A1.0: if magic-link verifies email, skip A1 entirely and just set `email_verified_at` on first successful magic-link login. Document the decision in `app/services/email_verification.py` docstring.)
-
-- [ ] **Step 7: Integration test**
-
-```python
-async def test_signup_then_verify_round_trip(client, db):
-    # signup
-    await client.post("/auth/magic-link", json={"email": "test@example.com"})
-    token = await fetch_test_token_from_outbox(db, "test@example.com")
-    # verify
-    resp = await client.post("/auth/verify-email", json={"token": token})
-    assert resp.status_code == 200
-    user = await db.execute(select(User).where(User.email == "test@example.com"))
-    assert user.scalar_one().email_verified_at is not None
-```
-
-Run: `uv run pytest backend/tests/integration/test_email_verification.py -v`. Expected: PASS.
-
-- [ ] **Step 8: Commit**
+- [ ] **Step 5: Commit**
 
 ```bash
-git add backend/app/services/email_verification.py backend/app/routes/email_verify.py \
-    backend/alembic/versions/0015_*.py backend/app/email_templates/verify_email.html \
-    frontend/src/pages/EmailVerify.vue backend/tests/integration/test_email_verification.py
-git commit -m "feat(auth): email verification flow + GDPR-clean signup"
+git add backend/app/models/user.py backend/alembic/versions/0015_*.py \
+    backend/app/services/login.py backend/tests/integration/test_email_verified_at.py
+git commit -m "feat(auth): record email_verified_at when magic-link is consumed"
 ```
 
 ---
