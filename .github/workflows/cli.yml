@@ -40,6 +40,9 @@ jobs:
         working-directory: cli
     steps:
       - uses: actions/checkout@v4
+      - name: install linux deps (dbus for keyring/secret-service)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y libdbus-1-dev pkg-config
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: ${{ matrix.target }}
