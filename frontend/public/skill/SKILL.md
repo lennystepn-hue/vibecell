@@ -104,15 +104,40 @@ under "Auto-log after every git commit", but worth repeating). Never wait
 for end-of-session to flush — log per commit, summary = first commit-
 message line.
 
-### Rule 4 — End of every assistant turn that did work: audit yourself
-Before you respond to the user, scan what you just did in this turn. Ask
-yourself: did I just (a) commit code, (b) make an architectural choice, OR
-(c) shift the topic? If yes to ANY: the matching tool call HAS to have run
-already in the same turn. If you forgot — call it now, then send your
-response. Do NOT wait for the user to remind you.
+### Rule 4 — Finished work that matches an open todo = tick it (not optional)
+If there's an active batch of todos (i.e. you previously called
+`vibecell_todo_batch_add` or the user has open todos visible in the
+dashboard) AND the work you just finished matches one of them — even
+loosely — close it BEFORE you respond:
 
-The user should NEVER have to type "log that" or "did you update context".
-If they do, you've broken the rule.
+```
+vibecell_todo_match({
+  description: "<1-2 sentences describing what shipped, including
+                file paths / commit SHA / test name>",
+  auto_complete: true
+})
+```
+
+`auto_complete: true` does the keyword-match + close in one round trip.
+The completion_note that lands on the card IS your description, so make
+it specific enough that the user can audit it later ("commit e9db58d:
+test_register_rate_limit un-skipped + Redis cleanup added").
+
+If no batch is active, skip — but if a batch IS active and you finish a
+unit of work without ticking, that's the same kind of trust-eroding gap
+as forgetting to log a session. **The user should never have to ask "did
+you tick A6?".** If they do, you've broken the rule.
+
+### Rule 5 — End of every assistant turn that did work: audit yourself
+Before you respond to the user, scan what you just did in this turn. Ask
+yourself: did I just (a) commit code, (b) make an architectural choice,
+(c) shift the topic, OR (d) finish a unit of work that maps to an open
+todo? If yes to ANY: the matching tool call HAS to have run already in
+the same turn. If you forgot — call it now, then send your response. Do
+NOT wait for the user to remind you.
+
+The user should NEVER have to type "log that" / "did you update context"
+/ "vergiss nicht abzuticken". If they do, you've broken the rule.
 
 ### Field-by-field auto-update reference
 Use this as the canonical "when X happens, write to Y" cheat sheet. Don't
@@ -135,6 +160,7 @@ below SHOULD trigger the matching tool call without prompting.
 | Idea pops up but it's NOT for the current project | `vibecell_idea` | workspace idea inbox |
 | Free-form note / observation worth keeping | `vibecell_note_append` | project notes |
 | Git commit landed | `vibecell_log_session` | new session row + auto-syncs current_focus |
+| Finished a unit of work matching an open todo | `vibecell_todo_match` (with `auto_complete: true`) | closes the matched todo + records completion_note |
 | Version shipped / tag pushed | `vibecell_ship` | new ship row |
 | Stack changed (new dep added/removed) | `vibecell_sync_repo` (preferred) | stack/infra/tags |
 | New environment URL (deployed staging) | `vibecell_add_environment` | environments |
