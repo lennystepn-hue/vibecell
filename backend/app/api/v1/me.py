@@ -25,7 +25,7 @@ from app.core.deps import AuthContext, require_auth
 from app.core.errors import ValidationError
 from app.core.middleware import SESSION_COOKIE_NAME
 from app.core.session import delete_session
-from app.models import Workspace, WorkspaceMember
+from app.models import Plan, Subscription, Workspace, WorkspaceMember
 from app.schemas.user import UserOut
 from app.schemas.workspace import WorkspaceListItem, WorkspaceOut
 from app.services import account_purge
@@ -59,6 +59,18 @@ class ChangeEmailAccepted(BaseModel):
 class DeleteAccountRequest(BaseModel):
     """Type the current email to confirm — guards against accidental clicks."""
     confirmation: EmailStr
+
+
+class SubscriptionOut(BaseModel):
+    """Spec-6 Sprint B4 — surface the user's subscription state to the
+    /settings/billing page + the global TrialBanner."""
+    status: str
+    plan_slug: str
+    plan_name: str
+    monthly_price_eur_cents: int
+    trial_ends_at: str | None
+    current_period_end: str | None
+    cancel_at_period_end: bool
 
 
 @router.get("/me", response_model=MeOut)
@@ -151,6 +163,38 @@ async def export_my_data(
                 f'attachment; filename="vibecell-export-{auth.user.id}.json"'
             ),
         },
+    )
+
+
+@router.get("/me/subscription", response_model=SubscriptionOut)
+async def my_subscription(
+    auth: Annotated[AuthContext, Depends(require_auth)],
+    db: Annotated[AsyncSession, Depends(get_db)],
+) -> SubscriptionOut:
+    """Return the current user's subscription state. Drives the
+    /settings/billing page and the global trial banner."""
+    sub = (
+        await db.execute(
+            select(Subscription).where(Subscription.user_id == auth.user.id)
+        )
+    ).scalar_one_or_none()
+    if sub is None:
+        # Should be impossible after B1 bootstrap — surface as 500-ish hint
+        # rather than 404 so support knows to investigate.
+        raise ValidationError(detail="user has no subscription row")
+    plan = await db.get(Plan, sub.plan_id)
+    if plan is None:
+        raise ValidationError(detail="subscription points at non-existent plan")
+    return SubscriptionOut(
+        status=sub.status,
+        plan_slug=plan.slug,
+        plan_name=plan.name,
+        monthly_price_eur_cents=plan.monthly_price_eur_cents,
+        trial_ends_at=sub.trial_ends_at.isoformat() if sub.trial_ends_at else None,
+        current_period_end=(
+            sub.current_period_end.isoformat() if sub.current_period_end else None
+        ),
+        cancel_at_period_end=sub.cancel_at_period_end,
     )
 
 
