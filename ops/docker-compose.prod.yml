@@ -35,6 +35,10 @@ services:
     restart: unless-stopped
     env_file:
       - /etc/hangar/hangar.env
+    environment:
+      # Sentry release tag — wired through from deploy.sh so each deploy
+      # tags errors with the SHA they came from.
+      GIT_SHA: ${HANGAR_SHA:-unknown}
     volumes:
       # Persistent store for captured project screenshots.
       # Named volume so image rebuilds / redeploys don't wipe visual history.
@@ -54,6 +58,10 @@ services:
     image: hangar-frontend:${HANGAR_SHA:-latest}
     build:
       context: ../frontend
+      args:
+        # Vite reads VITE_GIT_SHA at build time (frontend/src/main.ts → Sentry release).
+        # Build args in compose come from the host shell env, populated by deploy.sh.
+        VITE_GIT_SHA: ${HANGAR_SHA:-unknown}
     restart: unless-stopped
     depends_on:
       - backend

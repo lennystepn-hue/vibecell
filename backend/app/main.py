@@ -1,9 +1,30 @@
 # backend/app/main.py
+import logging
+import os
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from fastapi import FastAPI
+
+# Sentry init MUST happen before importing the FastAPI app, otherwise the
+# instrumentation patches don't catch anything. The `if dsn:` guard means
+# the SDK is a no-op until SENTRY_DSN_BACKEND is set in /etc/hangar/hangar.env.
+_sentry_dsn = os.environ.get("SENTRY_DSN_BACKEND")
+if _sentry_dsn:
+    import sentry_sdk
+    from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
+
+    sentry_sdk.init(
+        dsn=_sentry_dsn,
+        integrations=[SqlalchemyIntegration()],
+        traces_sample_rate=float(os.environ.get("SENTRY_TRACES_RATE", "0.1")),
+        environment=os.environ.get("ENVIRONMENT", "production"),
+        release=os.environ.get("GIT_SHA", "unknown"),
+        # Don't auto-capture session-cookie / authorization headers
+        send_default_pii=False,
+    )
+    logging.getLogger(__name__).info("Sentry initialised — release=%s", os.environ.get("GIT_SHA", "unknown"))
 
 # Activity timeline
 from app.api.v1.activity import router as activity_router

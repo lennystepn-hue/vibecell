@@ -28,7 +28,8 @@ from app.core.session import delete_session
 from app.models import Workspace, WorkspaceMember
 from app.schemas.user import UserOut
 from app.schemas.workspace import WorkspaceListItem, WorkspaceOut
-from app.services import account_purge, email_change as email_change_svc
+from app.services import account_purge
+from app.services import email_change as email_change_svc
 from app.services.mailer import send_email_change_email
 
 router = APIRouter(prefix="/api/v1", tags=["me"])

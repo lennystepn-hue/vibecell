@@ -1,5 +1,10 @@
 FROM node:22-alpine AS builder
 
+# Sentry release tag — passed by docker-compose build-arg, defaults to "unknown".
+# Vite reads VITE_GIT_SHA at build time and bakes it into the frontend bundle.
+ARG VITE_GIT_SHA=unknown
+ENV VITE_GIT_SHA=$VITE_GIT_SHA
+
 WORKDIR /app
 
 RUN corepack enable
