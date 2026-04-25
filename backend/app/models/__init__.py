@@ -3,6 +3,7 @@
 from app.models.auth import (
     AuditLog,
     CliDevice,
+    EmailChangeToken,
     MagicLinkToken,
     User,
     Workspace,

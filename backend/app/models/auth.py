@@ -93,3 +93,24 @@ class MagicLinkToken(Base):
     )
     expires_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), nullable=False, index=True)
     consumed_at: Mapped[datetime | None] = mapped_column(TIMESTAMP(timezone=True))
+
+
+class EmailChangeToken(Base):
+    """Spec-6 Sprint A2: token mailed to a user's NEW email when they want to
+    change their address. Separate from MagicLinkToken because the security
+    semantics differ: this token is bound to a specific user_id + new_email
+    pair, while a magic-link token only proves "someone controls this address"."""
+
+    __tablename__ = "email_change_tokens"
+
+    id: Mapped[str] = ulid_pk()
+    user_id: Mapped[str] = mapped_column(
+        String(26), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    new_email: Mapped[str] = mapped_column(String(320), nullable=False, index=True)
+    token_hash: Mapped[str] = mapped_column(String(64), nullable=False, unique=True, index=True)
+    created_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True), nullable=False, server_default=func.now()
+    )
+    expires_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), nullable=False, index=True)
+    consumed_at: Mapped[datetime | None] = mapped_column(TIMESTAMP(timezone=True))
