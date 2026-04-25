@@ -74,10 +74,10 @@ you actually did, **without the user ever having to remind you**. If they have
 to ask "did you log that?", the product has failed. These rules fire even
 when you're deep in flow:
 
-### Rule 1 — Topic shift = `vibecell_update_context` (not optional)
+### Rule 1 — Topic shift = `vibecell_set_focus` (not optional)
 When the conversation pivots to a meaningfully new piece of work, BEFORE you
-start that work call `vibecell_update_context` with a fresh `current_focus` +
-`next_step`. Examples of "topic shift":
+start that work call `vibecell_set_focus({ current_focus, next_step? })`.
+Examples of "topic shift":
   - User asks for a new feature ("now let's add Stripe webhooks")
   - User reports a bug to investigate ("the dropdown doesn't update")
   - You finish a multi-step task and surface the result
@@ -86,6 +86,10 @@ start that work call `vibecell_update_context` with a fresh `current_focus` +
 `current_focus` should be 1 sentence, present-tense, what's happening RIGHT
 NOW. `next_step` is the immediate concrete-action that comes after the
 current move, NOT a 5-step plan.
+
+Use `vibecell_set_focus` for the focus+next_step pair. Reserve
+`vibecell_update_context` for the slower-moving fields (user_wants,
+open_questions, known_issues, blocked_by) — those don't shift every turn.
 
 ### Rule 2 — Architectural choice = `vibecell_decision` (not optional)
 Anytime the conversation produces a non-trivial choice that future-you (or
@@ -117,7 +121,7 @@ below SHOULD trigger the matching tool call without prompting.
 
 | What just happened in conversation | Tool to call | Field touched |
 |---|---|---|
-| Conversation pivots to a new piece of work | `vibecell_update_context` | `current_focus` + `next_step` |
+| Conversation pivots to a new piece of work | **`vibecell_set_focus`** | `current_focus` + `next_step` |
 | User reveals a meta-goal / workflow preference | `vibecell_update_context` | `user_wants` |
 | User asks a question we can't answer yet | `vibecell_update_context` | `open_questions` (add) |
 | Open question gets resolved | `vibecell_update_context` | `open_questions` (remove) |

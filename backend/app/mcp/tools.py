@@ -56,6 +56,13 @@ class UpdateContextArgs(BaseModel):
     blocked_by: str | None = None
 
 
+class SetFocusArgs(BaseModel):
+    """Quick-update for the two fastest-moving context fields."""
+    current_focus: str = Field(..., min_length=1, max_length=500)
+    next_step: str | None = Field(default=None, max_length=500)
+    slug: str | None = None
+
+
 class DecisionArgs(BaseModel):
     title: str
     decision: str
@@ -294,7 +301,16 @@ TOOLS: list[Tool] = [
     # Write
     Tool("vibecell_switch", "Switch the active project within this workspace.", SlugRequired, w.handle_switch),
     Tool("vibecell_log_session", "Log a coding session.", LogSessionArgs, w.handle_log_session),
-    Tool("vibecell_update_context", "Patch the active project's context fields.", UpdateContextArgs, w.handle_update_context),
+    Tool("vibecell_update_context", "Patch the active project's context fields. Use this for less-frequent updates (user_wants, open_questions, known_issues, blocked_by). For the high-frequency current_focus + next_step pair, prefer vibecell_set_focus.", UpdateContextArgs, w.handle_update_context),
+    Tool(
+        "vibecell_set_focus",
+        "Set/refresh current_focus + (optional) next_step in ONE call. This is "
+        "the highest-frequency update tool — fire it every time the conversation "
+        "pivots to a new piece of work, BEFORE you start that work. current_focus "
+        "= 1 sentence, present tense, what's happening RIGHT NOW. next_step = "
+        "concrete-action that comes after the current move.",
+        SetFocusArgs, w.handle_set_focus,
+    ),
     Tool("vibecell_decision", "Record an ADR-lite decision on the active project.", DecisionArgs, w.handle_decision),
     Tool("vibecell_idea", "Capture an idea. Workspace inbox if project omitted.", IdeaArgs, w.handle_idea),
     Tool("vibecell_note_append", "Append a markdown block to the active project's notes.", NoteAppendArgs, w.handle_note_append),

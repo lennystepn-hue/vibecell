@@ -149,6 +149,28 @@ async def handle_update_context(args, ctx: MCPContext) -> str:
     })
 
 
+async def handle_set_focus(args, ctx: MCPContext) -> str:
+    """One-shot focus + next_step update — the daily-driver context tool.
+
+    Designed for friction-free use: 1-2 args, dedup-safe (idempotent), and
+    deliberately narrow so Claude doesn't have to think about which fields
+    to pass. SKILL.md tells Claude to fire this on every topic shift.
+    """
+    from app.services import project_children as children_svc
+
+    project = await _resolve_project(args, ctx)
+    fields: dict[str, str] = {"current_focus": args.current_focus.strip()}
+    next_step = (getattr(args, "next_step", None) or "").strip()
+    if next_step:
+        fields["next_step"] = next_step
+    ctx_row = await children_svc.upsert_context(ctx.db, project, **fields)
+    return json.dumps({
+        "project_slug": project.slug,
+        "current_focus": ctx_row.current_focus,
+        "next_step": ctx_row.next_step,
+    })
+
+
 async def handle_decision(args, ctx: MCPContext) -> str:
     """Record an ADR-lite decision on the active project."""
     from app.services.decision_svc import create_decision
