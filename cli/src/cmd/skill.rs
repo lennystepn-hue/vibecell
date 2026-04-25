@@ -75,7 +75,9 @@ async fn print_skill() -> Result<()> {
 pub(crate) async fn ensure_installed_quietly() -> String {
     let remote = match fetch_skill(&base_url()).await {
         Ok(s) => s,
-        Err(e) => return format!("warn: SKILL fetch failed ({e}) — run `hangar skill install` manually"),
+        Err(e) => {
+            return format!("warn: SKILL fetch failed ({e}) — run `hangar skill install` manually")
+        }
     };
     let dest = match claude_skill_path() {
         Ok(p) => p,
@@ -83,9 +85,7 @@ pub(crate) async fn ensure_installed_quietly() -> String {
     };
     if dest.exists() {
         match std::fs::read_to_string(&dest) {
-            Ok(existing) if existing == remote => {
-                "SKILL.md up-to-date".to_string()
-            }
+            Ok(existing) if existing == remote => "SKILL.md up-to-date".to_string(),
             Ok(existing) => {
                 if let Some(parent) = dest.parent() {
                     let _ = std::fs::create_dir_all(parent);
@@ -108,7 +108,6 @@ pub(crate) async fn ensure_installed_quietly() -> String {
         format!("SKILL.md installed at {}", dest.display())
     }
 }
-
 
 async fn install_skill(force: bool) -> Result<()> {
     let remote = fetch_skill(&base_url()).await?;

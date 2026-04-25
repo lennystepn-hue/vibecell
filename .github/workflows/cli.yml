@@ -26,12 +26,15 @@ jobs:
           - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
             bin: hangar
+            alias: vibecell
           - os: macos-latest
             target: aarch64-apple-darwin
             bin: hangar
+            alias: vibecell
           - os: windows-latest
             target: x86_64-pc-windows-msvc
             bin: hangar.exe
+            alias: vibecell.exe
     defaults:
       run:
         working-directory: cli
@@ -52,12 +55,21 @@ jobs:
         run: cargo test --target ${{ matrix.target }}
       - name: build release
         run: cargo build --release --target ${{ matrix.target }}
-      - name: smoke test
+      - name: smoke test (hangar)
         shell: bash
         run: ./target/${{ matrix.target }}/release/${{ matrix.bin }} --version
-      - name: upload artifact
+      - name: smoke test (vibecell)
+        shell: bash
+        run: ./target/${{ matrix.target }}/release/${{ matrix.alias }} --version
+      - name: upload hangar artifact
         uses: actions/upload-artifact@v4
         with:
           name: hangar-${{ matrix.target }}
           path: cli/target/${{ matrix.target }}/release/${{ matrix.bin }}
+          retention-days: 7
+      - name: upload vibecell artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: vibecell-${{ matrix.target }}
+          path: cli/target/${{ matrix.target }}/release/${{ matrix.alias }}
           retention-days: 7

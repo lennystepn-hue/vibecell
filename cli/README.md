@@ -1,8 +1,21 @@
 # Vibecell CLI
 
-The `hangar` binary — CLI + daemon + MCP server for Claude Code integration.
-(Binary name stays `hangar` as an internal codename — renaming would
-break every user's existing shell history, keychain entry, and config dir.)
+CLI + daemon + MCP server for Claude Code integration. Ships as **two
+identically-behaving binaries**: `vibecell` (the user-facing brand) and
+`hangar` (the internal codename). Use whichever you prefer — both run
+the same code, both read/write the same `~/.hangar/config.toml`.
+
+```bash
+vibecell pair          # OAuth-pair against vibecell.dev
+vibecell skill update  # refresh the SKILL.md
+vibecell status        # show pairing + active workspace
+```
+
+`hangar pair`, `hangar skill update`, etc. continue to work unchanged.
+
+(Internal identifiers — env vars `HANGAR_*`, config dir `~/.hangar/`,
+keychain service name, Cargo package name — intentionally stay `hangar`
+so existing self-hosters and shell history aren't churned.)
 
 ## Dev
 
