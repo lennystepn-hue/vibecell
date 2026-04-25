@@ -2,7 +2,7 @@
 seeded 'pro' plan with status='trialing'."""
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import pytest
 from sqlalchemy import select
@@ -43,7 +43,7 @@ async def test_signup_creates_trialing_subscription(session: AsyncSession) -> No
     assert sub.status == "trialing"
     assert sub.trial_ends_at is not None
     # Trial ends ~7 days from now
-    delta = sub.trial_ends_at - datetime.now(timezone.utc)
+    delta = sub.trial_ends_at - datetime.now(UTC)
     assert timedelta(days=6, hours=23) < delta < timedelta(days=7, hours=1)
     assert sub.stripe_customer_id is None  # not yet through Checkout
     assert sub.cancel_at_period_end is False
