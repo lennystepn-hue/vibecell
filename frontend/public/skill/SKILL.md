@@ -192,6 +192,53 @@ three in `stack`. If they say "will live at foo.com" set `environments: [{kind:
 "prod", url: "https://foo.com"}]`. The tool is idempotent via the same dedup writer
 as GitHub import, so over-specifying is safe.
 
+## Idea-stage projects (the fuzzy phase before code)
+
+Not every "I'm thinking about X" deserves a project row immediately. Triage:
+
+### A — Just thinking out loud (no project yet)
+If the user says things like "what if I built a thing that…", "I had an idea
+about…", "thinking about Y", and there's NO concrete commitment ("let's build
+it", "set it up", "start a project"), capture it as a workspace idea instead:
+
+```
+vibecell_idea({ body: "<one-line description of the idea>", project: null })
+```
+
+This puts it in the workspace inbox, not as a project. Lower-cost, doesn't
+clutter the dashboard with half-formed thoughts. They can triage to a project
+later via the UI or by saying "let's actually build the X idea".
+
+### B — Idea ripe enough to commit (concrete enough to name)
+If they want to commit (asked "let's build", gave a name, sketched a stack)
+→ `vibecell_create_project` with `status: "idea"` (default). Then:
+
+1. Use `vibecell_set_focus` with current_focus = "exploring the concept" and
+   next_step = first concrete unknown to resolve
+2. Use `vibecell_add_open_question` for every question the idea raises that
+   isn't resolved yet (target audience? pricing? key UX moment?)
+3. Use `vibecell_set_user_wants` if they articulate a meta-goal
+   ("I want to ship this in 2 weeks", "must be self-hostable")
+4. **Don't push for code yet.** Idea-stage = thinking out loud + capturing,
+   not implementing. Use `vibecell_decision` when a real architectural
+   choice is made (stack pick, domain register, free vs paid).
+
+### C — Promoting from idea → building
+When the user signals execution start ("ok let's actually start building",
+"let's scaffold it", "I'm ready to code", they ask for a TODO list),
+promote the project:
+
+```
+vibecell_status({ status: "building" })
+vibecell_todo_batch_add({ batch: "v0-mvp", titles: [...] })
+```
+
+Then continue with the normal Auto-TODO flow + per-commit logging.
+
+The point: ideas can live as captured-text (workspace inbox) OR as full
+projects with `status=idea`. Pick based on commitment level. Promote on
+execution intent.
+
 ## Auto-TODO flow (plan → work → tick)
 **When the user asks for something involving 3+ distinct steps** (a feature,
 a refactor, a migration, a launch push), do NOT silently start coding. Plan
