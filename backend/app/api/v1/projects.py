@@ -94,7 +94,15 @@ async def list_(
     return ProjectListPage(items=out_items, next_cursor=next_cursor)
 
 
-@router.post("", response_model=ProjectOut, status_code=status.HTTP_201_CREATED)
+from app.dependencies.plan_gate import require_under_project_limit
+
+
+@router.post(
+    "",
+    response_model=ProjectOut,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(require_under_project_limit)],
+)
 async def create(
     body: ProjectCreate,
     auth: Annotated[AuthContext, Depends(require_auth)],
