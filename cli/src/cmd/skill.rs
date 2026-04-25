@@ -67,6 +67,49 @@ async fn print_skill() -> Result<()> {
     Ok(())
 }
 
+/// Install or refresh the SKILL.md without producing user-facing prompts.
+/// Used by `hangar pair` to auto-install on first connect. Returns a short
+/// status line ("installed", "up-to-date", "updated <delta>") that the
+/// caller can print however they like. Never fails the parent flow — any
+/// error is downgraded to a soft warning.
+pub(crate) async fn ensure_installed_quietly() -> String {
+    let remote = match fetch_skill(&base_url()).await {
+        Ok(s) => s,
+        Err(e) => return format!("warn: SKILL fetch failed ({e}) — run `hangar skill install` manually"),
+    };
+    let dest = match claude_skill_path() {
+        Ok(p) => p,
+        Err(e) => return format!("warn: no home dir ({e}) — skipping SKILL install"),
+    };
+    if dest.exists() {
+        match std::fs::read_to_string(&dest) {
+            Ok(existing) if existing == remote => {
+                "SKILL.md up-to-date".to_string()
+            }
+            Ok(existing) => {
+                if let Some(parent) = dest.parent() {
+                    let _ = std::fs::create_dir_all(parent);
+                }
+                if let Err(e) = std::fs::write(&dest, &remote) {
+                    return format!("warn: SKILL update failed ({e})");
+                }
+                let delta = remote.len() as i64 - existing.len() as i64;
+                format!("SKILL.md updated ({delta:+} bytes)")
+            }
+            Err(e) => format!("warn: read existing SKILL failed ({e})"),
+        }
+    } else {
+        if let Some(parent) = dest.parent() {
+            let _ = std::fs::create_dir_all(parent);
+        }
+        if let Err(e) = std::fs::write(&dest, &remote) {
+            return format!("warn: SKILL install failed ({e})");
+        }
+        format!("SKILL.md installed at {}", dest.display())
+    }
+}
+
+
 async fn install_skill(force: bool) -> Result<()> {
     let remote = fetch_skill(&base_url()).await?;
     let dest = claude_skill_path()?;

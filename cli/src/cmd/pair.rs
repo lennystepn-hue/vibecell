@@ -2,7 +2,7 @@ use anyhow::{Context, Result};
 use std::time::Duration;
 use tokio::time::sleep;
 
-use crate::{cloud, config, keychain};
+use crate::{cloud, cmd::skill, config, keychain};
 
 pub async fn run() -> Result<()> {
     let base_url = config::default_base_url();
@@ -82,6 +82,14 @@ pub async fn run() -> Result<()> {
                         me.user.email, me.active_workspace.slug
                     );
                 }
+
+                // Auto-install / update the SKILL.md so Claude Code picks up
+                // the latest playbook on the next session start. Soft-fails:
+                // skill install errors are surfaced as warnings, never block
+                // a successful pair.
+                let status = skill::ensure_installed_quietly().await;
+                println!("  {status}");
+
                 return Ok(());
             }
         }
