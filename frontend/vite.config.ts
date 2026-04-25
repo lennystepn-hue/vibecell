@@ -32,5 +32,9 @@ export default defineConfig({
   test: {
     environment: "jsdom",
     globals: true,
+    // e2e/ contains Playwright specs (run via `pnpm e2e`, not vitest).
+    // Without this exclude vitest picks them up + crashes on Playwright's
+    // "test() not expected here" guard.
+    exclude: ["**/node_modules/**", "**/dist/**", "**/e2e/**"],
   },
 });

@@ -15,7 +15,7 @@ Shape on disk:
 from __future__ import annotations
 
 import hashlib
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from typing import Any
 
@@ -70,18 +70,10 @@ class DriftResult:
 
     never_scanned: bool = False
     drifted: bool = False
-    changed_files: list[str] = None  # paths present in both, hash differs
-    new_files: list[str] = None      # paths present in fresh only
-    removed_files: list[str] = None  # paths present in stored only
+    changed_files: list[str] = field(default_factory=list)  # paths present in both, hash differs
+    new_files: list[str] = field(default_factory=list)      # paths present in fresh only
+    removed_files: list[str] = field(default_factory=list)  # paths present in stored only
     last_scanned: str | None = None
-
-    def __post_init__(self) -> None:
-        if self.changed_files is None:
-            self.changed_files = []
-        if self.new_files is None:
-            self.new_files = []
-        if self.removed_files is None:
-            self.removed_files = []
 
 
 def compute_drift(

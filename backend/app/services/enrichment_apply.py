@@ -176,8 +176,8 @@ async def apply_enrichment_to_project(
         )).scalars().all()
     }
     for env in (enriched.environments or [])[:3]:
-        kind = env.get("kind")
-        url = env.get("url")
+        kind = (env.get("kind") or "").strip()
+        url = (env.get("url") or "").strip()
         if kind not in {"local", "staging", "prod"} or not url:
             continue
         if kind in existing_env_kinds:

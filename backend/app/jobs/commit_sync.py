@@ -19,10 +19,12 @@ from __future__ import annotations
 import logging
 import re
 from datetime import UTC, datetime, timedelta
+from typing import Any
 
 import httpx
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from sqlalchemy import func, select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db import session_scope
 from app.core.ulid import new_ulid
@@ -45,7 +47,7 @@ def _parse_owner_repo(url: str) -> tuple[str, str] | None:
     return m.group(1), m.group(2)
 
 
-async def _existing_shas_for_project(db, project_id: str) -> set[str]:
+async def _existing_shas_for_project(db: AsyncSession, project_id: str) -> set[str]:
     """Return every commit SHA ever referenced by a session on this project.
 
     Uses Postgres JSONB array containment by flattening to a set. Cheap for
@@ -72,9 +74,9 @@ async def _fetch_recent_commits(
     repo: str,
     since_iso: str,
     max_pages: int = 3,
-) -> list[dict]:
+) -> list[dict[str, Any]]:
     """Pull commits newer than `since_iso` from GitHub. Caps at 3 pages x 100."""
-    out: list[dict] = []
+    out: list[dict[str, Any]] = []
     async with httpx.AsyncClient(timeout=20) as client:
         for page in range(1, max_pages + 1):
             try:
@@ -91,7 +93,7 @@ async def _fetch_recent_commits(
                 break
             if r.status_code != 200:
                 break
-            batch = r.json()
+            batch: list[dict[str, Any]] = r.json()
             if not batch:
                 break
             out.extend(batch)
@@ -100,7 +102,7 @@ async def _fetch_recent_commits(
     return out
 
 
-async def _sync_project(db, workspace_id: str, project: Project, token: str) -> int:
+async def _sync_project(db: AsyncSession, workspace_id: str, project: Project, token: str) -> int:
     """Sync commits for one project. Returns the number of sessions inserted."""
     # Resolve owner/repo from the first github-kind link
     gh_link = (await db.execute(
@@ -188,7 +190,7 @@ async def _sync_project(db, workspace_id: str, project: Project, token: str) -> 
     return inserted
 
 
-async def _fetch_tags(token: str, owner: str, repo: str) -> list[dict]:
+async def _fetch_tags(token: str, owner: str, repo: str) -> list[dict[str, Any]]:
     """Pull the 100 most recent tags from GitHub."""
     try:
         async with httpx.AsyncClient(timeout=15) as client:
@@ -202,14 +204,14 @@ async def _fetch_tags(token: str, owner: str, repo: str) -> list[dict]:
                 params={"per_page": 100},
             )
         if r.status_code == 200:
-            return r.json()
+            return r.json()  # type: ignore[no-any-return]
     except Exception:
         return []
     return []
 
 
 async def _sync_tags_for_project(
-    db, workspace_id: str, project: Project, token: str, owner: str, repo: str,
+    db: AsyncSession, workspace_id: str, project: Project, token: str, owner: str, repo: str,
 ) -> int:
     """For each version-style tag (v1.2.3) not yet in `ships`, insert a Ship
     row with version=<tag>, summary derived from the pointed commit subject.

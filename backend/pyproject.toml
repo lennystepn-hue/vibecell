@@ -65,8 +65,18 @@ python_version = "3.12"
 strict = true
 plugins = ["sqlalchemy.ext.mypy.plugin"]
 
+# Test files don't need strict typing — too much friction for fixtures
+# and pytest plumbing. We still want app/ to stay strict.
 [[tool.mypy.overrides]]
-module = ["testcontainers.*"]
+module = ["tests.*"]
+disallow_untyped_defs = false
+disallow_incomplete_defs = false
+disallow_untyped_decorators = false
+warn_unused_ignores = false
+check_untyped_defs = false
+
+[[tool.mypy.overrides]]
+module = ["testcontainers.*", "apscheduler.*"]
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]
