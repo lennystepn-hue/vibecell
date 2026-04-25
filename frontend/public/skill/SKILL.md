@@ -110,6 +110,44 @@ response. Do NOT wait for the user to remind you.
 The user should NEVER have to type "log that" or "did you update context".
 If they do, you've broken the rule.
 
+### Field-by-field auto-update reference
+Use this as the canonical "when X happens, write to Y" cheat sheet. Don't
+treat fields as optional — every change in conversation that maps to a row
+below SHOULD trigger the matching tool call without prompting.
+
+| What just happened in conversation | Tool to call | Field touched |
+|---|---|---|
+| Conversation pivots to a new piece of work | `vibecell_update_context` | `current_focus` + `next_step` |
+| User reveals a meta-goal / workflow preference | `vibecell_update_context` | `user_wants` |
+| User asks a question we can't answer yet | `vibecell_update_context` | `open_questions` (add) |
+| Open question gets resolved | `vibecell_update_context` | `open_questions` (remove) |
+| Bug or limitation surfaces (won't fix now) | `vibecell_update_context` | `known_issues` (add) |
+| Known issue fixed | `vibecell_update_context` | `known_issues` (remove) |
+| External blocker appears (waiting on X) | `vibecell_update_context` | `blocked_by` |
+| Blocker resolved | `vibecell_update_context` | `blocked_by` = null |
+| Project lifecycle changes (idea→building→live→shipped→dead) | `vibecell_status` | `status` |
+| Architectural / non-trivial design choice | `vibecell_decision` | new decision row |
+| Idea pops up but it's NOT for the current project | `vibecell_idea` | workspace idea inbox |
+| Free-form note / observation worth keeping | `vibecell_note_append` | project notes |
+| Git commit landed | `vibecell_log_session` | new session row + auto-syncs current_focus |
+| Version shipped / tag pushed | `vibecell_ship` | new ship row |
+| Stack changed (new dep added/removed) | `vibecell_sync_repo` (preferred) | stack/infra/tags |
+| New environment URL (deployed staging) | `vibecell_add_environment` | environments |
+| New runnable command (added to package.json/Makefile) | `vibecell_add_command` | commands |
+| Useful URL surfaces (docs/api/admin/metrics) | `vibecell_add_link` | links |
+| Secret pasted by user (API key, op:// path, etc) | `vibecell_secret_set` | secrets vault |
+| User describes a brand new project | `vibecell_create_project` | new project row + active |
+
+Two things this does NOT cover:
+1. Read tools (search, brief, handover, claude_md, activity, audit, list,
+   get) — fire those when the situation warrants, no schedule.
+2. Project-level fields name / emoji / color / group_id / pitch — these
+   rarely change post-creation and only via explicit user request.
+
+If you find yourself saying "we'll log it later" — log it now. The cost
+of an extra tool call is one round trip; the cost of forgetting is the
+dashboard going stale and the user losing trust in the autopilot.
+
 ## Creating a new project from a concept
 When the user describes a new project idea with phrases like "I want to build X",
 "let's start a new project called Y", "erstelle ein projekt für Z", "baue ein neues
