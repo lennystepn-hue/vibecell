@@ -254,3 +254,13 @@ async def _apply_event(session: AsyncSession, event: dict[str, Any]) -> None:
         sub.stripe_subscription_id = None
     elif event_type == "invoice.payment_failed":
         sub.status = "past_due"
+        # Notify the user. Best-effort — never fail the webhook handler.
+        user = await session.get(User, sub.user_id)
+        if user is not None:
+            from app.core.config import get_settings as _gs
+            from app.services.mailer import send_payment_failed_email
+            try:
+                billing_url = f"{_gs().base_url.rstrip('/')}/settings/billing"
+                await send_payment_failed_email(to=user.email, billing_url=billing_url)
+            except Exception as e:  # noqa: BLE001
+                logger.warning("payment_failed email send blew up: %s", e)
