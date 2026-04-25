@@ -29,6 +29,18 @@ const loading = ref(false);
 const adding = ref(false);
 const newLabel = ref("");
 const newValue = ref("");
+const error = ref<string | null>(null);
+
+/** Map a free-text value to the backend's `kind` enum.
+ *  Keep this in sync with backend/app/schemas/secret.py::_ALLOWED_KINDS. */
+function detectKind(value: string): string {
+  if (value.startsWith("op://")) return "op";
+  if (value.startsWith("bw://")) return "bw";
+  if (value.startsWith("ssh-agent://")) return "ssh_agent";
+  // Bare $ENV or env://NAME — both treated as env-path lookup
+  if (value.startsWith("env://") || /^\$[A-Z_][A-Z0-9_]*$/.test(value)) return "env_path";
+  return "inline_encrypted";
+}
 
 async function load() {
   const slug = props.project.slug;
@@ -69,18 +81,37 @@ function kindBadge(k: string): { label: string; color: string; title: string } {
 async function save() {
   if (!newLabel.value || !newValue.value) return;
   adding.value = true;
+  error.value = null;
   try {
     const r = await fetch(`/api/v1/projects/${props.project.slug}/secrets`, {
       method: "POST",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ label: newLabel.value, value: newValue.value }),
+      body: JSON.stringify({
+        label: newLabel.value,
+        kind: detectKind(newValue.value),
+        reference: newValue.value,
+      }),
     });
     if (r.ok) {
       newLabel.value = "";
       newValue.value = "";
       await load();
+    } else {
+      // Surface backend errors instead of silently swallowing them.
+      let detail = `add failed (HTTP ${r.status})`;
+      try {
+        const body = await r.json();
+        if (body?.detail) {
+          detail = typeof body.detail === "string"
+            ? body.detail
+            : JSON.stringify(body.detail);
+        }
+      } catch { /* non-JSON response; keep generic message */ }
+      error.value = detail;
     }
+  } catch (e) {
+    error.value = `network error: ${e instanceof Error ? e.message : String(e)}`;
   } finally {
     adding.value = false;
   }
@@ -151,6 +182,11 @@ async function remove(label: string) {
             {{ adding ? "…" : "add" }}
           </PrimaryButton>
         </div>
+        <p
+          v-if="error"
+          class="text-[11px] text-signal-red mt-2 font-mono break-words"
+          role="alert"
+        >{{ error }}</p>
         <p class="text-[10px] text-fg-subtle mt-2 font-mono">
           Auto-detects kind: op:// → 1Password · bw:// → Bitwarden · ssh-agent:// → SSH · otherwise → AES-256-GCM encrypted at rest
         </p>
