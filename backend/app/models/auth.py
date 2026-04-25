@@ -16,6 +16,12 @@ class User(Base, TimestampMixin):
     name: Mapped[str | None] = mapped_column(String(200))
     handle: Mapped[str | None] = mapped_column(String(50), unique=True)
     passkey_credentials: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
+    # Set on first successful magic-link verify. Magic-link auth IS email
+    # verification (the user demonstrated control of the address by clicking
+    # the link). This column makes that fact queryable by downstream code
+    # (Stripe customer creation, support tooling, account-change flows).
+    # See docs/superpowers/decisions/2026-04-25-email-verification-already-implicit.md
+    email_verified_at: Mapped[datetime | None] = mapped_column(TIMESTAMP(timezone=True))
 
 
 class Workspace(Base, TimestampMixin):

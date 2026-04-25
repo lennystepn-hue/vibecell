@@ -123,6 +123,13 @@ async def verify_magic_link(session: AsyncSession, *, raw_token: str) -> str:
 
     # Mark token consumed
     token.consumed_at = datetime.now(UTC)
+
+    # Magic-link IS email verification: clicking the link proves mailbox
+    # control. Record that fact on first verify (idempotent — only writes
+    # the first time to preserve the original verification timestamp).
+    if user.email_verified_at is None:
+        user.email_verified_at = datetime.now(UTC)
+
     await session.flush()
 
     # Create session
