@@ -46,6 +46,7 @@ __all__ = [
     "Base",
     "CliDevice",
     "Decision",
+    "EmailChangeToken",
     "Idea",
     "Integration",
     "Launch",

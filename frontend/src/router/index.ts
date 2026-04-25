@@ -45,6 +45,14 @@ const router = createRouter({
       meta: { anonymous: true },
     },
     {
+      path: "/auth/change-email/:token",
+      name: "auth-change-email-confirm",
+      component: () => import("@/pages/AuthChangeEmailConfirm.vue"),
+      // Anonymous-allowed: user might click the link in a different browser
+      // than they're signed in on; the token itself is the proof.
+      meta: { anonymous: true },
+    },
+    {
       path: "/p",
       name: "projects-index",
       component: () => import("@/pages/ProjectsIndex.vue"),

@@ -19,6 +19,10 @@ const workspaceName = ref("");
 const savingWs = ref(false);
 const loggingOut = ref(false);
 
+const newEmail = ref("");
+const requestingChange = ref(false);
+const changeSent = ref(false);
+
 onMounted(async () => {
   if (!auth.isAuthed) await auth.refresh();
   workspaceName.value = auth.activeWorkspace?.name ?? "";
@@ -51,6 +55,32 @@ async function saveWorkspace() {
   toast.push("Workspace updated", "success");
 }
 
+async function requestEmailChange() {
+  if (!newEmail.value || newEmail.value === auth.user?.email) return;
+  requestingChange.value = true;
+  changeSent.value = false;
+  try {
+    const r = await fetch("/api/v1/me/change-email", {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ new_email: newEmail.value.trim().toLowerCase() }),
+    });
+    // Backend always returns 202 (no email-enumeration), so we always show
+    // the same "we sent you a link" state — even if the address is taken.
+    // The user finds out by either receiving or not receiving the mail.
+    if (r.ok || r.status === 202) {
+      changeSent.value = true;
+    } else {
+      toast.push("Couldn't request email change", "error");
+    }
+  } catch (e) {
+    toast.push(`Network error: ${e instanceof Error ? e.message : String(e)}`, "error");
+  } finally {
+    requestingChange.value = false;
+  }
+}
+
 async function logout() {
   loggingOut.value = true;
   await auth.logout();
@@ -80,6 +110,41 @@ async function logout() {
               <span class="mono-label">user id</span>
               <span class="font-mono text-small text-fg-subtle">{{ auth.user?.id ?? "—" }}</span>
             </div>
+          </div>
+        </SettingsSection>
+
+        <SettingsSection
+          title="Change email"
+          subtitle="Move your account to a different address. We'll send a confirmation link to the new email."
+        >
+          <div class="space-y-4">
+            <p
+              v-if="changeSent"
+              class="text-small text-fg-body p-3 border rounded"
+              :style="{ background: 'var(--signal-green-bg)', borderColor: 'var(--signal-green)' }"
+            >
+              Sent — click the link in the new mailbox to finish the switch.
+              The link expires in 24 hours.
+            </p>
+            <TextField
+              v-model="newEmail"
+              label="new email"
+              type="email"
+              placeholder="you@new-address.com"
+              :disabled="requestingChange"
+            />
+            <div class="flex justify-end">
+              <PrimaryButton
+                :disabled="!newEmail || newEmail === auth.user?.email || requestingChange"
+                :loading="requestingChange"
+                @click="requestEmailChange"
+              >
+                Send confirmation link
+              </PrimaryButton>
+            </div>
+            <p class="mono-label opacity-50">
+              // your current sessions stay signed in until the new address confirms
+            </p>
           </div>
         </SettingsSection>
 
