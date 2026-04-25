@@ -1,8 +1,9 @@
 """Integration tests for POST /oauth/register (RFC 7591 Dynamic Client Registration).
 
-Note: Rate-limit tests omitted for Phase 1 — will add once a rate-limit helper
-is wired into the endpoint (Spec X).  The rate_limit.py module already exists
-(app/core/rate_limit.py) but the register endpoint does not call it yet.
+Rate-limit is wired in `app/oauth/server.py::register` (capacity=10, refill=10/min
+per source IP). The rate-limit test below explicitly drains the bucket via Redis
+before the run and cleans up after, so it doesn't pollute sibling tests that hit
+the same endpoint with the default ASGITransport client IP.
 """
 from __future__ import annotations
 
@@ -79,9 +80,20 @@ async def test_register_accepts_https(session: AsyncSession) -> None:
     assert resp.status_code == 201
 
 
-@pytest.mark.skip(reason="rate-limit not wired into /oauth/register yet (see module docstring); enable once Spec X lands")
 async def test_register_rate_limit(session: AsyncSession) -> None:
-    """11th request from the same IP within the burst window should 429."""
+    """11th request from the same IP within the burst window should 429.
+
+    The endpoint uses `app.core.rate_limit.check_and_consume` keyed on
+    `oauth:register:{client_ip}`. ASGITransport defaults the client IP to
+    "127.0.0.1", so we reset that bucket before draining it and clean up
+    after to keep the test idempotent across runs and isolated from siblings.
+    """
+    from app.core.redis import get_redis
+
+    redis = await get_redis()
+    bucket_key = "oauth:register:127.0.0.1"
+    await redis.delete(bucket_key)
+
     override_db(session)
     try:
         async with AsyncClient(
@@ -95,7 +107,7 @@ async def test_register_rate_limit(session: AsyncSession) -> None:
                         "redirect_uris": ["http://127.0.0.1:1/cb"],
                     },
                 )
-                assert resp.status_code == 201
+                assert resp.status_code == 201, f"req {i} failed: {resp.text}"
             resp = await client.post(
                 "/oauth/register",
                 json={
@@ -104,5 +116,8 @@ async def test_register_rate_limit(session: AsyncSession) -> None:
                 },
             )
             assert resp.status_code == 429
+            assert resp.json()["detail"]["error"] == "rate_limited"
+            assert resp.headers.get("Retry-After") is not None
     finally:
         clear_db_override()
+        await redis.delete(bucket_key)
