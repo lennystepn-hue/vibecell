@@ -68,6 +68,48 @@ in one `manifests` dict — one tool call, not one per file.
 - When user says "capture this idea: ..." -> vibecell_idea(text).
 - When user asks "what's on fire" -> vibecell_health() across projects.
 
+## NON-NEGOTIABLE auto-logging rules (the heart of Vibecell)
+The whole point of this skill is that the dashboard stays in sync with what
+you actually did, **without the user ever having to remind you**. If they have
+to ask "did you log that?", the product has failed. These rules fire even
+when you're deep in flow:
+
+### Rule 1 — Topic shift = `vibecell_update_context` (not optional)
+When the conversation pivots to a meaningfully new piece of work, BEFORE you
+start that work call `vibecell_update_context` with a fresh `current_focus` +
+`next_step`. Examples of "topic shift":
+  - User asks for a new feature ("now let's add Stripe webhooks")
+  - User reports a bug to investigate ("the dropdown doesn't update")
+  - You finish a multi-step task and surface the result
+  - User says "let's switch to X for a bit"
+
+`current_focus` should be 1 sentence, present-tense, what's happening RIGHT
+NOW. `next_step` is the immediate concrete-action that comes after the
+current move, NOT a 5-step plan.
+
+### Rule 2 — Architectural choice = `vibecell_decision` (not optional)
+Anytime the conversation produces a non-trivial choice that future-you (or
+another maintainer) would want to find — an API shape, a library swap, a
+design trade-off, a data model decision, a security stance — record it with
+`vibecell_decision` with title / decision / context / consequences /
+reconsider_if. The bar isn't "huge architectural change", it's "would I
+search for this in 3 months when I forget why I did it?". Yes? Log it.
+
+### Rule 3 — git commit = `vibecell_log_session` (already covered above
+under "Auto-log after every git commit", but worth repeating). Never wait
+for end-of-session to flush — log per commit, summary = first commit-
+message line.
+
+### Rule 4 — End of every assistant turn that did work: audit yourself
+Before you respond to the user, scan what you just did in this turn. Ask
+yourself: did I just (a) commit code, (b) make an architectural choice, OR
+(c) shift the topic? If yes to ANY: the matching tool call HAS to have run
+already in the same turn. If you forgot — call it now, then send your
+response. Do NOT wait for the user to remind you.
+
+The user should NEVER have to type "log that" or "did you update context".
+If they do, you've broken the rule.
+
 ## Creating a new project from a concept
 When the user describes a new project idea with phrases like "I want to build X",
 "let's start a new project called Y", "erstelle ein projekt für Z", "baue ein neues
