@@ -189,6 +189,29 @@ async def delete_account(
 
 `purge` cascades through all `ondelete=CASCADE` FKs + nukes the keychain entry + (Sprint B) cancels any active Stripe subscription.
 
+> **2026-04-25 audit finding — `Workspace.owner_id` is `ondelete="RESTRICT"`.**
+> So a naïve `DELETE FROM users WHERE id=?` will be REJECTED by Postgres
+> as long as the user owns any workspace. This is correct safety
+> behaviour (don't drop a workspace someone else might be a member of)
+> but means the purge service has to be smarter than "DELETE users":
+>
+> 1. Walk every workspace where `owner_id == user.id`.
+> 2. For each: if it has OTHER members (`workspace_members.user_id !=
+>    user.id`), reject the whole purge with a 409 Conflict and an
+>    actionable message:
+>    `"You own workspace '<slug>' which has other members. Transfer
+>     ownership or remove members first."`
+> 3. If it has no other members: `DELETE FROM workspaces WHERE id=?`
+>    — that cascades through `projects` (CASCADE), which cascades
+>    through `project_*` tables, sessions, decisions, etc.
+> 4. After all owned workspaces are gone, `DELETE FROM users WHERE id=?`
+>    cascades through workspace_members / cli_devices / email_change_tokens
+>    / magic_link_tokens-by-email (manually deleted).
+>
+> Future: a Workspace-Transfer flow (Sprint 7?) lets the user reassign
+> ownership before deletion. For Sprint A, the rejection-with-message
+> is the safe default.
+
 - [ ] **Step 3: Frontend `/settings/account` page**
 
 Two buttons:
