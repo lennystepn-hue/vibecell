@@ -11,6 +11,7 @@ async def test_revoke_access_token_blacklists_jti(client, issued_token_pair) -> 
 
     from app.oauth.tokens import JTIBlacklist, verify_access_token
     claims = verify_access_token(access)
+    assert claims.jti is not None
     assert await JTIBlacklist().is_revoked(claims.jti)
 
 

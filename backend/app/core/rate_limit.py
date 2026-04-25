@@ -74,7 +74,7 @@ async def check_and_consume(
     # Key expires 2x the time to fully refill, so stale buckets don't linger.
     ttl_ms = int(max(60_000, (capacity / max(refill_rate, 0.001)) * 2_000))
 
-    result = await redis.eval(  # type: ignore[no-untyped-call]
+    result = await redis.eval(
         _LUA_TOKEN_BUCKET,
         1,
         key,

@@ -18,7 +18,7 @@ EXPECTED_TABLES = {
 
 async def test_all_20_tables_exist(engine: AsyncEngine) -> None:
     async with engine.connect() as conn:
-        def _tables(sync_conn):  # type: ignore[no-untyped-def]
+        def _tables(sync_conn):
             return set(inspect(sync_conn).get_table_names())
 
         tables = await conn.run_sync(_tables)
@@ -29,7 +29,7 @@ async def test_all_20_tables_exist(engine: AsyncEngine) -> None:
 
 async def test_projects_has_unique_workspace_slug(engine: AsyncEngine) -> None:
     async with engine.connect() as conn:
-        def _constraints(sync_conn):  # type: ignore[no-untyped-def]
+        def _constraints(sync_conn):
             return inspect(sync_conn).get_unique_constraints("projects")
 
         uqs = await conn.run_sync(_constraints)
