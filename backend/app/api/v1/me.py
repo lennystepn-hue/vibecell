@@ -3,12 +3,18 @@
 Also hosts the email-change flow (Spec-6 Sprint A2):
   POST /me/change-email           — issue token, mail to NEW address (auth)
   POST /me/change-email/confirm   — verify token, swap user.email
+
+And the GDPR data-export + account-delete (Spec-6 Sprint A3):
+  GET  /me/export    — JSON dump of every row owned by the user
+  DELETE /me         — purge user + solely-owned workspaces (refuses if
+                       any owned workspace has co-members)
 """
 from __future__ import annotations
 
+import json
 from typing import Annotated
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Cookie, Depends, Response
 from pydantic import BaseModel, EmailStr
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -16,10 +22,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import get_settings
 from app.core.db import get_db
 from app.core.deps import AuthContext, require_auth
+from app.core.errors import ValidationError
+from app.core.middleware import SESSION_COOKIE_NAME
+from app.core.session import delete_session
 from app.models import Workspace, WorkspaceMember
 from app.schemas.user import UserOut
 from app.schemas.workspace import WorkspaceListItem, WorkspaceOut
-from app.services import email_change as email_change_svc
+from app.services import account_purge, email_change as email_change_svc
 from app.services.mailer import send_email_change_email
 
 router = APIRouter(prefix="/api/v1", tags=["me"])
@@ -44,6 +53,11 @@ class ChangeEmailAccepted(BaseModel):
     was actually issued (avoids email-enumeration). The body is informational
     only; the real signal is whether the user receives a mail."""
     accepted: bool = True
+
+
+class DeleteAccountRequest(BaseModel):
+    """Type the current email to confirm — guards against accidental clicks."""
+    confirmation: EmailStr
 
 
 @router.get("/me", response_model=MeOut)
@@ -115,3 +129,54 @@ async def change_email_confirm(
     user = await email_change_svc.confirm_email_change(db, raw_token=body.token)
     await db.commit()
     return UserOut.model_validate(user)
+
+
+@router.get("/me/export")
+async def export_my_data(
+    auth: Annotated[AuthContext, Depends(require_auth)],
+    db: Annotated[AsyncSession, Depends(get_db)],
+) -> Response:
+    """GDPR Art. 20 — data portability. Returns every row owned by the
+    user across every table as a single JSON document. Synchronous — fine
+    for current dataset sizes (max ~1MB per user). If it ever gets slow,
+    move to an async job that emails the user a download link."""
+    payload = await account_purge.gather_user_data(db, auth.user.id)
+    body = json.dumps(payload, indent=2, default=str)
+    return Response(
+        content=body,
+        media_type="application/json",
+        headers={
+            "Content-Disposition": (
+                f'attachment; filename="vibecell-export-{auth.user.id}.json"'
+            ),
+        },
+    )
+
+
+@router.delete("/me", status_code=204)
+async def delete_my_account(
+    body: DeleteAccountRequest,
+    auth: Annotated[AuthContext, Depends(require_auth)],
+    db: Annotated[AsyncSession, Depends(get_db)],
+    hangar_session: Annotated[str | None, Cookie()] = None,
+) -> Response:
+    """GDPR Art. 17 — right to erasure. Permanently deletes the user
+    account + all solely-owned data. Refuses with 409 if the user owns a
+    workspace with co-members.
+
+    Requires the body to contain `confirmation` matching the user's
+    current email — guards against accidental DELETE requests fired by
+    bad client code or browser extensions.
+    """
+    if body.confirmation.lower() != auth.user.email.lower():
+        raise ValidationError(detail="confirmation must match your current email")
+
+    await account_purge.purge(db, auth.user.id)
+    await db.commit()
+
+    # Burn the current session cookie so the user is logged out immediately.
+    if hangar_session:
+        await delete_session(hangar_session)
+    response = Response(status_code=204)
+    response.delete_cookie(SESSION_COOKIE_NAME, path="/")
+    return response
