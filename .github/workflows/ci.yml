@@ -33,7 +33,9 @@ jobs:
       HANGAR_DATABASE_URL: postgresql+asyncpg://hangar:hangar_ci@localhost:5432/hangar_ci
       HANGAR_TEST_DATABASE_URL: postgresql+asyncpg://hangar:hangar_ci@localhost:5432/hangar_ci
       HANGAR_REDIS_URL: redis://localhost:6379/0
-      HANGAR_MASTER_KEY: test_master_key_32bytes_base64url_AAAAAAAAAAAAAAAAAAAAAAAA
+      # 43 base64url chars (no padding) = exactly 32 raw bytes — the size
+      # required by the AES-256-GCM derivation in app/core/crypto.py.
+      HANGAR_MASTER_KEY: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
       HANGAR_RESEND_API_KEY: test_fake
       HANGAR_GITHUB_CLIENT_ID: test_fake
       HANGAR_GITHUB_CLIENT_SECRET: test_fake
