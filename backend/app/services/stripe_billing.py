@@ -135,6 +135,13 @@ async def create_checkout_session(
         cancel_url=cancel_url,
         automatic_tax={"enabled": True},
         billing_address_collection="required",
+        # automatic_tax requires a valid Customer.address. The first time a
+        # user goes through Checkout, the Customer record is empty —
+        # customer_update.address='auto' tells Stripe to copy the address
+        # the user enters in Checkout back to the Customer record so the
+        # tax engine has what it needs both this time and on every
+        # subsequent invoice.
+        customer_update={"address": "auto", "name": "auto"},
         payment_method_collection="if_required",
         subscription_data={
             "trial_period_days": pro_plan.trial_period_days,
