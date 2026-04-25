@@ -28,6 +28,7 @@ dependencies = [
   "playwright>=1.48.0",
   "Pillow>=11.0.0",
   "sentry-sdk[fastapi]>=2.18.0",
+  "stripe>=11.4.0",
 ]
 
 [dependency-groups]
@@ -75,7 +76,7 @@ strict_equality = true
 no_implicit_optional = true
 
 [[tool.mypy.overrides]]
-module = ["testcontainers.*", "apscheduler.*", "ulid", "jwt", "prometheus_client.*", "playwright.*"]
+module = ["testcontainers.*", "apscheduler.*", "ulid", "jwt", "prometheus_client.*", "playwright.*", "stripe", "stripe.*"]
 ignore_missing_imports = true
 
 # Legacy modules with rich SQLAlchemy / Pydantic dynamic typing — full

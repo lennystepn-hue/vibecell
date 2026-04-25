@@ -1,21 +1,29 @@
-"""Billing API — Stripe checkout + webhook + customer portal.
+"""Billing API — Stripe Checkout + Portal + Webhook (Spec-6 Sprint B2).
 
-Spec 4 — Launch-Enabler. All endpoints are scaffolded; full Stripe integration
-is deferred to Spec 4.1. Checkout + portal return 501; webhook returns 200
-(required by Stripe — must never 500).
+Endpoints:
+  POST /api/v1/billing/checkout   — auth, returns {url} for Stripe Checkout
+  POST /api/v1/billing/portal     — auth, returns {url} for Stripe Customer Portal
+  POST /api/v1/billing/webhook    — public, Stripe POSTs here
+  GET  /api/v1/billing/plans      — public, lists plans from DB
+
+Stripe-not-configured returns 503 across all of them; the SDK is only
+loaded if STRIPE_SECRET_KEY is set in the env.
 """
 from __future__ import annotations
 
 import logging
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, Request, status
-from fastapi.responses import JSONResponse
+from fastapi import APIRouter, Depends, Request
+from pydantic import BaseModel
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import get_settings
 from app.core.db import get_db
 from app.core.deps import AuthContext, require_auth
-from app.services import billing as billing_svc
+from app.models import Plan
+from app.services import stripe_billing
 
 logger = logging.getLogger(__name__)
 
@@ -25,101 +33,99 @@ DbDep = Annotated[AsyncSession, Depends(get_db)]
 AuthDep = Annotated[AuthContext, Depends(require_auth)]
 
 
-class CheckoutRequest:
-    def __init__(self, plan_id: str = "pro") -> None:
-        self.plan_id = plan_id
-
-
-from pydantic import BaseModel
-
-
 class CheckoutBody(BaseModel):
     plan_id: str = "pro"
+
+
+class CheckoutResponse(BaseModel):
+    url: str
 
 
 class PortalBody(BaseModel):
     return_url: str = "/settings/billing"
 
 
-@router.post("/checkout")
+class PortalResponse(BaseModel):
+    url: str
+
+
+@router.post("/checkout", response_model=CheckoutResponse)
 async def create_checkout(
     body: CheckoutBody,
-    ctx: AuthDep,
+    auth: AuthDep,
     db: DbDep,
-) -> JSONResponse:
-    """Create a Stripe Checkout session for upgrading to Pro.
+) -> CheckoutResponse:
+    """Create a Stripe Checkout Session and return the hosted URL.
+    Frontend redirects window.location to it.
 
-    Returns 501 until STRIPE_SECRET_KEY is configured.
+    Raises 503 if Stripe isn't configured on this deployment.
     """
-    result = await billing_svc.create_checkout_session(
-        workspace_id=ctx.active_workspace_id,
-        user_email=ctx.user.email,
-        plan_id=body.plan_id,
+    settings = get_settings()
+    base = settings.base_url.rstrip("/")
+    url = await stripe_billing.create_checkout_session(
+        db,
+        auth.user,
+        success_url=f"{base}/settings/billing?status=ok",
+        cancel_url=f"{base}/settings/billing?status=cancel",
     )
-    if result.get("error") == "not_implemented":
-        return JSONResponse(
-            status_code=status.HTTP_501_NOT_IMPLEMENTED,
-            content=result,
-        )
-    return JSONResponse(content=result)
+    await db.commit()
+    return CheckoutResponse(url=url)
 
 
-@router.post("/portal")
+@router.post("/portal", response_model=PortalResponse)
 async def create_portal(
     body: PortalBody,
-    ctx: AuthDep,
+    auth: AuthDep,
     db: DbDep,
-) -> JSONResponse:
-    """Create a Stripe Billing Portal session for subscription management.
-
-    Returns 501 until Stripe is configured.
-    """
-    result = await billing_svc.create_portal_session(
-        workspace_id=ctx.active_workspace_id,
-        return_url=body.return_url,
+) -> PortalResponse:
+    """Hand the user off to Stripe-hosted Customer Portal.
+    Lets them update payment method, cancel, view invoices."""
+    settings = get_settings()
+    base = settings.base_url.rstrip("/")
+    return_url = body.return_url
+    if not return_url.startswith("http"):
+        return_url = f"{base}{return_url if return_url.startswith('/') else '/' + return_url}"
+    url = await stripe_billing.create_portal_session(
+        db,
+        auth.user,
+        return_url=return_url,
     )
-    if result.get("error") == "not_implemented":
-        return JSONResponse(
-            status_code=status.HTTP_501_NOT_IMPLEMENTED,
-            content=result,
-        )
-    return JSONResponse(content=result)
+    await db.commit()
+    return PortalResponse(url=url)
 
 
 @router.post("/webhook")
-async def stripe_webhook(request: Request) -> JSONResponse:
-    """Receive and process Stripe webhook events.
+async def stripe_webhook(
+    request: Request,
+    db: DbDep,
+) -> dict[str, Any]:
+    """Stripe POSTs subscription / invoice events here. Endpoint MUST
+    return 2xx fast — Stripe retries with exponential backoff on errors.
 
-    MUST return 200 quickly — Stripe will retry on non-200.
-    Signature verification is stubbed; event is logged but not persisted.
+    Signature is verified via stripe.Webhook.construct_event using the
+    STRIPE_WEBHOOK_SECRET env var. Idempotency dedupe via stripe_events
+    table.
     """
-    raw_body = await request.body()
-    sig_header = request.headers.get("stripe-signature")
-
-    result = await billing_svc.handle_webhook(raw_body=raw_body, sig_header=sig_header)
-
-    if not result.get("ok"):
-        logger.warning("billing.webhook: rejected payload")
-        return JSONResponse(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            content=result,
-        )
-
-    return JSONResponse(content={"received": True, "event_type": result.get("event_type")})
+    raw = await request.body()
+    sig = request.headers.get("stripe-signature")
+    result = await stripe_billing.handle_webhook(db, raw_body=raw, sig_header=sig)
+    await db.commit()
+    return result
 
 
 @router.get("/plans")
-async def list_plans() -> list[dict[str, Any]]:
-    """List available subscription plans (public endpoint, no auth required)."""
-    plans = billing_svc.PlanRegistry.all()
+async def list_plans(db: DbDep) -> list[dict[str, Any]]:
+    """Public endpoint — no auth required. Used by /pricing page."""
+    plans = (await db.execute(select(Plan))).scalars().all()
     return [
         {
-            "id": p.id,
+            "slug": p.slug,
             "name": p.name,
-            "price_usd_cents": p.price_usd_cents,
+            "monthly_price_eur_cents": p.monthly_price_eur_cents,
             "max_projects": p.max_projects,
-            "max_mcp_calls_per_month": p.max_mcp_calls_per_month,
-            "max_seats": p.max_seats,
+            "ai_enrichment_enabled": p.ai_enrichment_enabled,
+            "session_retention_days": p.session_retention_days,
+            "trial_period_days": p.trial_period_days,
         }
         for p in plans
     ]

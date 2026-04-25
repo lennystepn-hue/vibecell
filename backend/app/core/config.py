@@ -62,6 +62,22 @@ class Settings(BaseSettings):
                     "Bind-mount a persistent volume here in production.",
     )
 
+    # Stripe billing — Spec 6 Sprint B. All optional so the app boots
+    # without Stripe configured (endpoints return 503 in that case).
+    stripe_secret_key: str = Field(
+        default="",
+        description="sk_live_... or sk_test_... — server-side Stripe API key.",
+    )
+    stripe_webhook_secret: str = Field(
+        default="",
+        description="whsec_... — used to verify incoming /billing/webhook payloads.",
+    )
+    stripe_pro_price_id: str = Field(
+        default="",
+        description="price_... — Stripe Price ID for the Pro plan. Set after "
+                    "running `stripe products create` (see ops/stripe-setup.sh).",
+    )
+
 
 @lru_cache(maxsize=1)
 def get_settings() -> Settings:
