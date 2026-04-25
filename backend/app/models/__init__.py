@@ -23,7 +23,6 @@ from app.models.project import (
 )
 from app.models.screenshot import ProjectScreenshot
 from app.models.secret import ProjectSecretRef
-from app.models.todo import ProjectTodo
 from app.models.ship_loop import (
     Decision,
     Idea,
@@ -38,6 +37,7 @@ from app.models.signals import (
     ProjectHealthEvent,
     ProjectHealthSummary,
 )
+from app.models.todo import ProjectTodo
 
 __all__ = [
     "ActiveProject",
@@ -65,8 +65,8 @@ __all__ = [
     "ProjectScreenshot",
     "ProjectSecretRef",
     "ProjectStack",
-    "ProjectTodo",
     "ProjectTag",
+    "ProjectTodo",
     "Session",
     "Ship",
     "StackItem",

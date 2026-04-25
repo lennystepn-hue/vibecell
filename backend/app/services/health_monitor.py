@@ -12,7 +12,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import httpx
 from sqlalchemy import Integer, func, select
@@ -46,7 +46,7 @@ class ProbeResult:
 
 
 async def _probe_one(project_id: str, project_slug: str, url: str) -> ProbeResult:
-    probed_at = datetime.now(timezone.utc)
+    probed_at = datetime.now(UTC)
     async with _PROBE_SEMAPHORE:
         try:
             async with httpx.AsyncClient(
@@ -81,7 +81,7 @@ async def _probe_one(project_id: str, project_slug: str, url: str) -> ProbeResul
                 error_msg="timeout after 10s",
                 probed_at=probed_at,
             )
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             return ProbeResult(
                 project_id=project_id,
                 project_slug=project_slug,
@@ -101,7 +101,7 @@ async def _probe_one(project_id: str, project_slug: str, url: str) -> ProbeResul
 
 async def _persist_results(results: list[ProbeResult]) -> None:
     """Write events + upsert summaries inside a single DB transaction."""
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     cutoff_24h = now - timedelta(hours=24)
     cutoff_7d = now - timedelta(days=7)
 

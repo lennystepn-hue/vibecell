@@ -111,7 +111,7 @@ async def test_token_code_exchange_happy_path(client, authed_client, registered_
 
 
 async def test_token_rejects_wrong_pkce_verifier(client, authed_client, registered_oauth_client, user_workspace) -> None:
-    verifier, challenge = _pkce_pair()
+    _verifier, challenge = _pkce_pair()
     cid = registered_oauth_client.client_id
     redirect = registered_oauth_client.redirect_uris[0]
     await authed_client.get(

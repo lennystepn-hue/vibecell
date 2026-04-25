@@ -51,7 +51,7 @@ async def _event_stream(project_id: str):  # -> AsyncIterator[str]
                     sub.__anext__(),
                     timeout=HEARTBEAT_SECONDS,
                 )
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 # No events this window — keep the socket alive for proxies.
                 yield ": heartbeat\n\n"
                 continue

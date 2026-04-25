@@ -25,7 +25,7 @@ os.environ.setdefault("HANGAR_OAUTH_JWT_KID", "test-kid")
 # the session-scoped `engine` fixture (which normally injects this var).
 os.environ.setdefault("HANGAR_DATABASE_URL", "postgresql+asyncpg://u:p@localhost:5432/test")
 
-from app.oauth.tokens import (  # noqa: E402
+from app.oauth.tokens import (
     JTIBlacklist,
     OAuthTokenClaims,
     hash_refresh_token,

@@ -76,7 +76,9 @@ jobs:
         run: pnpm typecheck
       - name: Test
         working-directory: frontend
-        run: pnpm test --run
+        # `--` separator passes flags through to vitest. Without it pnpm
+        # tries to interpret `--run` as a pnpm flag and bails.
+        run: pnpm test -- --run
       - name: Build
         working-directory: frontend
         run: pnpm build

@@ -45,7 +45,7 @@ async def publish(
         if payload:
             body.update(payload)
         await r.publish(_channel(project_id), json.dumps(body))
-    except Exception:  # noqa: BLE001
+    except Exception:
         logger.warning("event publish failed (%s, %s)", project_id, event_type, exc_info=True)
 
 

@@ -53,7 +53,7 @@ async def _check_sliding_window(
         pipe.expire(key, window_seconds + 60)
         await pipe.execute()
         return True, count + 1, now
-    except Exception:  # noqa: BLE001
+    except Exception:
         logger.warning("ai rate-limit redis failure — fail-open", exc_info=True)
         return True, 0, now
 

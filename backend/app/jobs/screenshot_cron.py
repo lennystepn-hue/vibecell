@@ -21,7 +21,7 @@ async def _run_refresh_all() -> None:
         async with session_scope() as db:
             count = await screenshot_svc.refresh_all_auto(db)
             logger.info("screenshot_cron: captured %s preview(s)", count)
-    except Exception:  # noqa: BLE001
+    except Exception:
         logger.exception("screenshot_cron: refresh_all_auto crashed")
 
 

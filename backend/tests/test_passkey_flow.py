@@ -6,7 +6,6 @@ Does NOT require a live DB or Redis (pure unit-style).
 from __future__ import annotations
 
 import base64
-import json
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -14,7 +13,6 @@ from fastapi import HTTPException
 from httpx import ASGITransport, AsyncClient
 
 from app.core.ulid import new_ulid
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -209,8 +207,7 @@ async def test_register_begin_endpoint_calls_service(monkeypatch: pytest.MonkeyP
     monkeypatch.setattr("app.services.passkey.start_registration", fake_start_registration)
 
     # We need to inject an authenticated user into request.state
-    from app.core.db import get_db
-    from app.core.deps import require_auth, AuthContext
+    from app.core.deps import AuthContext, require_auth
 
     fake_user = MagicMock()
     fake_user.id = new_ulid()
@@ -278,8 +275,8 @@ async def test_auth_finish_endpoint_sets_cookie(monkeypatch: pytest.MonkeyPatch)
 @pytest.mark.asyncio
 async def test_register_finish_endpoint_returns_ok(monkeypatch: pytest.MonkeyPatch) -> None:
     """POST /api/v1/passkey/register/finish should return {ok: true}."""
+    from app.core.deps import AuthContext, require_auth
     from app.main import app
-    from app.core.deps import require_auth, AuthContext
 
     async def fake_finish_reg(user_id: str, credential_response: dict) -> bool:
         return True

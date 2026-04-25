@@ -7,16 +7,13 @@ Requires a real DB (integration test).
 """
 from __future__ import annotations
 
-from typing import Any
-from unittest.mock import patch
-
 import pytest
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.ulid import new_ulid
-from app.models import Project, User, Workspace, WorkspaceMember
+from app.models import User, Workspace, WorkspaceMember
 from app.models.signals import PortfolioSnapshot
 
 pytestmark = pytest.mark.integration
@@ -93,10 +90,9 @@ async def test_get_or_generate_refresh_forces_new_snapshot(session: AsyncSession
 @pytest.mark.asyncio
 async def test_get_snapshot_endpoint_with_refresh(session: AsyncSession) -> None:
     """GET /api/v1/portfolio/snapshot?refresh=true returns a fresh snapshot."""
+    from app.core.deps import AuthContext, require_auth
     from app.main import app
-    from app.core.db import get_db
-    from app.core.deps import require_auth, AuthContext
-    from tests._auth_helpers import override_db, clear_db_override
+    from tests._auth_helpers import clear_db_override, override_db
 
     _, workspace_id = await _make_workspace(session)
 

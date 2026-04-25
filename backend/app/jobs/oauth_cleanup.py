@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 async def prune_orphan_clients(db: AsyncSession) -> int:
     s = get_settings()
-    cutoff = datetime.now(timezone.utc) - timedelta(hours=s.oauth_dcr_orphan_ttl_hours)
+    cutoff = datetime.now(UTC) - timedelta(hours=s.oauth_dcr_orphan_ttl_hours)
     result = await db.execute(
         delete(OAuthClient).where(
             OAuthClient.registered_by_user_id.is_(None),
@@ -30,7 +30,7 @@ async def prune_orphan_clients(db: AsyncSession) -> int:
 
 
 async def prune_audit_log(db: AsyncSession) -> int:
-    cutoff = datetime.now(timezone.utc) - timedelta(days=30)
+    cutoff = datetime.now(UTC) - timedelta(days=30)
     result = await db.execute(
         delete(McpAuditLog).where(McpAuditLog.called_at < cutoff)
     )
@@ -46,7 +46,7 @@ async def run_once() -> None:
 
 async def refresh_active_connections_gauge() -> None:
     async with session_scope() as db:
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         count = (await db.execute(
             select(func.count(OAuthAccessToken.id)).where(
                 OAuthAccessToken.revoked_at.is_(None),

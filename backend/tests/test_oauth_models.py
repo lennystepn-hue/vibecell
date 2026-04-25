@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import pytest
 from sqlalchemy import select
@@ -47,7 +47,7 @@ async def _seed_base(session: AsyncSession) -> tuple[str, str, str]:
 
 
 async def test_oauth_client_insert_roundtrip(session: AsyncSession) -> None:
-    user_id, _workspace_id, client_id = await _seed_base(session)
+    _user_id, _workspace_id, client_id = await _seed_base(session)
 
     got = (
         await session.execute(
@@ -71,7 +71,7 @@ async def test_auth_code_expires_at_default(session: AsyncSession) -> None:
         redirect_uri="http://127.0.0.1:12345/callback",
         code_challenge="xyz",
         scope="vibecell:tools",
-        expires_at=datetime.now(timezone.utc) + timedelta(seconds=60),
+        expires_at=datetime.now(UTC) + timedelta(seconds=60),
     )
     session.add(code)
     await session.flush()
@@ -85,7 +85,7 @@ async def test_refresh_token_hash_unique_constraint(session: AsyncSession) -> No
 
     fam1 = new_ulid()
     fam2 = new_ulid()
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     t1 = OAuthRefreshToken(
         id=new_ulid(),
         token_hash="sha_same",
@@ -128,8 +128,8 @@ async def test_access_token_jti_indexed(session: AsyncSession) -> None:
         user_id=user_id,
         workspace_id=workspace_id,
         scope="vibecell:tools",
-        issued_at=datetime.now(timezone.utc),
-        expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
+        issued_at=datetime.now(UTC),
+        expires_at=datetime.now(UTC) + timedelta(hours=1),
     )
     session.add(tok)
     await session.flush()

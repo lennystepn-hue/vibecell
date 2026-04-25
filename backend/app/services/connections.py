@@ -4,7 +4,7 @@ Used by /settings/connections page in the frontend.
 """
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from sqlalchemy import func, select
@@ -67,13 +67,13 @@ class ConnectionsService:
         def sort_key(r: dict) -> datetime:
             if r["last_used_at"]:
                 return datetime.fromisoformat(r["last_used_at"])
-            return datetime.min.replace(tzinfo=timezone.utc)
+            return datetime.min.replace(tzinfo=UTC)
 
         results.sort(key=sort_key, reverse=True)
         return results
 
     async def _client_stats(self, client_id: str) -> dict[str, int]:
-        today_start = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+        today_start = datetime.now(UTC).replace(hour=0, minute=0, second=0, microsecond=0)
         today = (await self.db.execute(
             select(func.count(McpAuditLog.id)).where(
                 McpAuditLog.client_id == client_id,
@@ -101,7 +101,7 @@ class ConnectionsService:
         return "generic"
 
     async def revoke(self, kind: str, connection_id: str) -> None:
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         if kind == "oauth":
             row = await self.db.get(OAuthClient, connection_id)
             if row is None:

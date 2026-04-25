@@ -4,6 +4,7 @@ import asyncio
 import base64
 import os
 from collections.abc import AsyncIterator, Iterator
+from datetime import UTC
 from pathlib import Path
 from typing import Any
 
@@ -166,7 +167,7 @@ async def session(engine: AsyncEngine) -> AsyncIterator[AsyncSession]:
 @pytest_asyncio.fixture
 async def registered_oauth_client(session: AsyncSession):
     """Seed an OAuthClient row for authorize/grant/deny integration tests."""
-    from datetime import datetime, timezone
+    from datetime import datetime
 
     from app.core.ulid import new_ulid
     from app.oauth.models import OAuthClient
@@ -177,7 +178,7 @@ async def registered_oauth_client(session: AsyncSession):
         client_name="Test Client",
         redirect_uris=["http://127.0.0.1:1/cb"],
         scope="vibecell:tools",
-        created_at=datetime.now(timezone.utc),
+        created_at=datetime.now(UTC),
     )
     session.add(row)
     await session.flush()

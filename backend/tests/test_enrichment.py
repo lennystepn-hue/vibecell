@@ -5,12 +5,10 @@ import json
 import os
 from unittest.mock import AsyncMock, MagicMock, patch
 
-import pytest
-
 # Ensure required Settings fields are present for unit tests that don't spin up a DB.
 os.environ.setdefault("HANGAR_DATABASE_URL", "postgresql+asyncpg://u:p@h:5432/db")
 
-from app.services.enrichment import EnrichmentResult, enrich_from_repo  # noqa: E402
+from app.services.enrichment import enrich_from_repo
 
 
 async def test_enrich_graceful_fallback_when_no_api_key(monkeypatch):

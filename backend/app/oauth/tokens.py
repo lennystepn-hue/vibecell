@@ -9,7 +9,7 @@ import base64
 import hashlib
 import secrets
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import jwt
 
@@ -52,7 +52,7 @@ def issue_access_token(claims: OAuthTokenClaims) -> tuple[str, str]:
     """Return (jwt_string, jti). jti is the ULID used for revocation lookup."""
     s = get_settings()
     jti = new_ulid()
-    now = int(datetime.now(timezone.utc).timestamp())
+    now = int(datetime.now(UTC).timestamp())
     aud = claims.audience or _DEFAULT_AUDIENCE
     payload = {
         "iss": _ISSUER,

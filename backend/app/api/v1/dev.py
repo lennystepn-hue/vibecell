@@ -55,9 +55,10 @@ async def latest_magic_link_token(
         raise NotFoundError("magic_link_token", email)
     # We can't recover the raw token from the hash. Dev-only workaround:
     # issue a fresh token here and return it.
-    import secrets
     import hashlib
+    import secrets
     from datetime import UTC, datetime, timedelta
+
     from app.core.ulid import new_ulid
 
     raw = secrets.token_urlsafe(32)

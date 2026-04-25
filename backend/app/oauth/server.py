@@ -6,7 +6,7 @@ Tasks 1.8-1.10 append /authorize, /grant, /deny, /token, /revoke.
 from __future__ import annotations
 
 import secrets
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Annotated
 from urllib.parse import quote
 
@@ -48,7 +48,7 @@ async def register(
             headers={"Retry-After": str(retry_after)},
         )
 
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     client_id = "dyn_" + secrets.token_urlsafe(16)
     row = OAuthClient(
         id=new_ulid(),
@@ -203,7 +203,7 @@ async def grant(
 
     # Issue auth code
     code = "c_" + secrets.token_urlsafe(24)
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     db.add(OAuthAuthCode(
         id=new_ulid(),
         code=code,
@@ -255,13 +255,13 @@ async def deny(
 # ---------------------------------------------------------------------------
 # Task 1.9 — POST /oauth/token
 # ---------------------------------------------------------------------------
-import base64  # noqa: E402 — appended block; stdlib, no ordering issue
-import hashlib  # noqa: E402
+import base64
+import hashlib
 
-from fastapi import Form  # noqa: E402
+from fastapi import Form
 
-from app.oauth.models import OAuthAccessToken, OAuthRefreshToken  # noqa: E402
-from app.oauth.tokens import (  # noqa: E402
+from app.oauth.models import OAuthAccessToken, OAuthRefreshToken
+from app.oauth.tokens import (
     OAuthTokenClaims,
     hash_refresh_token,
     issue_access_token,
@@ -322,12 +322,12 @@ async def _token_from_code(
         raise HTTPException(400, detail={"error": "invalid_grant"})
     if row.redirect_uri != redirect_uri:
         raise HTTPException(400, detail={"error": "invalid_grant"})
-    if row.expires_at < datetime.now(timezone.utc):
+    if row.expires_at < datetime.now(UTC):
         raise HTTPException(400, detail={"error": "invalid_grant"})
     if not _verify_pkce(code_verifier, row.code_challenge):
         raise HTTPException(400, detail={"error": "invalid_grant"})
 
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     row.consumed_at = now
     s = get_settings()
 
@@ -382,10 +382,10 @@ async def _token_from_refresh(db: AsyncSession, refresh_token: str | None, clien
         raise HTTPException(400, detail={"error": "invalid_grant"})
     if row.client_id != client_id:
         raise HTTPException(400, detail={"error": "invalid_grant"})
-    if row.expires_at < datetime.now(timezone.utc):
+    if row.expires_at < datetime.now(UTC):
         raise HTTPException(400, detail={"error": "invalid_grant"})
 
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     row.consumed_at = now
     s = get_settings()
 
@@ -428,9 +428,9 @@ async def _token_from_refresh(db: AsyncSession, refresh_token: str | None, clien
 # ---------------------------------------------------------------------------
 # Task 1.10 — POST /oauth/revoke (RFC 7009)
 # ---------------------------------------------------------------------------
-from fastapi import Response  # noqa: E402
+from fastapi import Response
 
-from app.oauth.tokens import JTIBlacklist, verify_access_token  # noqa: E402
+from app.oauth.tokens import JTIBlacklist, verify_access_token
 
 
 @router.post("/revoke")
@@ -445,7 +445,7 @@ async def revoke(
             await _revoke_refresh(db, token)
         else:
             await _revoke_access(db, token)
-    except Exception:  # noqa: BLE001 — intentional broad swallow per RFC
+    except Exception:
         pass
     return Response(status_code=200)
 
@@ -455,13 +455,13 @@ async def _revoke_access(db: AsyncSession, token: str) -> None:
         claims = verify_access_token(token)
     except ValueError:
         return
-    ttl = max(1, claims.exp - int(datetime.now(timezone.utc).timestamp()))
+    ttl = max(1, claims.exp - int(datetime.now(UTC).timestamp()))
     await JTIBlacklist().add(claims.jti, ttl_seconds=ttl)
     row = (await db.execute(
         select(OAuthAccessToken).where(OAuthAccessToken.jti == claims.jti)
     )).scalar_one_or_none()
     if row:
-        row.revoked_at = datetime.now(timezone.utc)
+        row.revoked_at = datetime.now(UTC)
 
 
 async def _revoke_refresh(db: AsyncSession, token: str) -> None:
@@ -471,7 +471,7 @@ async def _revoke_refresh(db: AsyncSession, token: str) -> None:
     )).scalar_one_or_none()
     if row is None:
         return
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     row.revoked_at = now
     # Cascade: revoke all access tokens in same family still valid
     access_rows = (await db.execute(

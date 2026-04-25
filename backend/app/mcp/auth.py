@@ -14,7 +14,6 @@ from app.core.db import get_db
 from app.metrics.registry import mcp_auth_failures
 from app.oauth.tokens import JTIBlacklist, verify_access_token
 
-
 _METADATA_URL = "https://vibecell.dev/.well-known/oauth-protected-resource"
 _WWW_AUTH_HEADER = {"WWW-Authenticate": f'Bearer resource_metadata="{_METADATA_URL}"'}
 

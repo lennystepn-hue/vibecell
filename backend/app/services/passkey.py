@@ -21,7 +21,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import get_settings
 from app.core.redis import get_redis
 from app.core.session import SessionPayload, create_session
-from app.core.ulid import new_ulid
 from app.models.auth import User, Workspace
 
 logger = logging.getLogger(__name__)
@@ -72,8 +71,9 @@ async def start_registration(user_id: str, user_email: str) -> dict[str, Any]:
         existing_creds: list[Any] = user.passkey_credentials if (user and user.passkey_credentials) else []
 
     exclude_credentials = []
-    from webauthn.helpers.structs import PublicKeyCredentialDescriptor
     import base64
+
+    from webauthn.helpers.structs import PublicKeyCredentialDescriptor
     for cred in existing_creds:
         raw_id = base64.urlsafe_b64decode(cred["credential_id"] + "==")
         exclude_credentials.append(PublicKeyCredentialDescriptor(id=raw_id))
@@ -162,9 +162,10 @@ async def finish_registration(
 
 async def start_authentication(email: str) -> dict[str, Any]:
     """Generate WebAuthn authentication options for the frontend."""
+    import base64
+
     import webauthn
     from webauthn.helpers.structs import PublicKeyCredentialDescriptor, UserVerificationRequirement
-    import base64
 
     rp_id, _, _ = _get_rp()
 
@@ -199,9 +200,10 @@ async def finish_authentication(
     assertion_response: dict[str, Any],
 ) -> str:
     """Verify authentication assertion and return a new session_id."""
+    import base64
+
     import webauthn
     from webauthn.helpers.exceptions import InvalidAuthenticationResponse
-    import base64
 
     rp_id, _, origin = _get_rp()
 
@@ -232,7 +234,6 @@ async def finish_authentication(
             raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="credential_not_found")
 
         pub_key_bytes = base64.urlsafe_b64decode(matched_cred["public_key"] + "==")
-        cred_id_bytes = base64.urlsafe_b64decode(matched_cred["credential_id"] + "==")
 
         try:
             verification = webauthn.verify_authentication_response(
@@ -293,8 +294,8 @@ def _b64_to_bytes(s: str) -> bytes:
     return base64.urlsafe_b64decode(s)
 
 
-from contextlib import asynccontextmanager
 from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 
 
 @asynccontextmanager

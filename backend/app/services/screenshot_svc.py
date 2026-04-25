@@ -162,7 +162,7 @@ async def _render_webp(url: str) -> tuple[bytes, int, int]:
             # small extra delay for late-painting SPAs (Vue/React transitions)
             try:
                 await page.wait_for_load_state("networkidle", timeout=IDLE_TIMEOUT_MS)
-            except Exception:  # noqa: BLE001
+            except Exception:
                 pass
             png_bytes = await page.screenshot(type="png", full_page=False)
         finally:
@@ -204,7 +204,7 @@ async def capture_project(
 
     try:
         webp_bytes, w, h = await _render_webp(url)
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         logger.warning("screenshot render failed for %s (%s): %s", project.slug, url, exc)
         return None
 
@@ -280,7 +280,7 @@ async def refresh_all_auto(db: AsyncSession) -> int:
             if row is not None:
                 captured += 1
             await db.commit()
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             logger.warning("refresh_all_auto: %s failed: %s", p.slug, exc)
             await db.rollback()
     return captured
@@ -298,8 +298,11 @@ def schedule_background_capture(
 
     Used by the ship handler — it doesn't want to block the response on a
     5-second chromium launch. The background task opens its own DB session.
+
+    We DON'T hold a reference to the task: it's fire-and-forget, the caller
+    (a request handler) returns long before the screenshot finishes.
     """
-    asyncio.create_task(_bg_capture(project_id, kind, ship_id))
+    asyncio.create_task(_bg_capture(project_id, kind, ship_id))  # noqa: RUF006
 
 
 async def _bg_capture(project_id: str, kind: ScreenshotKind, ship_id: str | None) -> None:
@@ -311,5 +314,5 @@ async def _bg_capture(project_id: str, kind: ScreenshotKind, ship_id: str | None
             if project is None:
                 return
             await capture_project(db, project=project, kind=kind, ship_id=ship_id)
-    except Exception:  # noqa: BLE001
+    except Exception:
         logger.exception("background screenshot capture failed")

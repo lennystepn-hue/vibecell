@@ -6,7 +6,7 @@ GET /api/v1/projects/{slug}/health
 from __future__ import annotations
 
 import logging
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Annotated
 
 from fastapi import APIRouter, Depends
@@ -66,7 +66,7 @@ async def get_health(ctx: CtxDep, db: DbDep) -> JSONResponse:
         })
 
     # Fetch the last 24 events for timeline display
-    cutoff = datetime.now(timezone.utc) - timedelta(hours=24)
+    cutoff = datetime.now(UTC) - timedelta(hours=24)
     recent_events = (await db.execute(
         select(ProjectHealthEvent)
         .where(ProjectHealthEvent.project_id == project.id)

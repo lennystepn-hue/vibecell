@@ -49,7 +49,7 @@ async def _resolve_anthropic_key(
     # 1. Project-level inline_encrypted secret.
     try:
         row = await secret_svc.get_secret(db, project, "ANTHROPIC_API_KEY")
-    except Exception:  # noqa: BLE001
+    except Exception:
         row = None
 
     if row is not None and row.kind == "inline_encrypted":
@@ -58,7 +58,7 @@ async def _resolve_anthropic_key(
                 db, project=project, label="ANTHROPIC_API_KEY", workspace_id=workspace_id,
             )
             return value, "project-secret"
-        except Exception:  # noqa: BLE001
+        except Exception:
             logger.warning("AI key for %s failed to decrypt", project.slug, exc_info=True)
     elif row is not None:
         # reference kind — server can't use it directly.

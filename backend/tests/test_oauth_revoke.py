@@ -9,7 +9,7 @@ async def test_revoke_access_token_blacklists_jti(client, issued_token_pair) -> 
     resp = await client.post("/oauth/revoke", data={"token": access, "token_type_hint": "access_token"})
     assert resp.status_code == 200
 
-    from app.oauth.tokens import verify_access_token, JTIBlacklist
+    from app.oauth.tokens import JTIBlacklist, verify_access_token
     claims = verify_access_token(access)
     assert await JTIBlacklist().is_revoked(claims.jti)
 

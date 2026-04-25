@@ -8,7 +8,7 @@ Spec 5B.1 — Portfolio-Intel. Full persistence implementation.
 from __future__ import annotations
 
 import logging
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from sqlalchemy import func, select, text
@@ -31,9 +31,9 @@ _CACHE_TTL_MINUTES = 10
 async def generate_snapshot(workspace_id: str, db: AsyncSession) -> dict[str, Any]:
     """Compute a fresh portfolio snapshot and persist it to portfolio_snapshot."""
     from app.models.project import Project
-    from app.models.ship_loop import Decision, Note, Session, Ship  # noqa: F401
+    from app.models.ship_loop import Decision, Note, Session, Ship
 
-    generated_at = datetime.now(timezone.utc)
+    generated_at = datetime.now(UTC)
     stagnation_cutoff = generated_at - timedelta(days=_STAGNATION_DAYS)
 
     # --- Project list ---
@@ -215,7 +215,7 @@ async def get_or_generate(workspace_id: str, db: AsyncSession, *, force: bool = 
     Pass force=True to bypass the cache (e.g. ?refresh=true query param).
     """
     if not force:
-        cutoff = datetime.now(timezone.utc) - timedelta(minutes=_CACHE_TTL_MINUTES)
+        cutoff = datetime.now(UTC) - timedelta(minutes=_CACHE_TTL_MINUTES)
         cached = (await db.execute(
             select(PortfolioSnapshot)
             .where(PortfolioSnapshot.workspace_id == workspace_id)

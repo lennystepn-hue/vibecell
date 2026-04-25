@@ -5,8 +5,7 @@ Requires a real DB (integration test).
 """
 from __future__ import annotations
 
-from datetime import UTC, datetime
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 from sqlalchemy import select
@@ -61,7 +60,7 @@ class _FakeHttpxClient:
         self._status = status_code
         self._raise = raise_exc
 
-    async def __aenter__(self) -> "_FakeHttpxClient":
+    async def __aenter__(self) -> _FakeHttpxClient:
         return self
 
     async def __aexit__(self, *args: object) -> None:
@@ -177,7 +176,7 @@ async def test_probe_all_no_projects_is_noop(session: AsyncSession) -> None:
         yield session
 
     before = (await session.execute(select(ProjectHealthEvent))).scalars().all()
-    before_count = len(before)
+    _ = len(before)  # snapshot count for diff debugging if a future failure needs it
 
     with patch("app.services.health_monitor.session_scope", _fake_session_scope):
         from app.services.health_monitor import probe_all

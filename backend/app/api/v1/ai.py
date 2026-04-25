@@ -16,7 +16,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.db import get_db
 from app.core.deps import AuthContext, ProjectContext, require_auth, require_project
 from app.core.rate_limit_ai import enforce_ai_rate_limit
-from app.models import Decision, Project, ProjectContext as PCtx, Session, Ship
+from app.models import Decision, Project, Session, Ship
+from app.models import ProjectContext as PCtx
 from app.services import ai as ai_svc
 from app.services import todo_svc
 
@@ -183,7 +184,7 @@ async def _events_summary_since_ship(db: AsyncSession, project: Project) -> str:
 async def status_(ctx: CtxDep, auth: AuthDep, db: DbDep) -> AIStatusOut:
     """Tell the UI whether this project has a usable AI key and where it comes from."""
     try:
-        _key, source = await ai_svc._resolve_anthropic_key(  # noqa: SLF001
+        _key, source = await ai_svc._resolve_anthropic_key(
             db, ctx.project, workspace_id=auth.active_workspace_id,
         )
     except ai_svc.AIConfigError as exc:
