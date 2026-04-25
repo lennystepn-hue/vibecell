@@ -412,7 +412,7 @@ async def handle_audit(args: Any, ctx: MCPContext) -> str:
     from app.models import Decision, Idea, Ship
     from app.models import Session as SessionRow
     from app.models.project import ProjectCommand, ProjectEnvironment
-    from app.models.project_todo import ProjectTodo
+    from app.models.todo import ProjectTodo
 
     project = await _resolve_project(args, ctx)
     ctx_row = await children_svc.get_context(ctx.db, project)

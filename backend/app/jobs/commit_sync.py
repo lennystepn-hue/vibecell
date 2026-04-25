@@ -204,7 +204,7 @@ async def _fetch_tags(token: str, owner: str, repo: str) -> list[dict[str, Any]]
                 params={"per_page": 100},
             )
         if r.status_code == 200:
-            return r.json()  # type: ignore[no-any-return]
+            return r.json()
     except Exception:
         return []
     return []

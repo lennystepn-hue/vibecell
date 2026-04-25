@@ -69,11 +69,12 @@ async def mcp_endpoint(
 
 
 async def _dispatch_tool_call(ctx: MCPContext, req_id: Any, params: dict) -> dict:
-    name = params.get("name")
+    raw_name = params.get("name")
     arguments = params.get("arguments") or {}
-    tool = resolve_tool(name or "")
-    if tool is None:
-        return _err(req_id, -32602, f"Unknown tool: {name}")
+    tool = resolve_tool(raw_name or "") if isinstance(raw_name, str) else None
+    if tool is None or not isinstance(raw_name, str):
+        return _err(req_id, -32602, f"Unknown tool: {raw_name}")
+    name: str = raw_name
 
     try:
         args_model = tool.args_schema.model_validate(arguments)
