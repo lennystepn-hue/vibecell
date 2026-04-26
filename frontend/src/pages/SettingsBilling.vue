@@ -2,8 +2,6 @@
 import { computed, onMounted, ref } from "vue";
 
 import SettingsNav from "@/components/settings/SettingsNav.vue";
-import SettingsSection from "@/components/settings/SettingsSection.vue";
-import PrimaryButton from "@/components/ui/PrimaryButton.vue";
 
 import { useToastStore } from "@/stores/toast";
 
@@ -23,7 +21,11 @@ const sub = ref<SubscriptionResponse | null>(null);
 const loadingSub = ref(false);
 const checkingOut = ref(false);
 const openingPortal = ref(false);
-const stripeNotConfigured = ref(false);
+/** True when the API failed for any reason (no Stripe configured, no
+ *  subscription row, network blip, etc). The UI falls back to the
+ *  "Pro plan + start trial" pitch with the same Add-card CTA — better
+ *  than rendering an apologetic empty state. */
+const fellBack = ref(false);
 
 async function loadSubscription() {
   loadingSub.value = true;
@@ -32,14 +34,10 @@ async function loadSubscription() {
     if (r.ok) {
       sub.value = await r.json();
     } else {
-      // Any non-2xx (404 endpoint missing, 422 no-sub-row, 503 Stripe
-      // unconfigured, 5xx unexpected) — show the same fallback "Pro plan,
-      // try checkout" view rather than a blank page. The /billing/checkout
-      // call will fail loudly if Stripe isn't actually configured.
-      stripeNotConfigured.value = true;
+      fellBack.value = true;
     }
   } catch {
-    stripeNotConfigured.value = true;
+    fellBack.value = true;
   } finally {
     loadingSub.value = false;
   }
@@ -55,7 +53,6 @@ async function startCheckout() {
       body: JSON.stringify({ plan_id: "pro" }),
     });
     if (r.status === 503) {
-      stripeNotConfigured.value = true;
       toast.push("Stripe is not configured on this deployment yet", "error");
       return;
     }
@@ -99,22 +96,106 @@ const trialDaysLeft = computed(() => {
   return Math.ceil(ms / (24 * 60 * 60 * 1000));
 });
 
-const formattedPrice = computed(() => {
-  if (!sub.value) return "";
-  return `€${(sub.value.monthly_price_eur_cents / 100).toFixed(2)}/month`;
+/** Fraction of trial used — between 0 (just started) and 1 (over). */
+const trialProgress = computed(() => {
+  if (!sub.value?.trial_ends_at) return 0;
+  const TRIAL_DAYS = 7;
+  const left = trialDaysLeft.value ?? 0;
+  return Math.max(0, Math.min(1, (TRIAL_DAYS - left) / TRIAL_DAYS));
 });
 
-const statusLabel = computed(() => {
-  if (!sub.value) return "";
-  return {
-    trialing: "Trial",
-    active: "Active",
-    past_due: "Payment failed",
-    canceled: "Canceled",
-    incomplete: "Incomplete",
-    paused: "Paused",
-    unpaid: "Unpaid",
-  }[sub.value.status] ?? sub.value.status;
+const formattedPrice = computed(() => {
+  if (!sub.value) return "€8.99";
+  return `€${(sub.value.monthly_price_eur_cents / 100).toFixed(2)}`;
+});
+
+const statusBadge = computed(() => {
+  const s = sub.value?.status;
+  if (fellBack.value || !s) {
+    return { label: "Pro plan", color: "#5cc8a4", bg: "rgba(92,200,164,0.1)" };
+  }
+  switch (s) {
+    case "trialing":
+      return { label: "Trialing", color: "#5cc8a4", bg: "rgba(92,200,164,0.1)" };
+    case "active":
+      return { label: "Active", color: "#5cc8a4", bg: "rgba(92,200,164,0.1)" };
+    case "past_due":
+    case "unpaid":
+      return { label: "Payment failed", color: "#ff7e6c", bg: "rgba(255,126,108,0.1)" };
+    case "canceled":
+      return { label: "Canceled", color: "#8ba1bd", bg: "rgba(138,180,255,0.08)" };
+    default:
+      return { label: s, color: "#8ba1bd", bg: "rgba(138,180,255,0.08)" };
+  }
+});
+
+const features = [
+  {
+    icon: "∞",
+    title: "Unlimited projects",
+    body: "Track as many side-projects, side-side-projects and full apps as you want — no caps.",
+  },
+  {
+    icon: "✦",
+    title: "AI enrichment from GitHub",
+    body: "Drop a repo URL → get pitch + stack + infra + tags + emoji auto-filled in seconds.",
+  },
+  {
+    icon: "◇",
+    title: "MCP server access",
+    body: "Connect Claude Desktop, Claude Code, Cursor, Zed, Continue or any MCP-compatible client.",
+  },
+  {
+    icon: "↺",
+    title: "Cron jobs running for you",
+    body: "Auto-screenshots, commit-sync from GitHub, env-drift detection — your dashboard stays in sync without lifting a finger.",
+  },
+  {
+    icon: "○",
+    title: "Workspace secrets vault",
+    body: "Store API keys inline (AES-256-GCM) or as 1Password / Bitwarden references. Claude reads them silently when needed.",
+  },
+  {
+    icon: "▤",
+    title: "365-day session history",
+    body: "Every Claude session, decision, ship and idea logged forever — searchable, filterable, exportable as JSON.",
+  },
+  {
+    icon: "✉",
+    title: "Magic-link + Passkey login",
+    body: "No passwords. Touch ID, Face ID, security key — whatever your device offers.",
+  },
+  {
+    icon: "🇪🇺",
+    title: "EU VAT & GDPR ready",
+    body: "Stripe Tax handles invoicing per country. Full data export + one-click account delete (Art. 17 + 20).",
+  },
+];
+
+const showWillingCancel = computed(
+  () => sub.value?.status === "active" && sub.value.cancel_at_period_end
+);
+
+const ctaPrimary = computed(() => {
+  if (fellBack.value || !sub.value) return { label: "Start 7-day trial", action: startCheckout };
+  switch (sub.value.status) {
+    case "trialing":
+      return {
+        label: trialDaysLeft.value !== null && trialDaysLeft.value <= 0
+          ? "Add payment method to continue"
+          : "Add payment method",
+        action: startCheckout,
+      };
+    case "past_due":
+    case "unpaid":
+      return { label: "Update payment method", action: startCheckout };
+    case "canceled":
+      return { label: "Re-subscribe", action: startCheckout };
+    case "active":
+      return { label: "Manage subscription", action: openPortal };
+    default:
+      return { label: "Open billing portal", action: openPortal };
+  }
 });
 
 onMounted(loadSubscription);
@@ -123,91 +204,159 @@ onMounted(loadSubscription);
 <template>
   <div class="flex h-[calc(100vh-44px)]">
     <SettingsNav />
-    <div class="flex-1 overflow-y-auto">
-      <div class="max-w-[720px] mx-auto px-8 py-8">
+    <div class="flex-1 overflow-y-auto" style="background: var(--bg-canvas)">
+      <div class="max-w-[860px] mx-auto px-8 py-8">
         <h1 class="text-display text-fg-primary tracking-tight mb-8">Billing</h1>
 
-        <div v-if="loadingSub" class="text-fg-muted">Loading…</div>
-
-        <div v-else-if="stripeNotConfigured">
-          <SettingsSection
-            title="Vibecell Pro"
-            subtitle="€8.99 per month · 7-day trial · no credit card required for trial"
-          >
-            <ul class="space-y-2 mb-5 mono-label opacity-80">
-              <li>// unlimited projects</li>
-              <li>// AI enrichment from GitHub repos</li>
-              <li>// MCP server access for Claude / Cursor / Zed</li>
-              <li>// auto-screenshot + commit-sync cron jobs</li>
-              <li>// 365-day session retention</li>
-            </ul>
-            <PrimaryButton :disabled="checkingOut" :loading="checkingOut" @click="startCheckout">
-              Start 7-day trial
-            </PrimaryButton>
-            <p class="mono-label opacity-50 mt-3">
-              // payment method is requested only when the trial ends
-            </p>
-          </SettingsSection>
+        <div v-if="loadingSub" class="text-fg-muted py-12 text-center font-mono text-small">
+          Loading…
         </div>
 
-        <div v-else-if="sub">
-          <SettingsSection
-            title="Current plan"
-            :subtitle="`${sub.plan_name} — ${formattedPrice}`"
+        <template v-else>
+          <!-- ─────────────────── Hero / current state ─────────────────── -->
+          <div
+            class="rounded-xl p-7 mb-6 relative overflow-hidden"
+            style="
+              background: linear-gradient(135deg, rgba(92,200,164,0.06) 0%, rgba(138,180,255,0.04) 100%);
+              border: 1px solid rgba(92,200,164,0.18);
+              box-shadow: 0 0 48px rgba(92,200,164,0.06), inset 0 1px 0 rgba(92,200,164,0.1);
+            "
           >
-            <div class="space-y-3">
-              <div class="grid grid-cols-[120px_1fr] gap-3 items-baseline">
-                <span class="mono-label">status</span>
-                <span class="font-mono text-body" :class="{
-                  'text-signal-green': sub.status === 'active' || sub.status === 'trialing',
-                  'text-signal-red': sub.status === 'past_due' || sub.status === 'unpaid',
-                  'text-fg-muted': sub.status === 'canceled',
-                }">{{ statusLabel }}</span>
-              </div>
-              <div v-if="sub.status === 'trialing' && trialDaysLeft !== null" class="grid grid-cols-[120px_1fr] gap-3 items-baseline">
-                <span class="mono-label">trial ends</span>
-                <span class="font-mono text-body text-fg-body">
-                  in {{ trialDaysLeft }} {{ trialDaysLeft === 1 ? "day" : "days" }}
-                </span>
-              </div>
-              <div v-if="sub.current_period_end" class="grid grid-cols-[120px_1fr] gap-3 items-baseline">
-                <span class="mono-label">renews</span>
-                <span class="font-mono text-small text-fg-muted">
-                  {{ new Date(sub.current_period_end).toLocaleDateString() }}
-                  <span v-if="sub.cancel_at_period_end" class="text-signal-red">
-                    (will NOT renew)
+            <div class="flex items-start justify-between mb-5 flex-wrap gap-3">
+              <div>
+                <div class="flex items-center gap-3 mb-2">
+                  <span class="font-mono uppercase tracking-widest text-[11px]" style="color: #5cc8a4">
+                    Vibecell Pro
                   </span>
+                  <span
+                    class="px-2 py-0.5 rounded font-mono text-[10px] uppercase tracking-wider font-semibold"
+                    :style="{ background: statusBadge.bg, color: statusBadge.color }"
+                  >{{ statusBadge.label }}</span>
+                </div>
+                <div class="flex items-baseline gap-2">
+                  <span class="font-bold tracking-tight" style="font-size: 2.5rem; color: var(--fg-primary); line-height: 1">
+                    {{ formattedPrice }}
+                  </span>
+                  <span class="font-mono text-small text-fg-muted">/ month</span>
+                </div>
+                <p class="text-small text-fg-muted mt-2 max-w-md">
+                  One plan, one price. 7-day free trial — no credit card required to start.
+                </p>
+              </div>
+
+              <button
+                class="h-11 px-5 rounded-lg font-mono font-semibold text-[12px] transition-all hover:opacity-90"
+                style="background: #5cc8a4; color: #070b10; box-shadow: 0 0 20px rgba(92,200,164,0.25); white-space: nowrap"
+                :disabled="checkingOut || openingPortal"
+                @click="ctaPrimary.action"
+              >
+                {{ checkingOut || openingPortal ? "…" : ctaPrimary.label }} →
+              </button>
+            </div>
+
+            <!-- Trial progress bar -->
+            <div v-if="sub?.status === 'trialing' && trialDaysLeft !== null" class="mt-3">
+              <div class="flex items-center justify-between mb-2 text-[11px] font-mono">
+                <span style="color: #5cc8a4">
+                  {{ trialDaysLeft === 0 ? "Trial ended" : `${trialDaysLeft} day${trialDaysLeft === 1 ? "" : "s"} left` }}
                 </span>
+                <span class="text-fg-subtle">7-day trial</span>
+              </div>
+              <div class="h-1.5 rounded-full overflow-hidden" style="background: rgba(138,180,255,0.1)">
+                <div
+                  class="h-full rounded-full transition-all"
+                  :style="{
+                    width: `${Math.round(trialProgress * 100)}%`,
+                    background: trialDaysLeft <= 3 ? '#ffd66b' : '#5cc8a4',
+                  }"
+                />
               </div>
             </div>
-          </SettingsSection>
 
-          <SettingsSection
-            v-if="sub.status === 'trialing' || sub.status === 'past_due'"
-            title="Add payment method"
-            subtitle="Continue beyond trial / fix a failed payment via Stripe-hosted checkout."
-          >
-            <PrimaryButton :disabled="checkingOut" :loading="checkingOut" @click="startCheckout">
-              {{ sub.status === "past_due" ? "Update payment method" : "Add card" }}
-            </PrimaryButton>
-          </SettingsSection>
-
-          <SettingsSection
-            v-if="sub.status === 'active' || sub.status === 'past_due'"
-            title="Manage subscription"
-            subtitle="Stripe-hosted portal — change card, view invoices, cancel."
-          >
-            <button
-              type="button"
-              class="h-10 px-4 rounded-md text-body transition-colors"
-              :style="{ border: '1px solid var(--border)' }"
-              :disabled="openingPortal"
-              @click="openPortal"
+            <p
+              v-else-if="sub?.status === 'active' && sub.current_period_end"
+              class="font-mono text-[11px] text-fg-subtle"
             >
-              {{ openingPortal ? "Opening…" : "Open Stripe Customer Portal" }}
-            </button>
-          </SettingsSection>
-        </div>
+              <span v-if="showWillingCancel" style="color: #ff7e6c">
+                ⚠ Will not renew — access ends {{ new Date(sub.current_period_end).toLocaleDateString() }}
+              </span>
+              <span v-else>
+                Renews {{ new Date(sub.current_period_end).toLocaleDateString() }}
+              </span>
+            </p>
+
+            <p
+              v-else-if="sub?.status === 'past_due' || sub?.status === 'unpaid'"
+              class="font-mono text-[11px]" style="color: #ff7e6c"
+            >
+              Stripe couldn't process your last charge. Update your payment method to keep Pro access.
+            </p>
+
+            <p
+              v-else-if="sub?.status === 'canceled'"
+              class="font-mono text-[11px] text-fg-subtle"
+            >
+              Subscription canceled. Re-subscribe any time — your data is preserved.
+            </p>
+          </div>
+
+          <!-- ─────────────────── What you get ─────────────────── -->
+          <div class="mb-6">
+            <h2 class="font-mono text-[11px] uppercase tracking-widest text-fg-muted mb-4">
+              // what's included
+            </h2>
+            <div class="grid sm:grid-cols-2 gap-3">
+              <div
+                v-for="f in features"
+                :key="f.title"
+                class="rounded-lg p-4"
+                style="background: var(--bg-surface); border: 1px solid var(--border)"
+              >
+                <div class="flex items-start gap-3">
+                  <span
+                    class="font-mono text-[18px] leading-none mt-0.5 select-none"
+                    style="color: #5cc8a4; flex-shrink: 0; width: 22px"
+                  >{{ f.icon }}</span>
+                  <div>
+                    <div class="font-semibold text-body text-fg-body mb-1">{{ f.title }}</div>
+                    <p class="text-small text-fg-muted leading-snug">{{ f.body }}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ─────────────────── Manage section (only for paying users) ─── -->
+          <div
+            v-if="sub?.status === 'active' || sub?.status === 'past_due' || sub?.status === 'canceled'"
+            class="rounded-lg p-5 mb-6"
+            style="background: var(--bg-surface); border: 1px solid var(--border)"
+          >
+            <div class="flex items-center justify-between gap-4 flex-wrap">
+              <div>
+                <div class="font-semibold text-body text-fg-body mb-1">Manage subscription</div>
+                <p class="text-small text-fg-muted">
+                  Update payment method, view invoices, or cancel — Stripe-hosted portal.
+                </p>
+              </div>
+              <button
+                class="h-10 px-4 rounded-md text-small transition-colors hover:bg-bg-surface-hi"
+                style="border: 1px solid var(--border); color: var(--fg-body)"
+                :disabled="openingPortal"
+                @click="openPortal"
+              >{{ openingPortal ? "Opening…" : "Open portal →" }}</button>
+            </div>
+          </div>
+
+          <!-- ─────────────────── Footnote ─────────────────── -->
+          <p class="text-[11px] font-mono text-fg-subtle leading-relaxed">
+            // VAT applies based on your billing address (handled by Stripe Tax) ·
+            cancel any time from the portal · keep access through the end of the
+            current period after cancel · we never share or sell your data ·
+            full export / delete from
+            <router-link to="/settings" class="underline hover:text-fg-muted">/settings</router-link>
+          </p>
+        </template>
       </div>
     </div>
   </div>

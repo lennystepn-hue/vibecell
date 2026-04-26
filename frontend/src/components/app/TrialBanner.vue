@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 
 interface SubscriptionShape {
@@ -10,15 +10,64 @@ interface SubscriptionShape {
 
 const router = useRouter();
 const sub = ref<SubscriptionShape | null>(null);
+const dismissed = ref(false);
+
+/** Per-status dismiss key — once the user dismisses the banner for a given
+ *  status, we don't re-show it for that status until either:
+ *   - the status changes (trialing → past_due, etc.)
+ *   - 24h passes (so urgent reminders come back)
+ *   - the trial reaches the last day (urgent state always re-shows)
+ *
+ *  Last-day re-show is non-negotiable: dismiss is for "I get it, I'll
+ *  add the card later", not for "make this go away forever".
+ */
+const DISMISS_TTL_MS = 24 * 60 * 60 * 1000;
+
+function dismissKey(status: string): string {
+  return `vibecell.trialBanner.dismissed:${status}`;
+}
+
+function readDismissed(status: string): boolean {
+  try {
+    const raw = localStorage.getItem(dismissKey(status));
+    if (!raw) return false;
+    const ts = parseInt(raw, 10);
+    if (!Number.isFinite(ts)) return false;
+    return Date.now() - ts < DISMISS_TTL_MS;
+  } catch {
+    return false;
+  }
+}
+
+function dismiss() {
+  if (!sub.value) return;
+  try {
+    localStorage.setItem(dismissKey(sub.value.status), String(Date.now()));
+  } catch {
+    /* localStorage blocked — at least dismiss this session */
+  }
+  dismissed.value = true;
+}
 
 async function load() {
   try {
     const r = await fetch("/api/v1/me/subscription", { credentials: "include" });
-    if (r.ok) sub.value = await r.json();
+    if (r.ok) {
+      sub.value = await r.json();
+      if (sub.value) dismissed.value = readDismissed(sub.value.status);
+    }
   } catch {
     /* silent — banner just won't render */
   }
 }
+
+// Re-evaluate dismissed-state when sub changes (status flip = banner returns).
+watch(
+  () => sub.value?.status,
+  (s) => {
+    if (s) dismissed.value = readDismissed(s);
+  },
+);
 
 const trialDaysLeft = computed(() => {
   if (!sub.value?.trial_ends_at) return null;
@@ -43,6 +92,37 @@ const variant = computed<"urgent" | "info" | "danger" | "muted" | null>(() => {
   if (sub.value.status === "past_due" || sub.value.status === "unpaid") return "danger";
   if (sub.value.status === "canceled") return "muted";
   return null;
+});
+
+/** Final visibility: variant exists AND not dismissed UNLESS we're in
+ *  last-day-or-past trial territory — then show no matter what. The
+ *  user explicitly asked for dismissibility but we still want the
+ *  "your trial is OVER" reminder to be impossible to silence. */
+const finalVisible = computed(() => {
+  if (!variant.value) return false;
+  if (dismissed.value) {
+    // Override the dismiss for "trial about to expire" — final-day reminder
+    // is mission-critical. They can dismiss again the same day if they
+    // really want to — that just hides it for the next 24h, by which
+    // time their trial is over and the status flips to past_due (which is
+    // its OWN dismiss key, so the banner returns).
+    if (sub.value?.status === "trialing" && (trialDaysLeft.value ?? 99) <= 1) {
+      return true;
+    }
+    return false;
+  }
+  return true;
+});
+
+const dismissible = computed(() => {
+  // Don't allow dismiss on the truly urgent states.
+  if (sub.value?.status === "past_due" || sub.value?.status === "unpaid") {
+    return false;
+  }
+  if (sub.value?.status === "trialing" && (trialDaysLeft.value ?? 99) <= 0) {
+    return false;
+  }
+  return true;
 });
 
 const text = computed(() => {
@@ -88,8 +168,8 @@ onMounted(load);
 
 <template>
   <div
-    v-if="variant"
-    class="px-4 py-2 flex items-center justify-between gap-4 font-mono"
+    v-if="finalVisible"
+    class="px-4 py-2 flex items-center gap-4 font-mono"
     :style="{
       background:
         variant === 'urgent' ? 'rgba(255,200,80,0.08)' :
@@ -105,7 +185,7 @@ onMounted(load);
       fontSize: '11px',
     }"
   >
-    <span :style="{
+    <span class="flex-1 truncate" :style="{
       color:
         variant === 'urgent' ? '#ffd66b' :
         variant === 'info' ? '#5cc8a4' :
@@ -115,7 +195,7 @@ onMounted(load);
       {{ text }}
     </span>
     <button
-      class="px-3 py-1 rounded text-[10px] font-medium uppercase tracking-wider transition-opacity hover:opacity-80"
+      class="px-3 py-1 rounded text-[10px] font-medium uppercase tracking-wider transition-opacity hover:opacity-80 shrink-0"
       :style="{
         background:
           variant === 'urgent' ? '#ffd66b' :
@@ -128,5 +208,19 @@ onMounted(load);
       }"
       @click="go"
     >{{ ctaLabel }} →</button>
+    <button
+      v-if="dismissible"
+      class="ml-1 w-6 h-6 flex items-center justify-center rounded transition-opacity hover:opacity-100 shrink-0"
+      :style="{
+        opacity: 0.5,
+        color:
+          variant === 'urgent' ? '#ffd66b' :
+          variant === 'info' ? '#5cc8a4' :
+          '#8ba1bd',
+      }"
+      title="Dismiss for 24h"
+      aria-label="Dismiss banner"
+      @click="dismiss"
+    >×</button>
   </div>
 </template>
