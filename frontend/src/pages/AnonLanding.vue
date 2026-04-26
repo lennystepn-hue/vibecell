@@ -259,10 +259,11 @@ const steps = [
             style="font-size: clamp(2.6rem, 5.5vw, 4.4rem); letter-spacing: -0.04em; color: #ffffff">
             The project console<br>
             for
-            <!-- Single accent picked from the orb palette — keeps brand link
-                 to the rotating sphere on the right without the multi-stop
-                 rainbow that read AI-ish. -->
-            <span style="color: #5cc8a4">shipping devs.</span>
+            <!-- Same color band as the orb (mint → violet → mint → pink) —
+                 sweeps across the text on the same 18s cadence as the orb's
+                 aurora-rotate, so the headline and the orb feel sourced
+                 from the same animated palette. -->
+            <span class="aurora-text">shipping devs.</span>
           </h1>
 
           <p class="mb-9 leading-relaxed max-w-md"
@@ -905,3 +906,40 @@ const steps = [
     </footer>
   </div>
 </template>
+
+<style scoped>
+/* Aurora text — sweeps a wide gradient through the text to match the
+ * conic-gradient on HeroOrb. 18s linear infinite mirrors the orb's
+ * aurora-rotate so headline + orb feel like one breathing organism. */
+.aurora-text {
+  background-image: linear-gradient(
+    100deg,
+    #5cc8a4 0%,
+    #b592ff 25%,
+    #7dffd4 50%,
+    #ff6b9d 75%,
+    #5cc8a4 100%
+  );
+  background-size: 300% 100%;
+  background-position: 0% 50%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  animation: aurora-shift 18s linear infinite;
+  will-change: background-position;
+}
+
+@keyframes aurora-shift {
+  from { background-position: 0% 50%; }
+  to   { background-position: 300% 50%; }
+}
+
+/* Reduced-motion users: snapshot the gradient at a calm position, no animation. */
+@media (prefers-reduced-motion: reduce) {
+  .aurora-text {
+    animation: none;
+    background-position: 25% 50%;
+  }
+}
+</style>
