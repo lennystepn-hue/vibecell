@@ -93,7 +93,17 @@ onMounted(() => {
     if (progress < 1) setTimeout(tick, step);
   }
   setTimeout(tick, 400);
+  loadLaunchStatus();
 });
+
+interface LaunchStatus { active: boolean; remaining: number; max: number }
+const launch = ref<LaunchStatus>({ active: false, remaining: 0, max: 100 });
+async function loadLaunchStatus() {
+  try {
+    const r = await fetch("/api/v1/billing/launch-status");
+    if (r.ok) launch.value = await r.json();
+  } catch { /* silent */ }
+}
 
 // Removed the generic feature grid — it repeated what the orb-showcase +
 // MCP catalog + session-mockup already cover. Keeping the surface tight.
@@ -734,69 +744,91 @@ const steps = [
 
     <!-- ─── Pricing teaser ───────────────────────────────────────────────── -->
     <section class="py-28 px-6">
-      <div class="max-w-3xl mx-auto">
-        <div class="text-center mb-14">
+      <div class="max-w-2xl mx-auto">
+        <div class="text-center mb-12">
           <p class="font-mono text-[11px] uppercase tracking-[0.15em] mb-3" style="color: #5cc8a4">
             Pricing
           </p>
           <h2 class="font-semibold mb-3" style="font-size: clamp(1.6rem, 3vw, 2.4rem); letter-spacing: -0.03em; color: #ffffff">
-            Start free. Ship serious.
+            One plan. <span style="color:#5cc8a4">Two cycles.</span>
           </h2>
-          <p style="color: #8ba1bd; font-size: 14px">Upgrade only when you outgrow the free tier.</p>
+          <p style="color: #8ba1bd; font-size: 14px">7-day free trial on monthly · annual locks the price · cancel anytime.</p>
         </div>
 
-        <div class="grid md:grid-cols-2 gap-6">
-          <!-- Free -->
+        <!-- Launch ribbon — only renders while LAUNCH69 has redemptions left -->
+        <div
+          v-if="launch.active"
+          class="rounded-lg px-4 py-3 mb-5 text-center font-mono"
+          style="background: linear-gradient(90deg, rgba(255,200,80,0.14), rgba(92,200,164,0.14)); border: 1px solid rgba(255,200,80,0.3)"
+        >
+          <p style="font-size: 11px; color: #ffd66b; letter-spacing: 0.05em">
+            🎉 LAUNCH OFFER · {{ launch.remaining }} of {{ launch.max }} spots left
+          </p>
+          <p class="mt-1" style="font-size: 12px; color: #cfd4dc">
+            First 100 annual signups: <strong style="color:#ffd66b">€69.99</strong> first year
+            <span style="color:#5e7088">(then €99.99)</span>
+          </p>
+        </div>
+
+        <div class="grid md:grid-cols-2 gap-5">
+          <!-- Monthly -->
           <div class="rounded-xl p-7 flex flex-col"
-            style="background: rgba(20,33,50,0.5); border: 1px solid rgba(138,180,255,0.1)">
-            <p class="font-mono text-[11px] uppercase tracking-[0.12em] mb-3" style="color: #5e7088">Free</p>
-            <p class="font-bold mb-4" style="font-size: 2.8rem; color: #ffffff; letter-spacing: -0.04em; line-height: 1">
-              $0
-            </p>
-            <ul class="space-y-2.5 mb-8 flex-1" style="font-size: 12px; color: #8ba1bd">
-              <li class="flex gap-2.5 items-start"><span style="color:#5cc8a4;margin-top:1px">✓</span> 3 active projects</li>
-              <li class="flex gap-2.5 items-start"><span style="color:#5cc8a4;margin-top:1px">✓</span> 500 MCP calls / month</li>
-              <li class="flex gap-2.5 items-start"><span style="color:#5cc8a4;margin-top:1px">✓</span> Magic link login</li>
-              <li class="flex gap-2.5 items-start"><span style="color:#5cc8a4;margin-top:1px">✓</span> GitHub import + AI enrichment</li>
-              <li class="flex gap-2.5 items-start"><span style="color:#5cc8a4;margin-top:1px">✓</span> Full MCP + CLI access</li>
+            style="background: rgba(20,33,50,0.5); border: 1px solid rgba(138,180,255,0.12)">
+            <p class="font-mono text-[11px] uppercase tracking-[0.12em] mb-3" style="color: #8ba1bd">Pro · Monthly</p>
+            <div class="flex items-end gap-1 mb-2">
+              <p class="font-bold" style="font-size: 2.8rem; color: #ffffff; letter-spacing: -0.04em; line-height: 1">€8.99</p>
+              <p class="mb-2" style="color: #8ba1bd; font-size: 13px">/ month</p>
+            </div>
+            <p class="mb-5" style="font-size: 11px; color: #5e7088">7-day trial · no credit card to start</p>
+            <ul class="space-y-2 mb-7 flex-1" style="font-size: 12px; color: #8ba1bd">
+              <li class="flex gap-2 items-start"><span style="color:#5cc8a4;margin-top:1px">✓</span> Unlimited projects</li>
+              <li class="flex gap-2 items-start"><span style="color:#5cc8a4;margin-top:1px">✓</span> AI enrichment from GitHub</li>
+              <li class="flex gap-2 items-start"><span style="color:#5cc8a4;margin-top:1px">✓</span> MCP server access</li>
+              <li class="flex gap-2 items-start"><span style="color:#5cc8a4;margin-top:1px">✓</span> Auto-cron + secrets vault</li>
             </ul>
             <button
               class="w-full py-2.5 rounded-lg font-mono text-[13px] transition-all hover:opacity-80"
-              style="border: 1px solid rgba(138,180,255,0.18); color: #cfd4dc"
+              style="border: 1px solid rgba(138,180,255,0.2); color: #cfd4dc"
               @click="goSignIn">
-              Get started free
+              Start 7-day trial →
             </button>
           </div>
 
-          <!-- Pro -->
+          <!-- Annual / Launch -->
           <div class="rounded-xl p-7 flex flex-col relative overflow-hidden"
-            style="background: rgba(92,200,164,0.05); border: 1px solid rgba(92,200,164,0.25); box-shadow: 0 0 40px rgba(92,200,164,0.06)">
-            <!-- Most popular ribbon -->
+            style="background: rgba(92,200,164,0.05); border: 1px solid rgba(92,200,164,0.3); box-shadow: 0 0 40px rgba(92,200,164,0.06)">
             <div class="absolute top-0 right-0 font-mono text-[10px] uppercase tracking-widest px-3 py-1 rounded-bl"
-              style="background: #5cc8a4; color: #070b10">
-              Most popular
+              :style="{ background: launch.active ? '#ffd66b' : '#5cc8a4', color: '#070b10' }">
+              {{ launch.active ? 'Launch · save €38' : 'Best value' }}
             </div>
-            <p class="font-mono text-[11px] uppercase tracking-[0.12em] mb-3" style="color: #5cc8a4">Pro</p>
+            <p class="font-mono text-[11px] uppercase tracking-[0.12em] mb-3" style="color: #5cc8a4">Pro · Annual</p>
             <div class="flex items-end gap-1 mb-1">
-              <p class="font-bold" style="font-size: 2.8rem; color: #ffffff; letter-spacing: -0.04em; line-height: 1">$12</p>
-              <p class="mb-2" style="color: #8ba1bd; font-size: 13px">/ month</p>
+              <p class="font-bold" :style="{
+                fontSize: '2.8rem',
+                color: launch.active ? '#ffd66b' : '#ffffff',
+                letterSpacing: '-0.04em',
+                lineHeight: 1,
+              }">{{ launch.active ? '€69.99' : '€99.99' }}</p>
+              <p class="mb-2" style="color: #8ba1bd; font-size: 13px">/ year</p>
             </div>
-            <p class="mb-4" style="font-size: 11px; color: #5e7088">Per workspace · cancel any time</p>
-            <ul class="space-y-2.5 mb-8 flex-1" style="font-size: 12px; color: #8ba1bd">
-              <li class="flex gap-2.5 items-start"><span style="color:#5cc8a4;margin-top:1px">✓</span> <strong style="color:#cfd4dc">Unlimited</strong>&nbsp;projects</li>
-              <li class="flex gap-2.5 items-start"><span style="color:#5cc8a4;margin-top:1px">✓</span> 10,000 MCP calls / month</li>
-              <li class="flex gap-2.5 items-start"><span style="color:#5cc8a4;margin-top:1px">✓</span> Passkey (Touch ID / Face ID)</li>
-              <li class="flex gap-2.5 items-start"><span style="color:#5cc8a4;margin-top:1px">✓</span> Up to 5 workspace seats</li>
-              <li class="flex gap-2.5 items-start"><span style="color:#5cc8a4;margin-top:1px">✓</span> Auto-signals + Portfolio intel</li>
-              <li class="flex gap-2.5 items-start"><span style="color:#5cc8a4;margin-top:1px">✓</span> Priority support</li>
+            <p v-if="launch.active" class="mb-5" style="font-size: 11px; color: #ffd66b">
+              First 100 only · renews €99.99
+            </p>
+            <p v-else class="mb-5" style="font-size: 11px; color: #5e7088">
+              ~7% off vs monthly · billed yearly
+            </p>
+            <ul class="space-y-2 mb-7 flex-1" style="font-size: 12px; color: #8ba1bd">
+              <li class="flex gap-2 items-start"><span style="color:#5cc8a4;margin-top:1px">✓</span> Everything in monthly</li>
+              <li class="flex gap-2 items-start"><span style="color:#5cc8a4;margin-top:1px">✓</span> Locked-in price for 12 months</li>
+              <li class="flex gap-2 items-start"><span style="color:#5cc8a4;margin-top:1px">✓</span> Stripe Tax / EU-VAT invoicing</li>
+              <li class="flex gap-2 items-start"><span style="color:#5cc8a4;margin-top:1px">✓</span> 14-day Widerrufsrecht</li>
             </ul>
             <button
               class="w-full py-2.5 rounded-lg font-mono font-semibold text-[13px] transition-all hover:opacity-90"
               style="background: #5cc8a4; color: #070b10; box-shadow: 0 0 20px rgba(92,200,164,0.2)"
               @click="goSignIn">
-              Start free trial →
+              {{ launch.active ? 'Get launch price €69.99 →' : 'Get annual €99.99 →' }}
             </button>
-            <p class="text-center mt-2 font-mono" style="font-size: 10px; color: #5e7088">14-day trial · no credit card</p>
           </div>
         </div>
 
@@ -804,7 +836,7 @@ const steps = [
           <router-link to="/pricing"
             class="font-mono transition-colors hover:text-fg-primary"
             style="font-size: 12px; color: #5e7088">
-            See full pricing details →
+            See full pricing details + FAQ →
           </router-link>
         </div>
       </div>
