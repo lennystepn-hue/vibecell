@@ -33,7 +33,7 @@ from collections.abc import Awaitable, Callable
 from fastapi import FastAPI, Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
 
-from app.core.db import session_scope
+from app.core.db import get_db
 from app.services.access_level import access_level_for_user
 
 # HTTP methods that mutate state. Anything not in this set bypasses the
@@ -106,8 +106,26 @@ class PlanGateMiddleware(BaseHTTPMiddleware):
         if not user_id:
             return await call_next(request)
 
-        async with session_scope() as db:
+        # Honour FastAPI's dependency_overrides for get_db so the test
+        # suite (which puts the whole test in one rollback'd transaction
+        # and shares the session via the override) sees the same in-flight
+        # data as the request handler. In production the override is
+        # absent and we just open a fresh session per write.
+        get_db_fn = request.app.dependency_overrides.get(get_db, get_db)
+        gen = get_db_fn()
+        try:
+            db = await gen.__anext__()
+        except StopAsyncIteration:
+            # Fall-back: dependency override returned nothing — fail closed.
+            return _problem_response()
+        try:
             level = await access_level_for_user(db, user_id)
+        finally:
+            try:
+                await gen.aclose()
+            except Exception:
+                pass
+
         if level != "full":
             return _problem_response()
 
