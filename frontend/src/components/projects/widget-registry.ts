@@ -186,33 +186,48 @@ export const WIDGETS: Record<string, WidgetDef> = {
 
 /**
  * Factory layout — what every new project sees before the user customises.
- * Grid is 12 columns. h units are ~ 40px each.
+ * Grid is 12 columns. h units are ~ 40px each (16px gutter between rows).
+ *
+ * Design goals (set 2026-04-26):
+ *   1. Zero visible gaps for a freshly-created project. Empty cards
+ *      ("0 ships · 0 launches", "no infra configured") get small h so
+ *      they don't reserve 250px of grey real-estate.
+ *   2. Above-the-fold: brief, health, focus, todos. The first
+ *      thing a new user sees should be CTA-shaped, not "no data".
+ *   3. Metadata cluster (stack, tags, infra) sits right under work zone
+ *      as a single 3-card row — looks intentional whether populated or
+ *      empty.
+ *   4. Row heights chosen so a typical empty card hugs its placeholder
+ *      ("Empty" / "no X recorded") and a typical populated card has
+ *      breathing room, but neither over-reserves.
  */
 export const DEFAULT_LAYOUT: WidgetLayout[] = [
-  // Top row: brief (wide) + health (narrow)
-  { i: "brief",          x: 0,  y: 0,  w: 8, h: 5, minW: 5, minH: 4 },
-  { i: "health",         x: 8,  y: 0,  w: 4, h: 5, minW: 3, minH: 4 },
-  // Current focus: full width
-  { i: "focus",          x: 0,  y: 5,  w: 12, h: 4, minW: 4, minH: 4 },
-  // Todos: full width (the hero of the work zone)
-  { i: "todos",          x: 0,  y: 9,  w: 12, h: 6, minW: 5, minH: 5 },
-  // Sessions + decisions
-  { i: "sessions",       x: 0,  y: 15, w: 6, h: 5, minW: 4, minH: 4 },
-  { i: "decisions",      x: 6,  y: 15, w: 6, h: 5, minW: 4, minH: 4 },
-  // Launches + notes
-  { i: "launches",       x: 0,  y: 20, w: 6, h: 5, minW: 4, minH: 4 },
-  { i: "notes",          x: 6,  y: 20, w: 6, h: 5, minW: 4, minH: 4 },
-  // Config row: infra / stack / tags
-  { i: "infra",          x: 0,  y: 25, w: 4, h: 4, minW: 3, minH: 3 },
-  { i: "stack",          x: 4,  y: 25, w: 4, h: 4, minW: 3, minH: 3 },
-  { i: "tags",           x: 8,  y: 25, w: 4, h: 4, minW: 3, minH: 3 },
-  // Links + environments
-  { i: "links-commands", x: 0,  y: 29, w: 8, h: 5, minW: 4, minH: 4 },
-  { i: "environments",   x: 8,  y: 29, w: 4, h: 5, minW: 3, minH: 3 },
-  // Secrets full-width
-  { i: "secrets",        x: 0,  y: 34, w: 12, h: 5, minW: 5, minH: 4 },
-  // Activity timeline at the bottom
-  { i: "activity",       x: 0,  y: 39, w: 12, h: 8, minW: 6, minH: 6 },
+  // Hero row — project identity + health badges
+  { i: "brief",          x: 0,  y: 0,  w: 8, h: 4, minW: 5, minH: 3 },
+  { i: "health",         x: 8,  y: 0,  w: 4, h: 4, minW: 3, minH: 3 },
+  // Daily-driver row — what's the user supposed to do next
+  { i: "focus",          x: 0,  y: 4,  w: 12, h: 3, minW: 4, minH: 3 },
+  // Work zone — todos always render full-bleed
+  { i: "todos",          x: 0,  y: 7,  w: 12, h: 5, minW: 5, minH: 4 },
+  // Project metadata triplet — always 3 cards in one row, fills cleanly
+  { i: "stack",          x: 0,  y: 12, w: 4, h: 3, minW: 3, minH: 3 },
+  { i: "tags",           x: 4,  y: 12, w: 4, h: 3, minW: 3, minH: 3 },
+  { i: "infra",          x: 8,  y: 12, w: 4, h: 3, minW: 3, minH: 3 },
+  // Recent activity pair
+  { i: "sessions",       x: 0,  y: 15, w: 6, h: 4, minW: 4, minH: 3 },
+  { i: "decisions",      x: 6,  y: 15, w: 6, h: 4, minW: 4, minH: 3 },
+  // Operational links + envs
+  { i: "links-commands", x: 0,  y: 19, w: 8, h: 4, minW: 4, minH: 3 },
+  { i: "environments",   x: 8,  y: 19, w: 4, h: 4, minW: 3, minH: 3 },
+  // Notes + launches paired so empty-launch doesn't dominate
+  { i: "notes",          x: 0,  y: 23, w: 6, h: 4, minW: 4, minH: 3 },
+  { i: "launches",       x: 6,  y: 23, w: 6, h: 4, minW: 4, minH: 3 },
+  // Secrets full-width — visually dense once populated, h=4 keeps it
+  // under-the-fold for empty case
+  { i: "secrets",        x: 0,  y: 27, w: 12, h: 4, minW: 5, minH: 3 },
+  // Activity timeline closes out — full width, taller because it's the
+  // narrative of the project
+  { i: "activity",       x: 0,  y: 31, w: 12, h: 6, minW: 6, minH: 5 },
 ];
 
 export function widgetById(id: string): WidgetDef | undefined {
