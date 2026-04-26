@@ -286,10 +286,11 @@ const steps = [
             </button>
           </div>
 
-          <!-- Quiet technical line — replaces the animated counters that
-               read like vanity metrics. Pure facts, mono-label cadence. -->
+          <!-- Feature signal — surfaces the actual product surface
+               (dashboard + MCP tools + cron + secrets + history) rather
+               than infrastructure. Mono-label cadence, no marketing copy. -->
           <p class="font-mono text-[11px]" style="color: #5e7088; letter-spacing: 0.04em">
-            single binary · MCP 2024-11-05 · postgres + redis · self-hostable
+            dashboard · 47 MCP tools · auto-cron · session log · workspace secrets
           </p>
         </div>
 
