@@ -94,36 +94,21 @@ const variant = computed<"urgent" | "info" | "danger" | "muted" | null>(() => {
   return null;
 });
 
-/** Final visibility: variant exists AND not dismissed UNLESS we're in
- *  last-day-or-past trial territory — then show no matter what. The
- *  user explicitly asked for dismissibility but we still want the
- *  "your trial is OVER" reminder to be impossible to silence. */
+/** Final visibility: variant exists AND not dismissed. The 24h TTL on
+ *  dismiss + per-status keying brings the banner back automatically when
+ *  it actually matters (status flips to past_due → fresh dismiss key →
+ *  re-shown). User asked to be able to silence — respect that, no
+ *  paternalistic overrides. */
 const finalVisible = computed(() => {
   if (!variant.value) return false;
-  if (dismissed.value) {
-    // Override the dismiss for "trial about to expire" — final-day reminder
-    // is mission-critical. They can dismiss again the same day if they
-    // really want to — that just hides it for the next 24h, by which
-    // time their trial is over and the status flips to past_due (which is
-    // its OWN dismiss key, so the banner returns).
-    if (sub.value?.status === "trialing" && (trialDaysLeft.value ?? 99) <= 1) {
-      return true;
-    }
-    return false;
-  }
-  return true;
+  return !dismissed.value;
 });
 
-const dismissible = computed(() => {
-  // Don't allow dismiss on the truly urgent states.
-  if (sub.value?.status === "past_due" || sub.value?.status === "unpaid") {
-    return false;
-  }
-  if (sub.value?.status === "trialing" && (trialDaysLeft.value ?? 99) <= 0) {
-    return false;
-  }
-  return true;
-});
+/** Always dismissible — even past_due / trial-ended. The 24h TTL +
+ *  per-status keying means the banner returns soon enough that nobody
+ *  sleeps on a real billing problem; trying to lock the user out of
+ *  hiding their own UI is paternalistic and they pushed back on it. */
+const dismissible = computed(() => true);
 
 const text = computed(() => {
   if (!sub.value) return "";
@@ -178,19 +163,19 @@ const VARIANT_TOKENS: Record<
     fg: "var(--signal-amber)",
     bg: "var(--signal-amber-bg)",
     border: "var(--signal-amber)",
-    ctaText: "var(--bg-canvas)",
+    ctaText: "var(--on-signal)",
   },
   info: {
     fg: "var(--signal-green)",
     bg: "var(--signal-green-bg)",
     border: "var(--signal-green)",
-    ctaText: "var(--bg-canvas)",
+    ctaText: "var(--on-signal)",
   },
   danger: {
     fg: "var(--signal-red)",
     bg: "var(--signal-red-bg)",
     border: "var(--signal-red)",
-    ctaText: "var(--bg-canvas)",
+    ctaText: "var(--on-signal)",
   },
   muted: {
     fg: "var(--fg-muted)",
