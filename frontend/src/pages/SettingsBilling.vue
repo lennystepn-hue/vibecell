@@ -323,42 +323,49 @@ onMounted(() => {
           </div>
 
           <!-- ─── Launch-coupon callout ─── shows when LAUNCH69 still has
-               redemptions AND user isn't already on annual.  -->
+               redemptions AND user isn't already on annual. Single-accent
+               (amber only), no gradient backdrop, no emoji. -->
           <div
             v-if="launch.active && sub?.plan_slug !== 'pro_annual'"
-            class="rounded-xl p-5 mb-6 relative overflow-hidden"
+            class="rounded-lg p-5 mb-6"
             :style="{
-              background: 'linear-gradient(135deg, rgba(255,200,80,0.10) 0%, rgba(92,200,164,0.06) 100%)',
+              background: 'var(--signal-amber-bg)',
               border: '1px solid var(--signal-amber)',
             }"
           >
-            <div class="flex items-start justify-between gap-4 flex-wrap">
+            <div class="flex items-start justify-between gap-5 flex-wrap">
               <div class="flex-1 min-w-[260px]">
-                <div class="flex items-center gap-2 mb-2 font-mono uppercase tracking-widest" style="font-size: 10px; color: var(--signal-amber)">
-                  🎉 Launch offer · {{ launch.remaining }} of {{ launch.max }} spots left
-                </div>
-                <div class="flex items-baseline gap-3 flex-wrap mb-1">
-                  <span class="font-bold text-fg-subtle line-through" style="font-size: 1.4rem; line-height: 1; text-decoration-thickness: 2px">€99.99</span>
+                <p
+                  class="font-mono mb-3"
+                  style="font-size: 10px; color: var(--signal-amber); letter-spacing: 0.12em; text-transform: uppercase"
+                >
+                  // launch · {{ String(launch.max - launch.remaining).padStart(3, '0') }}/{{ launch.max }} taken
+                </p>
+                <div class="flex items-baseline gap-2 mb-3 flex-wrap">
                   <span class="font-bold tracking-tight" style="font-size: 2.4rem; color: var(--signal-amber); line-height: 1">€69.99</span>
                   <span class="font-mono text-fg-muted text-small">/ year</span>
+                  <span
+                    class="font-mono ml-1"
+                    style="font-size: 12px; color: var(--fg-subtle); text-decoration: line-through; text-decoration-thickness: 1px"
+                  >€99.99</span>
                 </div>
-                <p class="text-small text-fg-body mt-1">
-                  Switch to annual now — pay <strong style="color: var(--signal-amber)">€69.99 once</strong> instead of
-                  <strong style="color: var(--fg-body)">€107.88</strong> over 12 monthly charges.
-                  <span class="text-fg-muted">Renews at €99.99/year, cancel from the portal.</span>
+                <p class="text-small text-fg-body leading-relaxed">
+                  €69.99 for the first year · −€37.89 vs 12× monthly ·
+                  <span class="text-fg-muted">renews €99.99, cancel from portal</span>
                 </p>
               </div>
               <button
-                class="h-11 px-5 rounded-lg font-mono font-semibold text-[12px] transition-all hover:opacity-90 self-center"
+                class="h-10 px-4 rounded-md font-mono text-[11px] transition-opacity hover:opacity-85 self-center tracking-wider uppercase"
                 :style="{
                   background: 'var(--signal-amber)',
                   color: 'var(--on-signal)',
                   whiteSpace: 'nowrap',
+                  fontWeight: 600,
                 }"
                 :disabled="checkingOutAnnual || checkingOut || openingPortal"
                 @click="startCheckout('pro_annual')"
               >
-                {{ checkingOutAnnual ? '…' : 'Get launch price →' }}
+                {{ checkingOutAnnual ? '…' : 'Take launch price →' }}
               </button>
             </div>
           </div>

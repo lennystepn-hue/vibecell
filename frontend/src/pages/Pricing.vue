@@ -178,22 +178,21 @@ const faqs = [
       </p>
     </section>
 
-    <!-- ─── Launch ribbon (only renders when launch coupon is still active) ─ -->
+    <!-- ─── Launch marker (only renders when launch coupon is still active) ─ -->
     <section
       v-if="launch.active"
       class="max-w-md mx-auto px-6 mb-6"
     >
       <div
-        class="rounded-lg px-4 py-3 text-center font-mono"
-        style="background: linear-gradient(90deg, rgba(255,200,80,0.12), rgba(92,200,164,0.12)); border: 1px solid rgba(255,200,80,0.3)"
+        class="rounded-md px-4 py-2.5 font-mono flex items-baseline justify-between gap-3"
+        style="background: rgba(245,184,74,0.06); border: 1px solid rgba(245,184,74,0.22)"
       >
-        <p style="font-size: 11px; color: #ffd66b; letter-spacing: 0.05em">
-          🎉 LAUNCH OFFER · {{ launch.remaining }} of {{ launch.max }} spots left
-        </p>
-        <p class="mt-1" style="font-size: 12px; color: #cfd4dc">
-          First 100 annual customers: <strong style="color:#ffd66b">€69.99</strong> first year
-          <span style="color: #5e7088">(then €99.99)</span>
-        </p>
+        <span style="font-size: 10px; color: #f5b84a; letter-spacing: 0.12em; text-transform: uppercase">
+          // launch · {{ String(launch.max - launch.remaining).padStart(3, '0') }}/{{ launch.max }}
+        </span>
+        <span style="font-size: 11px; color: #8ba1bd; letter-spacing: 0.02em">
+          first {{ launch.remaining }} get <strong style="color:#f5b84a; font-weight: 600">€69.99</strong> · then €99.99
+        </span>
       </div>
     </section>
 
@@ -254,22 +253,26 @@ const faqs = [
 
         <!-- Annual price block (dynamic — shows €69.99 launch or €99.99 standard) -->
         <template v-else>
-          <div class="flex items-end gap-3 mb-1 flex-wrap">
-            <!-- When launch is active: show €99.99 struck-through next to €69.99 -->
-            <span v-if="launch.active" class="font-bold" style="font-size: 2rem; color: #5e7088; text-decoration: line-through; text-decoration-thickness: 2px; line-height: 1; letter-spacing: -0.04em">€99.99</span>
+          <div class="flex items-baseline gap-2 mb-1 flex-wrap">
             <span class="font-bold" :style="{
               fontSize: '4rem',
-              color: launch.active ? '#ffd66b' : '#ffffff',
+              color: launch.active ? '#f5b84a' : '#ffffff',
               letterSpacing: '-0.05em',
               lineHeight: 1,
             }">{{ formatEur(annualEffectiveCents) }}</span>
-            <span class="mb-3" style="font-size: 14px; color: #8ba1bd">/ year</span>
+            <span style="font-size: 14px; color: #8ba1bd">/ year</span>
+            <!-- Was-price as a sub-typographic note, not a co-equal sibling -->
+            <span
+              v-if="launch.active"
+              class="font-mono ml-1"
+              style="font-size: 12px; color: #5e7088; text-decoration: line-through; text-decoration-thickness: 1px; letter-spacing: 0"
+            >€99.99</span>
           </div>
-          <p v-if="launch.active" class="mb-1 font-mono" style="font-size: 11px; color: #ffd66b; letter-spacing: 0.03em">
-            🎉 LAUNCH PRICE — first {{ launch.max }} customers · {{ launch.remaining }} spots left
+          <p v-if="launch.active" class="mb-1 font-mono" style="font-size: 10px; color: #f5b84a; letter-spacing: 0.12em; text-transform: uppercase">
+            // launch · {{ launch.remaining }} of {{ launch.max }} seats left
           </p>
           <p class="mb-8" style="font-size: 12px; color: #5e7088">
-            <span v-if="launch.active">Saves <strong style="color:#ffd66b">{{ formatEur(annualSavingsVsMonthlyCents) }}</strong> vs monthly · renews at €99.99/year · </span>
+            <span v-if="launch.active">−{{ formatEur(annualSavingsVsMonthlyCents) }} vs monthly · renews at €99.99 · </span>
             <span>cancel from Stripe portal · billed yearly</span>
           </p>
         </template>
