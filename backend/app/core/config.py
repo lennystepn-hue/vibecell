@@ -77,6 +77,14 @@ class Settings(BaseSettings):
         description="price_... — Stripe Price ID for the Pro plan. Set after "
                     "running `stripe products create` (see ops/stripe-setup.sh).",
     )
+    stripe_pro_annual_price_id: str = Field(
+        default="",
+        description="price_... — Stripe Price ID for the annual Pro plan.",
+    )
+    stripe_launch_coupon_id: str = Field(
+        default="LAUNCH69",
+        description="Coupon code applied to first-100 annual signups for €30 off.",
+    )
 
 
 @lru_cache(maxsize=1)

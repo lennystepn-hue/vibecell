@@ -28,8 +28,12 @@ from typing import Any
 STRIPE_API = "https://api.stripe.com/v1"
 WEBHOOK_URL = "https://vibecell.dev/api/v1/billing/webhook"
 PRODUCT_NAME = "Vibecell Pro"
-PRICE_AMOUNT_CENTS = 899
+PRICE_AMOUNT_CENTS = 899  # monthly
+PRICE_ANNUAL_CENTS = 9999  # standard annual (save ~€7 vs 12×monthly)
 PRICE_CURRENCY = "eur"
+LAUNCH_COUPON_ID = "LAUNCH69"
+LAUNCH_COUPON_AMOUNT_OFF = 3000  # €30 off → first-year effective €69.99
+LAUNCH_COUPON_MAX = 100  # only first 100 redemptions
 ENV_FILE = "/etc/hangar/hangar.env"
 DOCKER_PG_CONTAINER = "hangar-postgres-1"
 WEBHOOK_EVENTS = [
@@ -41,7 +45,7 @@ WEBHOOK_EVENTS = [
 ]
 
 
-def _stripe(method: str, path: str, **form: Any) -> dict[str, Any]:
+def _stripe(method: str, path: str, *, not_found_ok: bool = False, **form: Any) -> dict[str, Any] | None:
     key = os.environ.get("HANGAR_STRIPE_SECRET_KEY", "")
     if not key:
         sys.stderr.write(
@@ -80,6 +84,8 @@ def _stripe(method: str, path: str, **form: Any) -> dict[str, Any]:
         with urllib.request.urlopen(req, timeout=30) as resp:  # noqa: S310 — Stripe API is whitelisted
             return json.loads(resp.read().decode("utf-8"))
     except urllib.error.HTTPError as e:
+        if e.code == 404 and not_found_ok:
+            return None
         body = e.read().decode("utf-8", errors="replace")
         sys.stderr.write(f"Stripe API {method} /{path} → {e.code}: {body}\n")
         sys.exit(3)
@@ -125,6 +131,52 @@ def find_or_create_price(product_id: str) -> str:
     return pr["id"]
 
 
+def find_or_create_annual_price(product_id: str) -> str:
+    prices = _stripe("GET", "prices", product=product_id, active="true", limit=100)
+    for pr in prices.get("data", []):
+        if (
+            pr.get("unit_amount") == PRICE_ANNUAL_CENTS
+            and pr.get("currency") == PRICE_CURRENCY
+            and pr.get("recurring", {}).get("interval") == "year"
+        ):
+            return pr["id"]
+    print("creating €99.99/year recurring price...")
+    pr = _stripe(
+        "POST",
+        "prices",
+        product=product_id,
+        unit_amount=PRICE_ANNUAL_CENTS,
+        currency=PRICE_CURRENCY,
+        recurring={"interval": "year"},
+        tax_behavior="exclusive",
+        nickname="Vibecell Pro Annual",
+    )
+    return pr["id"]
+
+
+def find_or_create_launch_coupon() -> str:
+    """The launch coupon — first 100 customers redeem for €30 off, applied
+    `once` (so only the first year is discounted; renewals are full price)."""
+    existing = _stripe("GET", f"coupons/{LAUNCH_COUPON_ID}", not_found_ok=True)
+    if existing is not None and existing.get("id") == LAUNCH_COUPON_ID:
+        print(f"coupon {LAUNCH_COUPON_ID}: found "
+              f"({existing.get('times_redeemed', 0)}/{LAUNCH_COUPON_MAX} redeemed)")
+        return LAUNCH_COUPON_ID
+    print(f"creating launch coupon {LAUNCH_COUPON_ID} (€30 off, max 100 redemptions)...")
+    c = _stripe(
+        "POST",
+        "coupons",
+        id=LAUNCH_COUPON_ID,
+        amount_off=LAUNCH_COUPON_AMOUNT_OFF,
+        currency=PRICE_CURRENCY,
+        duration="once",
+        max_redemptions=LAUNCH_COUPON_MAX,
+        name="Vibecell Launch — first 100 annual customers",
+    )
+    assert c is not None
+    return c["id"]
+
+
 def find_or_create_webhook() -> tuple[str, str | None]:
     """Returns (webhook_id, secret_or_None_if_existing)."""
     hooks = _stripe("GET", "webhook_endpoints", limit=100)
@@ -147,6 +199,25 @@ def update_plan_in_db(price_id: str) -> None:
         "docker", "exec", DOCKER_PG_CONTAINER,
         "psql", "-U", "hangar", "-d", "hangar",
         "-c", f"UPDATE plans SET stripe_price_id='{price_id}' WHERE slug='pro'",
+    ]
+    subprocess.run(cmd, check=True, stdout=sys.stdout, stderr=sys.stderr)
+
+
+def upsert_annual_plan_in_db(annual_price_id: str) -> None:
+    """Insert/update the pro_annual plan row pointing at the annual Stripe price."""
+    print("upserting plans (slug=pro_annual) in the DB...")
+    sql = (
+        "INSERT INTO plans (id, slug, name, stripe_price_id, monthly_price_eur_cents, "
+        "max_projects, ai_enrichment_enabled, session_retention_days, trial_period_days) "
+        "VALUES ('pro_annual_plan_row_______', 'pro_annual', 'Pro (annual)', "
+        f"'{annual_price_id}', {PRICE_ANNUAL_CENTS}, NULL, true, 365, 0) "
+        f"ON CONFLICT (slug) DO UPDATE SET stripe_price_id = EXCLUDED.stripe_price_id, "
+        f"monthly_price_eur_cents = EXCLUDED.monthly_price_eur_cents"
+    )
+    cmd = [
+        "docker", "exec", DOCKER_PG_CONTAINER,
+        "psql", "-U", "hangar", "-d", "hangar",
+        "-c", sql,
     ]
     subprocess.run(cmd, check=True, stdout=sys.stdout, stderr=sys.stderr)
 
@@ -183,8 +254,16 @@ def main() -> None:
     print(f"product:  {product_id}")
 
     price_id = find_or_create_price(product_id)
-    print(f"price:    {price_id}")
+    print(f"monthly:  {price_id}")
     append_to_env_if_missing("HANGAR_STRIPE_PRO_PRICE_ID", price_id)
+
+    annual_price_id = find_or_create_annual_price(product_id)
+    print(f"annual:   {annual_price_id}")
+    append_to_env_if_missing("HANGAR_STRIPE_PRO_ANNUAL_PRICE_ID", annual_price_id)
+
+    coupon_id = find_or_create_launch_coupon()
+    print(f"coupon:   {coupon_id}")
+    append_to_env_if_missing("HANGAR_STRIPE_LAUNCH_COUPON_ID", coupon_id)
 
     webhook_id, webhook_secret = find_or_create_webhook()
     print(f"webhook:  {webhook_id}")
@@ -205,6 +284,7 @@ def main() -> None:
             )
 
     update_plan_in_db(price_id)
+    upsert_annual_plan_in_db(annual_price_id)
     restart_backend()
     print("DONE.")
 

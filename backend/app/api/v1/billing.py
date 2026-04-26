@@ -58,18 +58,35 @@ async def create_checkout(
     """Create a Stripe Checkout Session and return the hosted URL.
     Frontend redirects window.location to it.
 
+    ``body.plan_id`` selects ``pro`` (monthly, default) or ``pro_annual``.
     Raises 503 if Stripe isn't configured on this deployment.
     """
     settings = get_settings()
     base = settings.base_url.rstrip("/")
+    plan_slug = body.plan_id if body.plan_id in ("pro", "pro_annual") else "pro"
     url = await stripe_billing.create_checkout_session(
         db,
         auth.user,
         success_url=f"{base}/settings/billing?status=ok",
         cancel_url=f"{base}/settings/billing?status=cancel",
+        plan_slug=plan_slug,
     )
     await db.commit()
     return CheckoutResponse(url=url)
+
+
+class LaunchStatusResponse(BaseModel):
+    active: bool
+    remaining: int
+    max: int
+
+
+@router.get("/launch-status", response_model=LaunchStatusResponse)
+async def launch_status() -> LaunchStatusResponse:
+    """Public endpoint — no auth. Used by the Pricing page to render the
+    launch ribbon + spots-left counter."""
+    s = await stripe_billing.get_launch_coupon_status()
+    return LaunchStatusResponse(active=s["active"], remaining=s["remaining"], max=s["max"])
 
 
 @router.post("/portal", response_model=PortalResponse)

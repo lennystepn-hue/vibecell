@@ -102,19 +102,54 @@ async def ensure_customer(session: AsyncSession, user: User) -> str:
 # Checkout
 # ---------------------------------------------------------------------------
 
+async def get_launch_coupon_status() -> dict[str, Any]:
+    """Look up the launch coupon redemption count from Stripe.
+
+    Returns ``{"active": bool, "remaining": int, "max": int}``. ``active``
+    means the coupon still has remaining redemptions AND it's defined on
+    Stripe. Frontend uses this to decide whether to show the launch ribbon
+    + spots-left counter."""
+    settings = get_settings()
+    coupon_id = settings.stripe_launch_coupon_id
+    if not coupon_id or not settings.stripe_secret_key:
+        return {"active": False, "remaining": 0, "max": 0}
+    try:
+        stripe = _stripe()
+        c = stripe.Coupon.retrieve(coupon_id)
+        max_redemptions = int(c.get("max_redemptions") or 0)
+        times_redeemed = int(c.get("times_redeemed") or 0)
+        remaining = max(0, max_redemptions - times_redeemed)
+        return {
+            "active": bool(c.get("valid")) and remaining > 0,
+            "remaining": remaining,
+            "max": max_redemptions,
+        }
+    except Exception as e:  # noqa: BLE001 — Stripe SDK throws all sorts; soft-fail
+        logger.warning("get_launch_coupon_status: %s", e)
+        return {"active": False, "remaining": 0, "max": 0}
+
+
 async def create_checkout_session(
     session: AsyncSession,
     user: User,
     *,
     success_url: str,
     cancel_url: str,
+    plan_slug: str = "pro",
 ) -> str:
     """Create a Stripe Checkout Session for upgrading the user to Pro.
     Returns the hosted Checkout URL — caller redirects the browser there.
 
-    Per pricing decision 2026-04-25: 7-day trial, no credit card required
-    for trial (``payment_method_collection='if_required'``), Stripe Tax
-    enabled, billing address required.
+    ``plan_slug`` selects between the monthly (slug=pro, default) and the
+    annual (slug=pro_annual) tier. Annual signups also get the launch
+    coupon attached if it still has remaining redemptions — Stripe applies
+    it to the first invoice only (``duration='once'``), renewals at full
+    price.
+
+    Per pricing decision 2026-04-25: 7-day trial on monthly, no trial on
+    annual (committing to a year IS the commitment), no credit card
+    required for trial (``payment_method_collection='if_required'``),
+    Stripe Tax enabled, billing address required.
     """
     settings = get_settings()
     if not settings.stripe_pro_price_id:
@@ -123,30 +158,45 @@ async def create_checkout_session(
     stripe = _stripe()
     customer_id = await ensure_customer(session, user)
 
-    pro_plan = (
-        await session.execute(select(Plan).where(Plan.slug == "pro"))
-    ).scalar_one()
+    plan = (
+        await session.execute(select(Plan).where(Plan.slug == plan_slug))
+    ).scalar_one_or_none()
+    if plan is None:
+        raise StripeNotConfiguredError()  # plan slug not seeded — surface as 503
 
-    checkout = stripe.checkout.Session.create(
+    if plan_slug == "pro_annual":
+        if not settings.stripe_pro_annual_price_id:
+            raise StripeNotConfiguredError()
+        price_id = settings.stripe_pro_annual_price_id
+        trial_days = 0  # annual = explicit commitment, no trial
+    else:
+        price_id = settings.stripe_pro_price_id
+        trial_days = plan.trial_period_days
+
+    # Apply launch coupon to annual checkouts if any redemptions remain.
+    discounts: list[dict[str, str]] = []
+    if plan_slug == "pro_annual":
+        status = await get_launch_coupon_status()
+        if status["active"]:
+            discounts = [{"coupon": settings.stripe_launch_coupon_id}]
+
+    kwargs: dict[str, Any] = dict(
         customer=customer_id,
         mode="subscription",
-        line_items=[{"price": settings.stripe_pro_price_id, "quantity": 1}],
+        line_items=[{"price": price_id, "quantity": 1}],
         success_url=success_url,
         cancel_url=cancel_url,
         automatic_tax={"enabled": True},
         billing_address_collection="required",
-        # automatic_tax requires a valid Customer.address. The first time a
-        # user goes through Checkout, the Customer record is empty —
-        # customer_update.address='auto' tells Stripe to copy the address
-        # the user enters in Checkout back to the Customer record so the
-        # tax engine has what it needs both this time and on every
-        # subsequent invoice.
         customer_update={"address": "auto", "name": "auto"},
         payment_method_collection="if_required",
-        subscription_data={
-            "trial_period_days": pro_plan.trial_period_days,
-        },
     )
+    if trial_days > 0:
+        kwargs["subscription_data"] = {"trial_period_days": trial_days}
+    if discounts:
+        kwargs["discounts"] = discounts
+
+    checkout = stripe.checkout.Session.create(**kwargs)
     return checkout["url"]
 
 
