@@ -191,21 +191,25 @@ const showWillingCancel = computed(
   () => sub.value?.status === "active" && sub.value.cancel_at_period_end
 );
 
-const ctaPrimary = computed(() => {
-  if (fellBack.value || !sub.value) return { label: "Start 7-day trial", action: startCheckout };
+// Wrap default-arg startCheckout in a zero-arg lambda so the type is
+// `() => void` — Vue's @click otherwise tries to feed it the MouseEvent
+// as the first positional `plan` argument and TS rejects the union mismatch.
+const startCheckoutMonthly = () => startCheckout("pro");
+const ctaPrimary = computed<{ label: string; action: () => void }>(() => {
+  if (fellBack.value || !sub.value) return { label: "Start 7-day trial", action: startCheckoutMonthly };
   switch (sub.value.status) {
     case "trialing":
       return {
         label: trialDaysLeft.value !== null && trialDaysLeft.value <= 0
           ? "Add payment method to continue"
           : "Add payment method",
-        action: startCheckout,
+        action: startCheckoutMonthly,
       };
     case "past_due":
     case "unpaid":
-      return { label: "Update payment method", action: startCheckout };
+      return { label: "Update payment method", action: startCheckoutMonthly };
     case "canceled":
-      return { label: "Re-subscribe", action: startCheckout };
+      return { label: "Re-subscribe", action: startCheckoutMonthly };
     case "active":
       return { label: "Manage subscription", action: openPortal };
     default:
