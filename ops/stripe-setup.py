@@ -171,7 +171,7 @@ def find_or_create_launch_coupon() -> str:
         currency=PRICE_CURRENCY,
         duration="once",
         max_redemptions=LAUNCH_COUPON_MAX,
-        name="Vibecell Launch — first 100 annual customers",
+        name="Vibecell Launch — first 100 annual",
     )
     assert c is not None
     return c["id"]

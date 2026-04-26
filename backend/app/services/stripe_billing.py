@@ -124,7 +124,9 @@ async def get_launch_coupon_status() -> dict[str, Any]:
             "remaining": remaining,
             "max": max_redemptions,
         }
-    except Exception as e:  # noqa: BLE001 — Stripe SDK throws all sorts; soft-fail
+    except Exception as e:
+        # Stripe SDK throws a variety of types; soft-fail to "no launch active"
+        # so a transient hiccup doesn't break the public pricing page.
         logger.warning("get_launch_coupon_status: %s", e)
         return {"active": False, "remaining": 0, "max": 0}
 
