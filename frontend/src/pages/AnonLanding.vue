@@ -257,41 +257,39 @@ const steps = [
         <div>
           <h1 class="font-sans font-semibold mb-6 leading-[1.04] tracking-tight"
             style="font-size: clamp(2.6rem, 5.5vw, 4.4rem); letter-spacing: -0.04em; color: #ffffff">
-            Project memory<br>
+            The project console<br>
             for
-            <!-- Gradient ties the headline into the hero orb's palette. -->
-            <span
-              class="bg-clip-text text-transparent"
-              style="background-image: linear-gradient(120deg, #b592ff 0%, #7dffd4 45%, #ff6b9d 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent"
-            >Claude &amp; Cursor.</span>
+            <!-- Single accent picked from the orb palette — keeps brand link
+                 to the rotating sphere on the right without the multi-stop
+                 rainbow that read AI-ish. -->
+            <span style="color: #5cc8a4">shipping devs.</span>
           </h1>
 
           <p class="mb-9 leading-relaxed max-w-md"
-            style="font-size: 1.1rem; color: #cfd4dc; line-height: 1.55">
-            A dashboard and
-            <strong style="color: #ffffff; font-weight: 600">38 MCP tools</strong>
-            that keep your AI in sync with every project you ship.
+            style="font-size: 1.05rem; color: #cfd4dc; line-height: 1.55">
+            One source of truth for every side-project, side-side-project,
+            and full app — with an MCP server your AI already speaks.
           </p>
 
-          <div class="flex flex-wrap gap-3 mb-8">
-            <!-- Primary CTA — same gradient as the "you ship" text + the
-                 hero orb, with a soft multi-color glow ring. -->
+          <div class="flex flex-wrap gap-3 mb-7">
             <button
-              class="px-6 py-3 rounded-lg font-mono font-semibold text-[13px] transition-all hover:opacity-95 hover:scale-[1.02] active:scale-[0.99]"
-              style="background: linear-gradient(120deg, #b592ff 0%, #7dffd4 45%, #ff6b9d 100%); color: #070b10; box-shadow: 0 0 30px rgba(181,146,255,0.3), 0 0 50px rgba(125,255,212,0.18)"
+              class="px-5 py-2.5 rounded-md font-mono font-semibold text-[12px] transition-opacity hover:opacity-90 tracking-wider uppercase"
+              style="background: #5cc8a4; color: #070b10; box-shadow: 0 0 20px rgba(92,200,164,0.18)"
               @click="goSignIn">
-              {{ auth.isAuthed ? 'Open dashboard →' : 'Get started — free' }}
+              {{ auth.isAuthed ? 'Open dashboard →' : 'Start 7-day trial →' }}
             </button>
             <button
-              class="px-6 py-3 rounded-lg font-mono text-[13px] transition-all hover:border-opacity-60"
-              style="border: 1px solid rgba(138,180,255,0.18); color: #cfd4dc; background: rgba(20,33,50,0.4)"
+              class="px-5 py-2.5 rounded-md font-mono text-[12px] transition-opacity hover:opacity-100 tracking-wider uppercase"
+              style="border: 1px solid rgba(138,180,255,0.2); color: #cfd4dc; background: transparent; opacity: 0.85"
               @click="scrollToDemo">
               See how it works ↓
             </button>
           </div>
 
-          <p class="font-mono text-[11px]" style="color: #5e7088">
-            No credit card · free plan included · self-hostable
+          <!-- Quiet technical line — replaces the animated counters that
+               read like vanity metrics. Pure facts, mono-label cadence. -->
+          <p class="font-mono text-[11px]" style="color: #5e7088; letter-spacing: 0.04em">
+            single binary · MCP 2024-11-05 · postgres + redis · self-hostable
           </p>
         </div>
 
@@ -745,91 +743,100 @@ const steps = [
     <!-- ─── Pricing teaser ───────────────────────────────────────────────── -->
     <section class="py-28 px-6">
       <div class="max-w-2xl mx-auto">
-        <div class="text-center mb-12">
-          <p class="font-mono text-[11px] uppercase tracking-[0.15em] mb-3" style="color: #5cc8a4">
-            Pricing
+        <div class="text-center mb-10">
+          <p class="font-mono text-[10px] uppercase tracking-[0.18em] mb-3" style="color: #5cc8a4">
+            // pricing
           </p>
           <h2 class="font-semibold mb-3" style="font-size: clamp(1.6rem, 3vw, 2.4rem); letter-spacing: -0.03em; color: #ffffff">
-            One plan. <span style="color:#5cc8a4">Two cycles.</span>
+            One plan, two cycles.
           </h2>
-          <p style="color: #8ba1bd; font-size: 14px">7-day free trial on monthly · annual locks the price · cancel anytime.</p>
+          <p style="color: #8ba1bd; font-size: 13px; line-height: 1.6">
+            7-day trial on monthly · annual locks the price · cancel from the Stripe portal.
+          </p>
         </div>
 
-        <!-- Launch ribbon — only renders while LAUNCH69 has redemptions left -->
+        <!-- Launch marker — thin amber strip, mono-label tradition,
+             no emoji, no multi-stop gradient. Mirrors /pricing exactly. -->
         <div
           v-if="launch.active"
-          class="rounded-lg px-4 py-3 mb-5 text-center font-mono"
-          style="background: linear-gradient(90deg, rgba(255,200,80,0.14), rgba(92,200,164,0.14)); border: 1px solid rgba(255,200,80,0.3)"
+          class="rounded-md px-4 py-2.5 mb-5 font-mono flex items-baseline justify-between gap-3"
+          style="background: rgba(245,184,74,0.06); border: 1px solid rgba(245,184,74,0.22)"
         >
-          <p style="font-size: 11px; color: #ffd66b; letter-spacing: 0.05em">
-            🎉 LAUNCH OFFER · {{ launch.remaining }} of {{ launch.max }} spots left
-          </p>
-          <p class="mt-1" style="font-size: 12px; color: #cfd4dc">
-            First 100 annual signups: <strong style="color:#ffd66b">€69.99</strong> first year
-            <span style="color:#5e7088">(then €99.99)</span>
-          </p>
+          <span style="font-size: 10px; color: #f5b84a; letter-spacing: 0.12em; text-transform: uppercase">
+            // launch · {{ String(launch.max - launch.remaining).padStart(3, '0') }}/{{ launch.max }}
+          </span>
+          <span style="font-size: 11px; color: #8ba1bd">
+            first {{ launch.remaining }} get <strong style="color:#f5b84a; font-weight: 600">€69.99</strong> · then €99.99
+          </span>
         </div>
 
         <div class="grid md:grid-cols-2 gap-5">
           <!-- Monthly -->
-          <div class="rounded-xl p-7 flex flex-col"
-            style="background: rgba(20,33,50,0.5); border: 1px solid rgba(138,180,255,0.12)">
-            <p class="font-mono text-[11px] uppercase tracking-[0.12em] mb-3" style="color: #8ba1bd">Pro · Monthly</p>
-            <div class="flex items-end gap-1 mb-2">
-              <p class="font-bold" style="font-size: 2.8rem; color: #ffffff; letter-spacing: -0.04em; line-height: 1">€8.99</p>
-              <p class="mb-2" style="color: #8ba1bd; font-size: 13px">/ month</p>
+          <div class="rounded-lg p-7 flex flex-col"
+            style="background: rgba(20,33,50,0.45); border: 1px solid rgba(138,180,255,0.1)">
+            <p class="font-mono text-[10px] uppercase tracking-[0.14em] mb-4" style="color: #5e7088">// pro · monthly</p>
+            <div class="flex items-baseline gap-1.5 mb-1">
+              <p class="font-bold" style="font-size: 2.6rem; color: #ffffff; letter-spacing: -0.04em; line-height: 1">€8.99</p>
+              <p style="color: #8ba1bd; font-size: 12px">/ month</p>
             </div>
-            <p class="mb-5" style="font-size: 11px; color: #5e7088">7-day trial · no credit card to start</p>
-            <ul class="space-y-2 mb-7 flex-1" style="font-size: 12px; color: #8ba1bd">
-              <li class="flex gap-2 items-start"><span style="color:#5cc8a4;margin-top:1px">✓</span> Unlimited projects</li>
-              <li class="flex gap-2 items-start"><span style="color:#5cc8a4;margin-top:1px">✓</span> AI enrichment from GitHub</li>
-              <li class="flex gap-2 items-start"><span style="color:#5cc8a4;margin-top:1px">✓</span> MCP server access</li>
-              <li class="flex gap-2 items-start"><span style="color:#5cc8a4;margin-top:1px">✓</span> Auto-cron + secrets vault</li>
+            <p class="mb-6 font-mono" style="font-size: 11px; color: #5e7088">7-day trial · no card to start</p>
+            <ul class="space-y-1.5 mb-7 flex-1" style="font-size: 12px; color: #8ba1bd">
+              <li class="flex gap-2 items-start"><span style="color:#5cc8a4">·</span> Unlimited projects</li>
+              <li class="flex gap-2 items-start"><span style="color:#5cc8a4">·</span> AI enrichment from any GitHub repo</li>
+              <li class="flex gap-2 items-start"><span style="color:#5cc8a4">·</span> MCP server access</li>
+              <li class="flex gap-2 items-start"><span style="color:#5cc8a4">·</span> Auto-cron + workspace secrets</li>
             </ul>
             <button
-              class="w-full py-2.5 rounded-lg font-mono text-[13px] transition-all hover:opacity-80"
-              style="border: 1px solid rgba(138,180,255,0.2); color: #cfd4dc"
+              class="w-full py-2.5 rounded-md font-mono text-[11px] tracking-wider uppercase transition-opacity hover:opacity-100"
+              style="border: 1px solid rgba(138,180,255,0.18); color: #cfd4dc; opacity: 0.85"
               @click="goSignIn">
-              Start 7-day trial →
+              Start trial →
             </button>
           </div>
 
-          <!-- Annual / Launch -->
-          <div class="rounded-xl p-7 flex flex-col relative overflow-hidden"
-            style="background: rgba(92,200,164,0.05); border: 1px solid rgba(92,200,164,0.3); box-shadow: 0 0 40px rgba(92,200,164,0.06)">
-            <div class="absolute top-0 right-0 font-mono text-[10px] uppercase tracking-widest px-3 py-1 rounded-bl"
-              :style="{ background: launch.active ? '#ffd66b' : '#5cc8a4', color: '#070b10' }">
-              {{ launch.active ? 'Launch · save €38' : 'Best value' }}
-            </div>
-            <p class="font-mono text-[11px] uppercase tracking-[0.12em] mb-3" style="color: #5cc8a4">Pro · Annual</p>
-            <div class="flex items-end gap-2 mb-1 flex-wrap">
-              <!-- Strikethrough €99.99 when launch is on -->
-              <p v-if="launch.active" class="font-bold" style="font-size: 1.5rem; color: #5e7088; text-decoration: line-through; text-decoration-thickness: 2px; line-height: 1; letter-spacing: -0.03em">€99.99</p>
+          <!-- Annual / Launch — single accent (amber if launch, mint if standard) -->
+          <div class="rounded-lg p-7 flex flex-col relative"
+            :style="{
+              background: launch.active ? 'rgba(245,184,74,0.04)' : 'rgba(92,200,164,0.04)',
+              border: '1px solid ' + (launch.active ? 'rgba(245,184,74,0.28)' : 'rgba(92,200,164,0.28)'),
+            }">
+            <p class="font-mono text-[10px] uppercase tracking-[0.14em] mb-4"
+              :style="{ color: launch.active ? '#f5b84a' : '#5cc8a4' }">
+              // pro · annual
+            </p>
+            <div class="flex items-baseline gap-2 mb-1 flex-wrap">
               <p class="font-bold" :style="{
-                fontSize: '2.8rem',
-                color: launch.active ? '#ffd66b' : '#ffffff',
+                fontSize: '2.6rem',
+                color: launch.active ? '#f5b84a' : '#ffffff',
                 letterSpacing: '-0.04em',
                 lineHeight: 1,
               }">{{ launch.active ? '€69.99' : '€99.99' }}</p>
-              <p class="mb-2" style="color: #8ba1bd; font-size: 13px">/ year</p>
+              <p style="color: #8ba1bd; font-size: 12px">/ year</p>
+              <!-- Strikethrough €99.99 as a typographic footnote, not a sibling -->
+              <p v-if="launch.active" class="font-mono ml-1" style="font-size: 11px; color: #5e7088; text-decoration: line-through; text-decoration-thickness: 1px">
+                €99.99
+              </p>
             </div>
-            <p v-if="launch.active" class="mb-5 font-mono" style="font-size: 11px; color: #ffd66b; letter-spacing: 0.03em">
-              SAVE €38 · first 100 only · renews €99.99
+            <p v-if="launch.active" class="mb-6 font-mono" style="font-size: 10px; color: #f5b84a; letter-spacing: 0.12em; text-transform: uppercase">
+              // first 100 only · renews €99.99
             </p>
-            <p v-else class="mb-5" style="font-size: 11px; color: #5e7088">
+            <p v-else class="mb-6 font-mono" style="font-size: 11px; color: #5e7088">
               ~7% off vs monthly · billed yearly
             </p>
-            <ul class="space-y-2 mb-7 flex-1" style="font-size: 12px; color: #8ba1bd">
-              <li class="flex gap-2 items-start"><span style="color:#5cc8a4;margin-top:1px">✓</span> Everything in monthly</li>
-              <li class="flex gap-2 items-start"><span style="color:#5cc8a4;margin-top:1px">✓</span> Locked-in price for 12 months</li>
-              <li class="flex gap-2 items-start"><span style="color:#5cc8a4;margin-top:1px">✓</span> Stripe Tax / EU-VAT invoicing</li>
-              <li class="flex gap-2 items-start"><span style="color:#5cc8a4;margin-top:1px">✓</span> 14-day Widerrufsrecht</li>
+            <ul class="space-y-1.5 mb-7 flex-1" style="font-size: 12px; color: #8ba1bd">
+              <li class="flex gap-2 items-start"><span style="color:#5cc8a4">·</span> Everything in monthly</li>
+              <li class="flex gap-2 items-start"><span style="color:#5cc8a4">·</span> Price locked for 12 months</li>
+              <li class="flex gap-2 items-start"><span style="color:#5cc8a4">·</span> Stripe Tax — EU-VAT invoicing</li>
+              <li class="flex gap-2 items-start"><span style="color:#5cc8a4">·</span> 14-day Widerruf, then committed</li>
             </ul>
             <button
-              class="w-full py-2.5 rounded-lg font-mono font-semibold text-[13px] transition-all hover:opacity-90"
-              style="background: #5cc8a4; color: #070b10; box-shadow: 0 0 20px rgba(92,200,164,0.2)"
+              class="w-full py-2.5 rounded-md font-mono font-semibold text-[11px] tracking-wider uppercase transition-opacity hover:opacity-90"
+              :style="{
+                background: launch.active ? '#f5b84a' : '#5cc8a4',
+                color: '#070b10',
+              }"
               @click="goSignIn">
-              {{ launch.active ? 'Get launch price €69.99 →' : 'Get annual €99.99 →' }}
+              {{ launch.active ? 'Take launch price →' : 'Get annual →' }}
             </button>
           </div>
         </div>
@@ -837,8 +844,8 @@ const steps = [
         <div class="text-center mt-8">
           <router-link to="/pricing"
             class="font-mono transition-colors hover:text-fg-primary"
-            style="font-size: 12px; color: #5e7088">
-            See full pricing details + FAQ →
+            style="font-size: 11px; color: #5e7088; letter-spacing: 0.04em">
+            full pricing details + FAQ →
           </router-link>
         </div>
       </div>
