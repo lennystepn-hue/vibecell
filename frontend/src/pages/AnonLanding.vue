@@ -267,7 +267,7 @@ const steps = [
 
           <p class="mb-9 leading-relaxed max-w-md"
             style="font-size: 1.05rem; color: #cfd4dc; line-height: 1.55">
-            One source of truth for every side-project, side-side-project,
+            One source of truth for every weekend hack, side-project,
             and full app — with an MCP server your AI already speaks.
           </p>
 
