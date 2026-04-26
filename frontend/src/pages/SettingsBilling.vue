@@ -20,12 +20,25 @@ interface SubscriptionResponse {
 const sub = ref<SubscriptionResponse | null>(null);
 const loadingSub = ref(false);
 const checkingOut = ref(false);
+const checkingOutAnnual = ref(false);
 const openingPortal = ref(false);
 /** True when the API failed for any reason (no Stripe configured, no
  *  subscription row, network blip, etc). The UI falls back to the
  *  "Pro plan + start trial" pitch with the same Add-card CTA — better
  *  than rendering an apologetic empty state. */
 const fellBack = ref(false);
+
+interface LaunchStatus { active: boolean; remaining: number; max: number }
+const launch = ref<LaunchStatus>({ active: false, remaining: 0, max: 100 });
+
+async function loadLaunchStatus() {
+  try {
+    const r = await fetch("/api/v1/billing/launch-status");
+    if (r.ok) launch.value = await r.json();
+  } catch {
+    /* silent */
+  }
+}
 
 async function loadSubscription() {
   loadingSub.value = true;
@@ -43,14 +56,15 @@ async function loadSubscription() {
   }
 }
 
-async function startCheckout() {
-  checkingOut.value = true;
+async function startCheckout(plan: "pro" | "pro_annual" = "pro") {
+  if (plan === "pro_annual") checkingOutAnnual.value = true;
+  else checkingOut.value = true;
   try {
     const r = await fetch("/api/v1/billing/checkout", {
       method: "POST",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ plan_id: "pro" }),
+      body: JSON.stringify({ plan_id: plan }),
     });
     if (r.status === 503) {
       toast.push("Stripe is not configured on this deployment yet", "error");
@@ -66,6 +80,7 @@ async function startCheckout() {
     toast.push(`Network error: ${e instanceof Error ? e.message : String(e)}`, "error");
   } finally {
     checkingOut.value = false;
+    checkingOutAnnual.value = false;
   }
 }
 
@@ -198,7 +213,10 @@ const ctaPrimary = computed(() => {
   }
 });
 
-onMounted(loadSubscription);
+onMounted(() => {
+  loadSubscription();
+  loadLaunchStatus();
+});
 </script>
 
 <template>
@@ -298,6 +316,47 @@ onMounted(loadSubscription);
             >
               Subscription canceled. Re-subscribe any time — your data is preserved.
             </p>
+          </div>
+
+          <!-- ─── Launch-coupon callout ─── shows when LAUNCH69 still has
+               redemptions AND user isn't already on annual.  -->
+          <div
+            v-if="launch.active && sub?.plan_slug !== 'pro_annual'"
+            class="rounded-xl p-5 mb-6 relative overflow-hidden"
+            :style="{
+              background: 'linear-gradient(135deg, rgba(255,200,80,0.10) 0%, rgba(92,200,164,0.06) 100%)',
+              border: '1px solid var(--signal-amber)',
+            }"
+          >
+            <div class="flex items-start justify-between gap-4 flex-wrap">
+              <div class="flex-1 min-w-[260px]">
+                <div class="flex items-center gap-2 mb-2 font-mono uppercase tracking-widest" style="font-size: 10px; color: var(--signal-amber)">
+                  🎉 Launch offer · {{ launch.remaining }} of {{ launch.max }} spots left
+                </div>
+                <div class="flex items-baseline gap-3 flex-wrap mb-1">
+                  <span class="font-bold text-fg-subtle line-through" style="font-size: 1.4rem; line-height: 1; text-decoration-thickness: 2px">€99.99</span>
+                  <span class="font-bold tracking-tight" style="font-size: 2.4rem; color: var(--signal-amber); line-height: 1">€69.99</span>
+                  <span class="font-mono text-fg-muted text-small">/ year</span>
+                </div>
+                <p class="text-small text-fg-body mt-1">
+                  Switch to annual now — pay <strong style="color: var(--signal-amber)">€69.99 once</strong> instead of
+                  <strong style="color: var(--fg-body)">€107.88</strong> over 12 monthly charges.
+                  <span class="text-fg-muted">Renews at €99.99/year, cancel from the portal.</span>
+                </p>
+              </div>
+              <button
+                class="h-11 px-5 rounded-lg font-mono font-semibold text-[12px] transition-all hover:opacity-90 self-center"
+                :style="{
+                  background: 'var(--signal-amber)',
+                  color: 'var(--on-signal)',
+                  whiteSpace: 'nowrap',
+                }"
+                :disabled="checkingOutAnnual || checkingOut || openingPortal"
+                @click="startCheckout('pro_annual')"
+              >
+                {{ checkingOutAnnual ? '…' : 'Get launch price →' }}
+              </button>
+            </div>
           </div>
 
           <!-- ─────────────────── What you get ─────────────────── -->

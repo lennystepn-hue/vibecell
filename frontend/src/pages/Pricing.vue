@@ -254,7 +254,9 @@ const faqs = [
 
         <!-- Annual price block (dynamic — shows €69.99 launch or €99.99 standard) -->
         <template v-else>
-          <div class="flex items-end gap-3 mb-1">
+          <div class="flex items-end gap-3 mb-1 flex-wrap">
+            <!-- When launch is active: show €99.99 struck-through next to €69.99 -->
+            <span v-if="launch.active" class="font-bold" style="font-size: 2rem; color: #5e7088; text-decoration: line-through; text-decoration-thickness: 2px; line-height: 1; letter-spacing: -0.04em">€99.99</span>
             <span class="font-bold" :style="{
               fontSize: '4rem',
               color: launch.active ? '#ffd66b' : '#ffffff',
@@ -263,11 +265,11 @@ const faqs = [
             }">{{ formatEur(annualEffectiveCents) }}</span>
             <span class="mb-3" style="font-size: 14px; color: #8ba1bd">/ year</span>
           </div>
-          <p v-if="launch.active" class="mb-1" style="font-size: 12px; color: #ffd66b">
-            🎉 Launch price for first 100 — saves €30 the first year
+          <p v-if="launch.active" class="mb-1 font-mono" style="font-size: 11px; color: #ffd66b; letter-spacing: 0.03em">
+            🎉 LAUNCH PRICE — first {{ launch.max }} customers · {{ launch.remaining }} spots left
           </p>
-          <p class="mb-8" :style="{ fontSize: '12px', color: launch.active ? '#5e7088' : '#5e7088' }">
-            <span v-if="launch.active">Renews at €99.99/year · </span>
+          <p class="mb-8" style="font-size: 12px; color: #5e7088">
+            <span v-if="launch.active">Saves <strong style="color:#ffd66b">{{ formatEur(annualSavingsVsMonthlyCents) }}</strong> vs monthly · renews at €99.99/year · </span>
             <span>cancel from Stripe portal · billed yearly</span>
           </p>
         </template>

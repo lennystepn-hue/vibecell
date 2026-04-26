@@ -802,7 +802,9 @@ const steps = [
               {{ launch.active ? 'Launch · save €38' : 'Best value' }}
             </div>
             <p class="font-mono text-[11px] uppercase tracking-[0.12em] mb-3" style="color: #5cc8a4">Pro · Annual</p>
-            <div class="flex items-end gap-1 mb-1">
+            <div class="flex items-end gap-2 mb-1 flex-wrap">
+              <!-- Strikethrough €99.99 when launch is on -->
+              <p v-if="launch.active" class="font-bold" style="font-size: 1.5rem; color: #5e7088; text-decoration: line-through; text-decoration-thickness: 2px; line-height: 1; letter-spacing: -0.03em">€99.99</p>
               <p class="font-bold" :style="{
                 fontSize: '2.8rem',
                 color: launch.active ? '#ffd66b' : '#ffffff',
@@ -811,8 +813,8 @@ const steps = [
               }">{{ launch.active ? '€69.99' : '€99.99' }}</p>
               <p class="mb-2" style="color: #8ba1bd; font-size: 13px">/ year</p>
             </div>
-            <p v-if="launch.active" class="mb-5" style="font-size: 11px; color: #ffd66b">
-              First 100 only · renews €99.99
+            <p v-if="launch.active" class="mb-5 font-mono" style="font-size: 11px; color: #ffd66b; letter-spacing: 0.03em">
+              SAVE €38 · first 100 only · renews €99.99
             </p>
             <p v-else class="mb-5" style="font-size: 11px; color: #5e7088">
               ~7% off vs monthly · billed yearly

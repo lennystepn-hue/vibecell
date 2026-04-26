@@ -116,11 +116,14 @@ async def get_launch_coupon_status() -> dict[str, Any]:
     try:
         stripe = _stripe()
         c = stripe.Coupon.retrieve(coupon_id)
-        max_redemptions = int(c.get("max_redemptions") or 0)
-        times_redeemed = int(c.get("times_redeemed") or 0)
+        # stripe-python returns a StripeObject — attribute access is the
+        # documented interface; .get() worked on older versions but raises
+        # AttributeError on 15.x.
+        max_redemptions = int(getattr(c, "max_redemptions", None) or 0)
+        times_redeemed = int(getattr(c, "times_redeemed", None) or 0)
         remaining = max(0, max_redemptions - times_redeemed)
         return {
-            "active": bool(c.get("valid")) and remaining > 0,
+            "active": bool(getattr(c, "valid", False)) and remaining > 0,
             "remaining": remaining,
             "max": max_redemptions,
         }
