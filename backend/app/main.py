@@ -75,6 +75,7 @@ from app.api.v1.todos import router as todos_router
 from app.api.v1.workspaces import router as workspaces_router
 from app.core.audit import install_audit_listener
 from app.core.middleware import install_session_middleware
+from app.core.plan_gate_middleware import install_plan_gate_middleware
 from app.core.problem import install_problem_handler
 from app.jobs.commit_sync import schedule_commit_sync_jobs
 from app.jobs.health_cron import schedule_health_jobs
@@ -129,6 +130,10 @@ app = FastAPI(
 )
 
 install_problem_handler(app)
+# Order: middleware added LAST runs FIRST. We need SessionMiddleware to run
+# before PlanGateMiddleware (so request.state.user_id is set when PlanGate
+# checks it) → install plan_gate FIRST, session SECOND.
+install_plan_gate_middleware(app)
 install_session_middleware(app)
 install_audit_listener()
 

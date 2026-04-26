@@ -281,10 +281,22 @@ async def _sync_tags_for_project(
 
 
 async def _run_sync_all() -> None:
-    """Cron entry point: walk every workspace with a GitHub token + sync."""
+    """Cron entry point: walk every workspace with a GitHub token + sync.
+
+    Skips workspaces whose owner is in read-only mode (Stripe canceled /
+    unpaid / no sub) — GitHub-API quota and our compute are paid features.
+    """
+    from app.models import Subscription
+    from app.services.access_level import FULL_ACCESS_STATUSES
     try:
         async with session_scope() as db:
-            workspaces = (await db.execute(select(Workspace))).scalars().all()
+            workspaces = (
+                await db.execute(
+                    select(Workspace)
+                    .join(Subscription, Subscription.user_id == Workspace.owner_id)
+                    .where(Subscription.status.in_(list(FULL_ACCESS_STATUSES)))
+                )
+            ).scalars().all()
             total = 0
             for ws in workspaces:
                 try:

@@ -311,6 +311,15 @@ class Tool:
     args_schema: type[BaseModel]
     handler: Handler
 
+    @property
+    def is_write(self) -> bool:
+        """A tool is `write` when its handler lives in app.mcp.handlers.write —
+        the convention every existing tool already follows. The MCP dispatcher
+        (server.py) uses this to gate writes behind subscription status: full
+        access = all tools; read-only = only read tools, writes return 402-ish
+        JSON-RPC error pointing at /settings/billing."""
+        return self.handler.__module__.endswith(".write")
+
 
 TOOLS: list[Tool] = [
     # Read

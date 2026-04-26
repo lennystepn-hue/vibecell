@@ -265,11 +265,21 @@ async def latest_screenshot(
 async def refresh_all_auto(db: AsyncSession) -> int:
     """Scheduled job: capture "auto" kind for every project with a URL.
 
+    Skips projects whose owner is in read-only mode (canceled / unpaid /
+    no subscription) — Chromium snapshots cost compute on our infra and
+    we don't run that for non-paying accounts.
+
     Returns count of successfully captured screenshots. Errors per-project
     are logged and skipped.
     """
+    from app.models import Subscription, Workspace
+    from app.services.access_level import FULL_ACCESS_STATUSES
     projects = (await db.execute(
-        select(Project).where(Project.archived_at.is_(None))
+        select(Project)
+        .join(Workspace, Workspace.id == Project.workspace_id)
+        .join(Subscription, Subscription.user_id == Workspace.owner_id)
+        .where(Project.archived_at.is_(None))
+        .where(Subscription.status.in_(list(FULL_ACCESS_STATUSES)))
     )).scalars().all()
     captured = 0
     for p in projects:

@@ -15,6 +15,7 @@ from app.mcp.auth import MCPContext, require_mcp_context
 from app.mcp.tools import TOOLS, resolve_tool
 from app.metrics.registry import mcp_tool_calls
 from app.services import presence as presence_svc
+from app.services.access_level import access_level_for_user
 
 router = APIRouter()
 
@@ -80,6 +81,26 @@ async def _dispatch_tool_call(ctx: MCPContext, req_id: Any, params: dict) -> dic
         args_model = tool.args_schema.model_validate(arguments)
     except ValidationError as e:
         return _err(req_id, -32602, f"Invalid arguments: {e.errors()}")
+
+    # Spec-6 plan-gate: read-only mode blocks all write tools. The `is_write`
+    # property derives from the handler's module path (handlers/write.py vs
+    # handlers/read.py) so it stays accurate as new tools land. Read-only
+    # users can still call read tools (vibecell_active, _search, _get,
+    # _activity, _audit, AI generators that don't persist, etc.) so they
+    # can audit their own data + decide whether to renew.
+    if tool.is_write:
+        level = await access_level_for_user(ctx.db, ctx.user_id)
+        if level != "full":
+            mcp_tool_calls.labels(tool_name=name, status="read_only").inc()
+            return _err(
+                req_id,
+                # JSON-RPC application-level error code. -32002 is unused in
+                # the JSON-RPC spec; we co-opt it for "subscription required".
+                -32002,
+                "Subscription expired — Vibecell is read-only. "
+                "Renew at https://vibecell.dev/settings/billing to keep "
+                "logging sessions, decisions, and ships.",
+            )
 
     # Resolve which project this tool touched BEFORE running it, so the audit
     # log row (and downstream presence ping) is correctly attributed. Tools

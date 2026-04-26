@@ -68,7 +68,14 @@ def _stack_slug(language: str) -> str:
     return re.sub(r"-+", "-", s).strip("-") or "unknown"
 
 
-@router.post("/import", response_model=ImportResponse)
+from app.dependencies.plan_gate import require_active_subscription
+
+
+@router.post(
+    "/import",
+    response_model=ImportResponse,
+    dependencies=[Depends(require_active_subscription)],
+)
 async def bulk_import(
     body: ImportRequest,
     auth: AuthDep,

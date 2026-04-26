@@ -260,12 +260,42 @@ async def purge(session: AsyncSession, user_id: str) -> None:
     Refuses (raises ConflictError) if the user owns any workspace that has
     OTHER members — those workspaces are shared resources, the operator
     must explicitly transfer ownership or remove members before delete.
+
+    Side-effect (best-effort): if the user has a live Stripe subscription,
+    we cancel it BEFORE deleting their data, so Stripe stops charging
+    them. Failure to reach Stripe is logged but doesn't block the purge —
+    the user has a clear right to erasure under Art. 17 even if our
+    payment processor is temporarily unreachable.
     """
+    import logging
+    logger = logging.getLogger(__name__)
+
     user_row = (
         await session.execute(select(User).where(User.id == user_id))
     ).scalar_one_or_none()
     if user_row is None:
         return  # already gone, no-op
+
+    # Cancel Stripe subscription (best-effort) BEFORE deleting our row —
+    # otherwise Stripe keeps charging a customer record we no longer track.
+    from app.models import Subscription
+    sub_row = (
+        await session.execute(
+            select(Subscription).where(Subscription.user_id == user_id)
+        )
+    ).scalar_one_or_none()
+    if sub_row is not None and sub_row.stripe_subscription_id:
+        try:
+            from app.services.stripe_billing import _stripe
+            stripe = _stripe()
+            stripe.Subscription.delete(sub_row.stripe_subscription_id)
+            logger.info(
+                "stripe-cancel-on-purge: canceled %s", sub_row.stripe_subscription_id
+            )
+        except Exception as e:
+            logger.warning("stripe-cancel-on-purge failed: %s", e)
+            # Don't block: user's right to erasure trumps our billing
+            # bookkeeping. We can clean up the Stripe customer manually.
 
     owned_ws = await _user_owned_workspace_ids(session, user_id)
 
