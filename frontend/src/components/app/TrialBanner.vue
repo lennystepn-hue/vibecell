@@ -166,60 +166,69 @@ function go() {
 onMounted(load);
 </script>
 
+<script lang="ts">
+/** Theme-aware token map. Each variant maps to a `--signal-*` token pair
+ *  defined in tokens.css; these resolve correctly against dark + paper +
+ *  any future theme without hand-tuning RGBs in this component. */
+const VARIANT_TOKENS: Record<
+  "urgent" | "info" | "danger" | "muted",
+  { fg: string; bg: string; border: string; ctaText: string }
+> = {
+  urgent: {
+    fg: "var(--signal-amber)",
+    bg: "var(--signal-amber-bg)",
+    border: "var(--signal-amber)",
+    ctaText: "var(--bg-canvas)",
+  },
+  info: {
+    fg: "var(--signal-green)",
+    bg: "var(--signal-green-bg)",
+    border: "var(--signal-green)",
+    ctaText: "var(--bg-canvas)",
+  },
+  danger: {
+    fg: "var(--signal-red)",
+    bg: "var(--signal-red-bg)",
+    border: "var(--signal-red)",
+    ctaText: "var(--bg-canvas)",
+  },
+  muted: {
+    fg: "var(--fg-muted)",
+    bg: "var(--signal-blue-bg)",
+    border: "var(--border)",
+    ctaText: "var(--fg-body)",
+  },
+};
+</script>
+
 <template>
   <div
-    v-if="finalVisible"
-    class="px-4 py-2 flex items-center gap-4 font-mono"
+    v-if="finalVisible && variant"
+    class="px-4 py-2 flex items-center gap-4 font-mono text-[11px]"
     :style="{
-      background:
-        variant === 'urgent' ? 'rgba(255,200,80,0.08)' :
-        variant === 'info' ? 'rgba(92,200,164,0.07)' :
-        variant === 'danger' ? 'rgba(255,126,108,0.1)' :
-        'rgba(138,180,255,0.06)',
-      borderBottom: '1px solid ' + (
-        variant === 'urgent' ? 'rgba(255,200,80,0.25)' :
-        variant === 'info' ? 'rgba(92,200,164,0.18)' :
-        variant === 'danger' ? 'rgba(255,126,108,0.3)' :
-        'rgba(138,180,255,0.12)'
-      ),
-      fontSize: '11px',
+      background: VARIANT_TOKENS[variant].bg,
+      borderBottom: `1px solid ${VARIANT_TOKENS[variant].border}`,
+      color: VARIANT_TOKENS[variant].fg,
     }"
   >
-    <span class="flex-1 truncate" :style="{
-      color:
-        variant === 'urgent' ? '#ffd66b' :
-        variant === 'info' ? '#5cc8a4' :
-        variant === 'danger' ? '#ff7e6c' :
-        '#8ba1bd',
-    }">
-      {{ text }}
-    </span>
+    <span class="flex-1 truncate">{{ text }}</span>
     <button
       class="px-3 py-1 rounded text-[10px] font-medium uppercase tracking-wider transition-opacity hover:opacity-80 shrink-0"
       :style="{
-        background:
-          variant === 'urgent' ? '#ffd66b' :
-          variant === 'info' ? '#5cc8a4' :
-          variant === 'danger' ? '#ff7e6c' :
-          'transparent',
-        color:
-          variant === 'muted' ? '#8ba1bd' : '#070b10',
-        border: variant === 'muted' ? '1px solid rgba(138,180,255,0.2)' : 'none',
+        background: variant === 'muted' ? 'transparent' : VARIANT_TOKENS[variant].fg,
+        color: variant === 'muted' ? VARIANT_TOKENS[variant].ctaText : VARIANT_TOKENS[variant].ctaText,
+        border: variant === 'muted' ? `1px solid ${VARIANT_TOKENS[variant].border}` : 'none',
       }"
       @click="go"
     >{{ ctaLabel }} →</button>
     <button
       v-if="dismissible"
-      class="ml-1 w-6 h-6 flex items-center justify-center rounded transition-opacity hover:opacity-100 shrink-0"
-      :style="{
-        opacity: 0.5,
-        color:
-          variant === 'urgent' ? '#ffd66b' :
-          variant === 'info' ? '#5cc8a4' :
-          '#8ba1bd',
-      }"
+      class="ml-1 w-6 h-6 flex items-center justify-center rounded transition-opacity shrink-0"
+      style="opacity: 0.55"
       title="Dismiss for 24h"
       aria-label="Dismiss banner"
+      @mouseenter="(e) => ((e.target as HTMLElement).style.opacity = '1')"
+      @mouseleave="(e) => ((e.target as HTMLElement).style.opacity = '0.55')"
       @click="dismiss"
     >×</button>
   </div>
