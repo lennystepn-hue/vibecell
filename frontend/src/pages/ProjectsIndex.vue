@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
+import { useRouter } from "vue-router";
 
 import ConnectModal from "@/components/connections/ConnectModal.vue";
 import ProjectCard from "@/components/projects/ProjectCard.vue";
@@ -11,13 +12,29 @@ import { useProjectsStore } from "@/stores/projects";
 
 const projects = useProjectsStore();
 const connections = useConnectionsStore();
+const router = useRouter();
 const quickAddOpen = ref(false);
 const connectOpen = ref(false);
 const hasOAuthClient = computed(() => connections.list.some((c) => c.type === "oauth"));
 
-onMounted(() => {
-  projects.fetchList();
-  connections.refresh();
+const ONBOARDING_FLAG = "vibecell_onboarding_done";
+
+onMounted(async () => {
+  await Promise.all([projects.fetchList(), connections.refresh()]);
+
+  // Spec-6 C3 — first-empty-dashboard redirect to the wizard. We only fire
+  // once per browser (localStorage flag) so dropping back to /p after the
+  // user explicitly archives every project doesn't trap them in onboarding.
+  const seen = (() => {
+    try {
+      return localStorage.getItem(ONBOARDING_FLAG) === "1";
+    } catch {
+      return false;
+    }
+  })();
+  if (!seen && projects.list.length === 0) {
+    router.replace("/welcome");
+  }
 });
 </script>
 

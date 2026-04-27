@@ -68,6 +68,9 @@ from app.api.v1.secrets import router as secrets_router
 from app.api.v1.sessions import router as sessions_router
 from app.api.v1.ships import router as ships_router
 from app.api.v1.stack_items import router as stack_items_router
+
+# Spec-6 C4 — Public status endpoint
+from app.api.v1.status import router as status_router
 from app.api.v1.tags import router as tags_router
 
 # Per-project TODOs
@@ -172,6 +175,8 @@ app.include_router(billing_router)
 app.include_router(passkey_router)
 # Spec 5A — Auto-Signals
 app.include_router(health_router)
+# Spec-6 C4 — Public status endpoint
+app.include_router(status_router)
 # Spec 5B — Portfolio-Intel
 app.include_router(portfolio_router)
 # Activity timeline

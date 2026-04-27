@@ -15,6 +15,7 @@ const bareLayoutRoutes = new Set([
   "landing",
   "pricing",
   "legal",
+  "status",
   "login",
   "auth-verify",
   "auth-change-email-confirm",

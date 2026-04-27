@@ -26,6 +26,14 @@ const router = createRouter({
       component: () => import("@/pages/Legal.vue"),
       meta: { anonymous: true },
     },
+    {
+      // Spec-6 C4 — public status page. Anonymous so external uptime monitors
+      // can hit it directly. Mirrors /api/v1/status.
+      path: "/status",
+      name: "status",
+      component: () => import("@/pages/Status.vue"),
+      meta: { anonymous: true },
+    },
     // Spec 5B — Portfolio-Intel
     {
       path: "/portfolio",
@@ -56,6 +64,14 @@ const router = createRouter({
       path: "/settings/billing",
       name: "settings-billing",
       component: () => import("@/pages/SettingsBilling.vue"),
+    },
+    {
+      // Spec-6 C3 — onboarding wizard. ProjectsIndex auto-redirects new users
+      // here when their dashboard is empty AND localStorage hasn't seen the
+      // completion flag yet. Direct hits (eg. /welcome bookmark) just render.
+      path: "/welcome",
+      name: "welcome",
+      component: () => import("@/pages/Welcome.vue"),
     },
     {
       path: "/p",
