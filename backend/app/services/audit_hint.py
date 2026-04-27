@@ -38,7 +38,7 @@ from typing import Any
 from sqlalchemy import desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models import Project, ProjectContext, ProjectTodo, Session
+from app.models import Project, ProjectContext, Session
 
 # Recency window — drift only counts within the last 30 min so old
 # unlogged work doesn't keep nagging forever.
@@ -103,10 +103,12 @@ async def compute_audit_hint(
 
     # If the most recent github session is older than the most recent manual
     # log, Claude IS keeping up — no silent drift.
-    if last_manual_at and silent_rows:
-        if all(s.started_at <= last_manual_at for s in silent_rows):
-            silent_commits = 0
-            silent_rows = []
+    if (
+        last_manual_at and silent_rows
+        and all(s.started_at <= last_manual_at for s in silent_rows)
+    ):
+        silent_commits = 0
+        silent_rows = []
 
     # Try to match open todos against recent silent-commit subjects
     matchable: list[dict[str, Any]] = []
@@ -129,7 +131,7 @@ async def compute_audit_hint(
 
     # Focus staleness — only complain when there's recent activity
     stale_focus_minutes: int | None = None
-    if silent_commits > 0 or last_manual_at and (now - last_manual_at) < _RECENT_WINDOW:
+    if silent_commits > 0 or (last_manual_at and (now - last_manual_at) < _RECENT_WINDOW):
         ctx_row = (
             await db.execute(
                 select(ProjectContext).where(ProjectContext.project_id == project.id)
