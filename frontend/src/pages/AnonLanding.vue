@@ -895,7 +895,8 @@ const steps = [
         <!-- Links -->
         <nav class="flex flex-wrap justify-center gap-6" style="font-size: 12px; color: #5e7088">
           <router-link to="/pricing" class="hover:text-fg-muted transition-colors">Pricing</router-link>
-          <router-link to="/legal" class="hover:text-fg-muted transition-colors">Privacy</router-link>
+          <router-link to="/legal?tab=imprint" class="hover:text-fg-muted transition-colors">Imprint</router-link>
+          <router-link to="/legal?tab=privacy" class="hover:text-fg-muted transition-colors">Privacy</router-link>
           <router-link to="/legal?tab=terms" class="hover:text-fg-muted transition-colors">Terms</router-link>
           <a href="https://github.com/lennystepn-hue/vibecell" target="_blank" rel="noopener" class="hover:text-fg-muted transition-colors">GitHub</a>
           <a href="mailto:hello@vibecell.dev" class="hover:text-fg-muted transition-colors">Contact</a>

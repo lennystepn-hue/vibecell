@@ -377,7 +377,9 @@ const faqs = [
           <button @click="goBilling" class="hover:text-fg-muted transition-colors font-mono">
             Billing
           </button>
-          <router-link to="/legal" class="hover:text-fg-muted transition-colors">Privacy &amp; Terms</router-link>
+          <router-link to="/legal?tab=imprint" class="hover:text-fg-muted transition-colors">Imprint</router-link>
+          <router-link to="/legal?tab=privacy" class="hover:text-fg-muted transition-colors">Privacy</router-link>
+          <router-link to="/legal?tab=terms" class="hover:text-fg-muted transition-colors">Terms</router-link>
         </div>
       </div>
     </footer>
