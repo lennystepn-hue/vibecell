@@ -179,6 +179,20 @@ async def _sync_project(db: AsyncSession, workspace_id: str, project: Project, t
         ))
         inserted += 1
 
+        # Layer-1 auto-tick: try to match this commit's subject against an
+        # open todo and tick it. Fuzzy match — only fires when score ≥ 1
+        # (see todo_svc._score_match). Conservative on purpose: better to
+        # miss a tick than to wrongly close an unrelated todo. Failure
+        # here is silent — the commit→session sync is the contract, the
+        # auto-tick is a bonus.
+        try:
+            await _auto_tick_from_commit(db, project, first_line, sha[:7])
+        except Exception:
+            logger.exception(
+                "commit_sync: auto-tick crashed (non-fatal) project=%s sha=%s",
+                project.slug, sha[:7],
+            )
+
     if inserted:
         logger.info(
             "commit_sync: +%s session(s) for workspace=%s project=%s",
@@ -188,6 +202,36 @@ async def _sync_project(db: AsyncSession, workspace_id: str, project: Project, t
     # owner/repo resolved.
     inserted += await _sync_tags_for_project(db, workspace_id, project, token, owner, repo)
     return inserted
+
+
+async def _auto_tick_from_commit(
+    db: AsyncSession, project: Project, commit_subject: str, sha_short: str
+) -> None:
+    """If `commit_subject` looks like it completed an open todo, tick it.
+
+    Reuses todo_svc.match_open_todo's scoring (≥ 1 threshold). The
+    completion_note records both the commit subject and the SHA so the
+    user can audit the auto-tick later in the dashboard.
+    """
+    from app.services import todo_svc
+
+    matched = await todo_svc.match_open_todo(
+        db, project=project, description=commit_subject
+    )
+    if matched is None:
+        return
+    note = f"auto-ticked from commit {sha_short}: {commit_subject}"
+    await todo_svc.complete_todo(
+        db,
+        project=project,
+        todo_id=matched.id,
+        completed_by="commit_sync",
+        completion_note=note[:2000],
+    )
+    logger.info(
+        "commit_sync: auto-ticked todo %s for project=%s commit=%s",
+        matched.id, project.slug, sha_short,
+    )
 
 
 async def _fetch_tags(token: str, owner: str, repo: str) -> list[dict[str, Any]]:
@@ -330,14 +374,17 @@ async def _run_sync_all() -> None:
 
 
 def schedule_commit_sync_jobs(scheduler: AsyncIOScheduler) -> None:
-    """Register the 10-min commit-sync cron."""
+    """Register the 2-min commit-sync cron — Layer 1 of the auto-logging
+    safety net. Runs every 2 minutes so a forgotten vibecell_log_session
+    call gets backstopped within 2 minutes (was 10 min). GitHub API cost
+    is one `since=last-sync` request per workspace; cheap."""
     scheduler.add_job(
         _run_sync_all,
         "interval",
-        minutes=10,
+        minutes=2,
         id="commit_sync_all",
         replace_existing=True,
         max_instances=1,
         coalesce=True,
     )
-    logger.info("commit_sync: registered commit_sync_all every 10m")
+    logger.info("commit_sync: registered commit_sync_all every 2m")

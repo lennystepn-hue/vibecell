@@ -152,7 +152,35 @@ async def _dispatch_tool_call(ctx: MCPContext, req_id: Any, params: dict) -> dic
         except Exception:
             pass
 
-    return _ok(req_id, {"content": [{"type": "text", "text": text}]})
+    # Layer-2 of the auto-logging safety net: every tool response carries a
+    # `_audit_hint` block when drift is detected (commits arriving without
+    # corresponding session logs, todos that look done, stale focus). The
+    # SKILL has a hard rule that says "if _audit_hint.suggested_action is
+    # set, run it before your next user-facing response" — this forces the
+    # discipline mechanically rather than via the SKILL's good intentions.
+    result_payload: dict[str, Any] = {"content": [{"type": "text", "text": text}]}
+    try:
+        if touched_slug:
+            from sqlalchemy import select as _select
+
+            from app.models import Project as _Project
+            from app.services.audit_hint import compute_audit_hint
+
+            proj_row = (
+                await ctx.db.execute(
+                    _select(_Project)
+                    .where(_Project.workspace_id == ctx.workspace_id)
+                    .where(_Project.slug == touched_slug)
+                )
+            ).scalar_one_or_none()
+            hint = await compute_audit_hint(ctx.db, project=proj_row)
+            if hint is not None:
+                result_payload["_audit_hint"] = hint.to_dict()
+    except Exception:
+        # Hint computation MUST NOT fail a tool call — it's advisory.
+        pass
+
+    return _ok(req_id, result_payload)
 
 
 # Tools that operate on the WORKSPACE, not on a specific project. For these

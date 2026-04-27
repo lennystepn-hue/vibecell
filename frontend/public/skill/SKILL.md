@@ -128,7 +128,33 @@ unit of work without ticking, that's the same kind of trust-eroding gap
 as forgetting to log a session. **The user should never have to ask "did
 you tick A6?".** If they do, you've broken the rule.
 
-### Rule 5 — End of every assistant turn that did work: audit yourself
+### Rule 5 — `_audit_hint` in tool results = mechanical follow-up
+The Vibecell MCP server attaches `_audit_hint.suggested_action` to a tool
+result when it detects drift (commits arriving without a session log,
+matchable open todos, stale current_focus). When you see this field on
+ANY tool result, the suggested action is **non-negotiable** — run it
+BEFORE you respond to the user. The whole point of this hint is to take
+the discipline out of "remembering the SKILL rules" and into the protocol
+itself, so don't rationalize past it.
+
+Example response shape:
+```
+{
+  "result": { "content": [...] },
+  "_audit_hint": {
+    "silent_commits": 3,
+    "matchable_todos": [{"id": "01K...", "title": "...", "match_subject": "..."}],
+    "suggested_action": "call vibecell_log_session covering the 3 commits..."
+  }
+}
+```
+
+If `suggested_action` is set, your very next tool call MUST be the
+suggested one (or a closer-fit alternative — e.g. if the hint says
+log_session but you can ALSO tick three todos in the same turn, do all
+of it before responding).
+
+### Rule 6 — End of every assistant turn that did work: audit yourself
 Before you respond to the user, scan what you just did in this turn. Ask
 yourself: did I just (a) commit code, (b) make an architectural choice,
 (c) shift the topic, OR (d) finish a unit of work that maps to an open
