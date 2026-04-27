@@ -39,6 +39,9 @@ router = APIRouter(prefix="/api/v1/projects", tags=["projects"])
 
 
 def _to_out(project: Project) -> ProjectOut:
+    # created_at / updated_at come from TimestampMixin and were silently
+    # dropped here — leaving the telemetry rail's "created" row stuck on "—"
+    # forever. Include them as ISO strings so the frontend formats them.
     return ProjectOut(
         id=project.id,
         slug=project.slug,
@@ -49,6 +52,8 @@ def _to_out(project: Project) -> ProjectOut:
         status=project.status,
         is_public=project.is_public,
         archived_at=project.archived_at.isoformat() if project.archived_at else None,
+        created_at=project.created_at.isoformat() if project.created_at else None,
+        updated_at=project.updated_at.isoformat() if project.updated_at else None,
         group_id=project.group_id,
         position=project.position,
     )
