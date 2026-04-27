@@ -34,6 +34,14 @@ const router = createRouter({
       component: () => import("@/pages/Status.vue"),
       meta: { anonymous: true },
     },
+    {
+      // Public AI-paste install landing. Single-purpose: copy a prompt that
+      // wires Vibecell into whatever editor the user is in. Shareable URL.
+      path: "/install",
+      name: "install",
+      component: () => import("@/pages/Install.vue"),
+      meta: { anonymous: true },
+    },
     // Spec 5B — Portfolio-Intel
     {
       path: "/portfolio",

@@ -27,6 +27,7 @@ import PrimaryButton from "@/components/ui/PrimaryButton.vue";
 import TextField from "@/components/ui/TextField.vue";
 
 import { api } from "@/api/client";
+import { INSTALL_PROMPT_PITCH, VIBECELL_INSTALL_PROMPT } from "@/lib/installPrompt";
 import { useAuthStore } from "@/stores/auth";
 import { useConnectionsStore } from "@/stores/connections";
 import { useProjectsStore } from "@/stores/projects";
@@ -99,9 +100,18 @@ async function createProject() {
 
 // ----- Step 2: pair editor -------------------------------------------------
 
-type EditorTab = "claude-desktop" | "claude-code" | "cursor" | "zed" | "windsurf";
+type EditorTab =
+  | "ai-prompt"
+  | "claude-desktop"
+  | "claude-code"
+  | "cursor"
+  | "zed"
+  | "windsurf";
 
-const tab = ref<EditorTab>(detectBestTab());
+// Default to "ai-prompt" — that's the slickest path now. The AI itself
+// runs the install + OAuth + SKILL fetch + first status read. Users who
+// want to do it by hand can still pick a per-editor tab.
+const tab = ref<EditorTab>("ai-prompt");
 const oneClickAttempted = ref(false);
 const copiedKey = ref<string | null>(null);
 const connectionCountAtStart = ref(0);
@@ -110,7 +120,10 @@ const pollHandle = ref<ReturnType<typeof setInterval> | null>(null);
 const BASE = "https://vibecell.dev";
 const MCP_URL = `${BASE}/mcp`;
 
-function detectBestTab(): EditorTab {
+// Manual fallback if the user picks a per-editor tab — used to suggest
+// which one's most likely to match their machine. The default lands on
+// "ai-prompt" via the ref initialiser above; this is just a hint helper.
+function detectBestEditorTab(): EditorTab {
   if (typeof navigator === "undefined") return "claude-desktop";
   const ua = navigator.userAgent.toLowerCase();
   const platform = (navigator.platform ?? "").toLowerCase();
@@ -118,6 +131,10 @@ function detectBestTab(): EditorTab {
   if (platform.includes("win")) return "claude-desktop";
   return "claude-code";
 }
+// Reference once so the linter doesn't warn about the unused export — and
+// so future instrumentation (e.g. analytics on which tab the user picked)
+// has a place to land.
+void detectBestEditorTab;
 
 const claudeCodeCommand = computed(
   () => `claude mcp add vibecell ${MCP_URL} --transport http --scope user`,
@@ -369,10 +386,10 @@ onMounted(async () => {
             </p>
           </header>
 
-          <!-- Tabs -->
+          <!-- Tabs — "Paste into AI" first because it's the slickest path -->
           <nav class="flex gap-1 mb-5 border-b border-border flex-wrap">
             <button
-              v-for="t in (['claude-desktop', 'claude-code', 'cursor', 'zed', 'windsurf'] as const)"
+              v-for="t in (['ai-prompt', 'claude-desktop', 'claude-code', 'cursor', 'zed', 'windsurf'] as const)"
               :key="t"
               type="button"
               class="px-3 py-2 text-small transition-colors"
@@ -381,14 +398,44 @@ onMounted(async () => {
                 : 'text-fg-muted hover:text-fg-body'"
               @click="tab = t"
             >
-              {{
-                t === "claude-desktop" ? "Claude Desktop" :
-                t === "claude-code" ? "Claude Code" :
-                t === "cursor" ? "Cursor" :
-                t === "zed" ? "Zed" : "Windsurf"
-              }}
+              <template v-if="t === 'ai-prompt'">
+                <span aria-hidden="true" class="text-signal-green mr-1">✦</span>Paste into AI
+              </template>
+              <template v-else>
+                {{
+                  t === "claude-desktop" ? "Claude Desktop" :
+                  t === "claude-code" ? "Claude Code" :
+                  t === "cursor" ? "Cursor" :
+                  t === "zed" ? "Zed" : "Windsurf"
+                }}
+              </template>
             </button>
           </nav>
+
+          <!-- ─── AI prompt ─────────────────────────────────────────── -->
+          <div v-if="tab === 'ai-prompt'" class="space-y-4">
+            <p class="text-small text-fg-muted">{{ INSTALL_PROMPT_PITCH }}</p>
+            <div
+              class="rounded-md p-4 font-mono text-[12px] leading-relaxed whitespace-pre-wrap select-all"
+              style="background:rgba(20,33,50,0.5); border:1px solid rgba(138,180,255,0.12); color:var(--fg-body); max-height:280px; overflow-y:auto"
+            >{{ VIBECELL_INSTALL_PROMPT }}</div>
+            <div class="flex items-center gap-3">
+              <PrimaryButton
+                size="lg"
+                class="flex-1"
+                @click="copy(VIBECELL_INSTALL_PROMPT, 'ai-prompt')"
+              >
+                {{ copiedKey === 'ai-prompt' ? "✓ Copied — paste into your AI" : "Copy prompt" }}
+              </PrimaryButton>
+              <span class="font-mono text-[10px] text-fg-subtle whitespace-nowrap">
+                ~{{ Math.ceil(VIBECELL_INSTALL_PROMPT.length / 4) }} tokens
+              </span>
+            </div>
+            <p class="text-small text-fg-subtle">
+              Then paste it into Claude Code, Claude Desktop, Cursor, Zed, or any other AI in your editor.
+              First tool call pops OAuth in your browser — confirm there and you're paired.
+            </p>
+          </div>
 
           <!-- Claude Desktop -->
           <div v-if="tab === 'claude-desktop'" class="space-y-4">

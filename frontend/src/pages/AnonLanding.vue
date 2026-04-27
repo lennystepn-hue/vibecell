@@ -272,7 +272,7 @@ const steps = [
             and full app — with an MCP server your AI already speaks.
           </p>
 
-          <div class="flex flex-wrap gap-3 mb-7">
+          <div class="flex flex-wrap gap-3 mb-3">
             <button
               class="px-5 py-2.5 rounded-md font-mono font-semibold text-[12px] transition-opacity hover:opacity-90 tracking-wider uppercase"
               style="background: #5cc8a4; color: #070b10; box-shadow: 0 0 20px rgba(92,200,164,0.18)"
@@ -286,6 +286,20 @@ const steps = [
               See how it works ↓
             </button>
           </div>
+
+          <!-- AI-paste install. Faster than the trial flow for anyone whose
+               editor already speaks MCP — paste a prompt, AI installs itself,
+               OAuth pops, done. Inline link rather than a third button so it
+               doesn't compete with the primary CTA. -->
+          <p class="mb-7 font-mono text-[11px]" style="color: #cfd4dc; letter-spacing: 0.02em">
+            <span aria-hidden="true" style="color: #5cc8a4">✦</span>
+            Already in Claude / Cursor / Zed?
+            <RouterLink
+              to="/install"
+              class="underline-offset-2 hover:underline"
+              style="color: #5cc8a4"
+            >Paste one prompt — AI installs itself →</RouterLink>
+          </p>
 
           <!-- Feature signal — surfaces the actual product surface
                (dashboard + MCP tools + cron + secrets + history) rather

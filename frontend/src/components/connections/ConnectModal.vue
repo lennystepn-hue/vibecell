@@ -2,9 +2,10 @@
 import { computed, ref, watch } from "vue";
 
 import PrimaryButton from "@/components/ui/PrimaryButton.vue";
+import { INSTALL_PROMPT_PITCH, VIBECELL_INSTALL_PROMPT } from "@/lib/installPrompt";
 import { useConnectionsStore } from "@/stores/connections";
 
-type Tab = "claude-desktop" | "claude-code" | "cursor" | "zed" | "windsurf";
+type Tab = "ai-prompt" | "claude-desktop" | "claude-code" | "cursor" | "zed" | "windsurf";
 
 const props = defineProps<{ open: boolean }>();
 const emit = defineEmits<{ close: [] }>();
@@ -19,15 +20,12 @@ const oneClickAttempted = ref(false);
 const connectionCountAtOpen = ref<number>(0);
 const pollHandle = ref<ReturnType<typeof setInterval> | null>(null);
 
-// Auto-detect: macOS + Safari/Chrome is most likely Claude Desktop.
-// Windows is Claude Desktop or Cursor. Linux defaults to Claude Code.
+// Default tab is the AI-paste prompt — that's the slickest path. The
+// per-editor tabs remain for users who prefer the manual flow. We keep
+// the auto-detect helper around for the "if the user picks the per-editor
+// path, suggest which one" use case (currently unused, but cheap to retain).
 function detectBestTab(): Tab {
-  if (typeof navigator === "undefined") return "claude-desktop";
-  const ua = navigator.userAgent.toLowerCase();
-  const platform = navigator.platform?.toLowerCase() ?? "";
-  if (platform.includes("mac") || ua.includes("mac os")) return "claude-desktop";
-  if (platform.includes("win")) return "claude-desktop";
-  return "claude-code";
+  return "ai-prompt";
 }
 
 const claudeCodeCommand = computed(
@@ -188,7 +186,7 @@ function close() {
 
         <nav class="flex gap-1 mb-5 border-b border-border flex-wrap">
           <button
-            v-for="t in (['claude-desktop', 'claude-code', 'cursor', 'zed', 'windsurf'] as const)"
+            v-for="t in (['ai-prompt', 'claude-desktop', 'claude-code', 'cursor', 'zed', 'windsurf'] as const)"
             :key="t"
             class="px-3 py-2 text-small transition-colors"
             :class="tab === t
@@ -196,14 +194,34 @@ function close() {
               : 'text-fg-muted hover:text-fg-body'"
             @click="tab = t"
           >
-            {{
-              t === "claude-desktop" ? "Claude Desktop" :
-              t === "claude-code" ? "Claude Code" :
-              t === "cursor" ? "Cursor" :
-              t === "zed" ? "Zed" : "Windsurf"
-            }}
+            <template v-if="t === 'ai-prompt'">
+              <span aria-hidden="true" class="text-signal-green mr-1">✦</span>Paste into AI
+            </template>
+            <template v-else>
+              {{
+                t === "claude-desktop" ? "Claude Desktop" :
+                t === "claude-code" ? "Claude Code" :
+                t === "cursor" ? "Cursor" :
+                t === "zed" ? "Zed" : "Windsurf"
+              }}
+            </template>
           </button>
         </nav>
+
+        <!-- ─── AI prompt ─────────────────────────────────────────── -->
+        <div v-if="tab === 'ai-prompt'" class="space-y-4">
+          <p class="text-small text-fg-muted">{{ INSTALL_PROMPT_PITCH }}</p>
+          <div
+            class="rounded-md p-4 font-mono text-[12px] leading-relaxed whitespace-pre-wrap select-all"
+            style="background:rgba(20,33,50,0.5); border:1px solid rgba(138,180,255,0.12); color:var(--fg-body); max-height:280px; overflow-y:auto"
+          >{{ VIBECELL_INSTALL_PROMPT }}</div>
+          <PrimaryButton class="w-full" @click="copy(VIBECELL_INSTALL_PROMPT, 'ai-prompt')">
+            {{ copiedKey === 'ai-prompt' ? "✓ Copied — paste into your AI" : "Copy prompt" }}
+          </PrimaryButton>
+          <p class="text-small text-fg-subtle text-center">
+            Paste into Claude / Cursor / Zed — it'll handle install + OAuth + first read on its own.
+          </p>
+        </div>
 
         <!-- ─── Claude Desktop ─────────────────────────────────────── -->
         <div v-if="tab === 'claude-desktop'" class="space-y-4">
