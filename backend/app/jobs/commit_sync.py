@@ -23,7 +23,7 @@ from typing import Any
 
 import httpx
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from sqlalchemy import func, select
+from sqlalchemy import desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db import session_scope
@@ -45,6 +45,54 @@ def _parse_owner_repo(url: str) -> tuple[str, str] | None:
     if not m:
         return None
     return m.group(1), m.group(2)
+
+
+async def _link_sha_to_recent_manual_log(
+    db: AsyncSession,
+    *,
+    project_id: str,
+    sha: str,
+    summary: str,
+    started_at: datetime,
+) -> bool:
+    """If a recent non-github session with the same summary already exists,
+    splice the SHA into its commits[] and return True (caller skips insert).
+
+    The dashboard's session list de-duplicates strictly on row identity, so
+    two rows with the same summary appear twice. Without this hook, every
+    SHA that Claude logged manually via vibecell_log_session — without
+    bothering to include the commits[] field — would be re-logged 2 minutes
+    later by this cron. End result: every commit shown twice (see the
+    Spec-6 hotfix migration 0019_session_dedup).
+
+    The 30-minute look-around is generous enough to bridge the cron's
+    schedule jitter and conservative enough that a same-named session from
+    last week wouldn't accidentally absorb a new SHA.
+    """
+    cutoff = started_at - timedelta(minutes=30)
+    upper = started_at + timedelta(minutes=30)
+    sibling = (
+        await db.execute(
+            select(Session)
+            .where(Session.project_id == project_id)
+            .where(Session.source != "github")
+            .where(Session.summary == summary)
+            .where(Session.started_at >= cutoff)
+            .where(Session.started_at <= upper)
+            .order_by(desc(Session.started_at))
+            .limit(1)
+        )
+    ).scalar_one_or_none()
+    if sibling is None:
+        return False
+
+    commits = sibling.commits if isinstance(sibling.commits, list) else []
+    already = any(
+        isinstance(c, dict) and c.get("sha") == sha for c in commits
+    )
+    if not already:
+        sibling.commits = [*commits, {"sha": sha[:40], "msg": summary[:500]}]
+    return True
 
 
 async def _existing_shas_for_project(db: AsyncSession, project_id: str) -> set[str]:
@@ -165,6 +213,21 @@ async def _sync_project(db: AsyncSession, workspace_id: str, project: Project, t
             started_at = datetime.fromisoformat(ts_iso.replace("Z", "+00:00"))
         except ValueError:
             started_at = datetime.now(UTC)
+
+        # If Claude already logged a same-summary session in the last 30 min,
+        # patch the SHA into that row instead of creating a new github row.
+        # That row was probably created by vibecell_log_session WITHOUT a
+        # commits[] entry, which is what produced the dashboard duplicates.
+        linked = await _link_sha_to_recent_manual_log(
+            db,
+            project_id=project.id,
+            sha=sha,
+            summary=first_line,
+            started_at=started_at,
+        )
+        if linked:
+            # No new row needed; SHA is now associated with the manual log.
+            continue
 
         db.add(Session(
             id=new_ulid(),

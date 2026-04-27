@@ -136,7 +136,12 @@ function commitsArr(s: SessionOut): unknown[] {
 <template>
   <section class="glass rounded-lg p-5">
     <header class="flex items-center justify-between mb-4 select-none">
-      <h3 class="mono-label text-fg-muted">//sessions <span class="opacity-60">({{ count }})</span></h3>
+      <h3 class="mono-label text-fg-muted">
+        //sessions
+        <span class="opacity-60">
+          ({{ count }}<span v-if="sessions.nextCursor">+</span>)
+        </span>
+      </h3>
       <button
         type="button"
         class="mono-label hover:text-fg-body transition-colors"
@@ -162,7 +167,7 @@ function commitsArr(s: SessionOut): unknown[] {
           @click="toggleExpand(s.id)"
         >
           <span class="font-mono text-small text-fg-subtle w-20 shrink-0">{{ relTime(s.started_at) }}</span>
-          <span aria-hidden="true" class="text-fg-muted">🛠</span>
+          <span aria-hidden="true" class="font-mono text-fg-muted shrink-0 w-3 text-center">◉</span>
           <span class="flex-1 text-body text-fg-body truncate">
             {{ s.summary || "(no summary)" }}
           </span>
@@ -201,6 +206,21 @@ function commitsArr(s: SessionOut): unknown[] {
         </div>
       </li>
     </ul>
+
+    <!-- Cursor pagination — older sessions on demand so the first paint
+         stays under 100 rows. nextCursor === null when we've reached the
+         end of the table. -->
+    <div v-if="sessions.nextCursor" class="mt-3 pt-3 border-t border-border-subtle flex items-center justify-between">
+      <span class="font-mono text-small text-fg-subtle">// more older sessions available</span>
+      <button
+        type="button"
+        class="font-mono text-small text-fg-muted hover:text-fg-body transition-colors disabled:opacity-50"
+        :disabled="sessions.loadingMore"
+        @click="sessions.loadMore"
+      >
+        {{ sessions.loadingMore ? "loading…" : "load more →" }}
+      </button>
+    </div>
 
     <Modal :open="modalOpen" title="log session" @close="modalOpen = false">
       <form class="space-y-4" @submit.prevent="onSubmit">
