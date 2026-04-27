@@ -137,7 +137,7 @@ async function onSubmit() {
     type="button"
     class="mono-label hover:text-signal-green transition-colors"
     @click="openModal"
-  >🚀 ship it</button>
+  >↑ ship it</button>
 
   <Modal :open="open" title="ship it" width="640px" @close="open = false">
     <form class="space-y-4" @submit.prevent="onSubmit">

@@ -24,13 +24,15 @@ function hostOf(url: string): string {
 }
 
 function kindIcon(kind: string): string {
-  if (kind.startsWith("ship")) return "🚀";
-  if (kind.startsWith("launch")) return "📣";
-  if (kind.startsWith("decision")) return "⚖";
-  if (kind.startsWith("session")) return "🛠";
-  if (kind.startsWith("idea")) return "💡";
-  if (kind.startsWith("note")) return "📝";
-  return "•";
+  // Cockpit marks — geometric, not pictographic. Replace earlier emoji
+  // set per the impeccable design brief.
+  if (kind.startsWith("ship")) return "↑";
+  if (kind.startsWith("launch")) return "◢";
+  if (kind.startsWith("decision")) return "◇";
+  if (kind.startsWith("session")) return "◉";
+  if (kind.startsWith("idea")) return "◌";
+  if (kind.startsWith("note")) return "▤";
+  return "·";
 }
 
 function detailSnippet(ev: LifecycleEventOut): string {

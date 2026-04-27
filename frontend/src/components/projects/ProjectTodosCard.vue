@@ -231,7 +231,7 @@ onProjectLiveEvent(
         />
         <input
           v-model="newTitle"
-          placeholder="New todo, or a goal for ✨ AI plan — press ⏎"
+          placeholder="New todo · or a goal for AI plan, press ⏎"
           class="h-8 px-2 text-small bg-bg-surface border border-border rounded flex-1"
           :disabled="planning"
           @keydown.enter="add"
@@ -243,12 +243,12 @@ onProjectLiveEvent(
           @click="add"
         >add</button>
         <button
-          class="h-8 px-3 text-small font-mono rounded border transition-colors disabled:opacity-50"
-          style="border-color: rgba(92,200,164,0.4); color: #5cc8a4; background: rgba(92,200,164,0.06)"
+          class="h-8 px-3 text-small font-mono rounded border transition-colors disabled:opacity-50 uppercase tracking-wider"
+          style="border-color: rgba(92,200,164,0.4); color: #5cc8a4; background: rgba(92,200,164,0.06); letter-spacing: 0.08em; font-size: 10px"
           :disabled="!newTitle.trim() || planning"
           :title="'AI: break this into a batch of todos'"
           @click="aiPlan"
-        >{{ planning ? "✨ planning…" : "✨ AI plan" }}</button>
+        >{{ planning ? "planning…" : "AI plan" }}</button>
       </div>
       <p
         v-if="planError"
@@ -263,7 +263,7 @@ onProjectLiveEvent(
       >
         <p class="text-small text-fg-body">Nothing on the list yet.</p>
         <p class="text-[11px] text-fg-subtle mt-1">
-          Type a goal above and hit <span class="font-mono">✨ AI plan</span> — Claude breaks it into todos.
+          Type a goal above and hit <span class="font-mono uppercase tracking-wider" style="letter-spacing: 0.08em">AI plan</span> — Claude breaks it into todos.
         </p>
       </div>
 
