@@ -23,7 +23,7 @@ from typing import Any
 
 import httpx
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from sqlalchemy import desc, func, select
+from sqlalchemy import desc, func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db import session_scope
@@ -150,8 +150,50 @@ async def _fetch_recent_commits(
     return out
 
 
+async def _try_lock_project(db: AsyncSession, project_id: str) -> bool:
+    """Try to acquire a transaction-scoped advisory lock for this project.
+
+    Two backend containers overlap during a rolling deploy (new container
+    starts before old one stops), so APScheduler's `max_instances=1` only
+    rate-limits within a single process. Without DB-level coordination both
+    crons happily INSERT the same SHA twice (millisecond apart, identical
+    started_at) — exactly the duplicate-session shape that bricked the
+    dashboard.
+
+    Postgres advisory locks are the cheapest cross-process mutex available
+    here: one bigint argument, transaction-scoped (auto-released on
+    commit/rollback), no rows touched. We hash the project_id into a
+    bigint and namespace it with a constant high half so it can't collide
+    with another subsystem's advisory locks.
+
+    Returns False when another process holds the lock — caller should skip
+    the project (it'll get re-synced on the NEXT 2-min tick anyway).
+    """
+    namespace = 0x7C56_E1CE  # 'vibecell-commit-sync' rough magic
+    row = (
+        await db.execute(
+            text(
+                "SELECT pg_try_advisory_xact_lock(:ns, "
+                "      ('x' || substr(md5(:pid), 1, 8))::bit(32)::int)"
+            ),
+            {"ns": namespace, "pid": project_id},
+        )
+    ).scalar_one()
+    return bool(row)
+
+
 async def _sync_project(db: AsyncSession, workspace_id: str, project: Project, token: str) -> int:
     """Sync commits for one project. Returns the number of sessions inserted."""
+    # Take a project-scoped advisory lock. If a parallel backend instance
+    # already has it, bail — the next tick will pick up whatever this run
+    # would have inserted, without the duplicate-row collision.
+    if not await _try_lock_project(db, project.id):
+        logger.info(
+            "commit_sync: skipped %s/%s — another process holds the project lock",
+            workspace_id, project.slug,
+        )
+        return 0
+
     # Resolve owner/repo from the first github-kind link
     gh_link = (await db.execute(
         select(ProjectLink).where(
