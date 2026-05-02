@@ -1,6 +1,10 @@
 # Production deploy — Vibecell
 
-Staging + first production instance: `89.167.111.89` (Hetzner Helsinki, 4 GB).
+> **Placeholders used below:** `$DEPLOY_HOST` = production server IP/hostname,
+> `$DEPLOY_USER` = SSH user (typically `root`). Set them in your shell:
+> `export DEPLOY_HOST=... DEPLOY_USER=...` before running any command in this doc.
+
+Staging + first production instance: `$DEPLOY_HOST` (Hetzner Helsinki, 4 GB).
 
 ## Prerequisites on the server
 
@@ -39,13 +43,13 @@ On your laptop:
 # 1. Sync code to server
 tar --exclude='.git' --exclude='node_modules' --exclude='.venv' \
     --exclude='dist' --exclude='.superpowers' -cf - . \
-  | ssh root@89.167.111.89 "mkdir -p /srv/hangar && cd /srv/hangar && tar -xf -"
+  | ssh $DEPLOY_USER@$DEPLOY_HOST "mkdir -p /srv/hangar && cd /srv/hangar && tar -xf -"
 
 # 2. Run deploy on server
-ssh root@89.167.111.89 "cd /srv/hangar && ./ops/deploy.sh $(git rev-parse --short HEAD)"
+ssh $DEPLOY_USER@$DEPLOY_HOST "cd /srv/hangar && ./ops/deploy.sh $(git rev-parse --short HEAD)"
 ```
 
-Verify: `curl http://89.167.111.89:8080/api/v1/healthz` → `{"ok":true,...}`.
+Verify: `curl http://$DEPLOY_HOST:8080/api/v1/healthz` → `{"ok":true,...}`.
 
 ## Expose vibecell.dev
 
@@ -61,17 +65,17 @@ via the host gateway `http://172.17.0.1:8080` (docker0 bridge — no
 compose-file change needed on the agentready side).
 
 **First-time cert issuance** (once DNS A record points vibecell.dev at
-89.167.111.89):
+$DEPLOY_HOST):
 
 ```bash
 scp ops/nginx/vibecell.dev.http-only.conf \
-    root@89.167.111.89:/tmp/vibecell-http.conf
-ssh root@89.167.111.89 'docker cp /tmp/vibecell-http.conf \
+    $DEPLOY_USER@$DEPLOY_HOST:/tmp/vibecell-http.conf
+ssh $DEPLOY_USER@$DEPLOY_HOST 'docker cp /tmp/vibecell-http.conf \
   agentready-nginx-1:/etc/nginx/conf.d/vibecell.conf && \
   docker exec agentready-nginx-1 nginx -s reload'
 
-scp ops/issue-cert.sh root@89.167.111.89:/tmp/issue-cert.sh
-ssh root@89.167.111.89 'chmod +x /tmp/issue-cert.sh && /tmp/issue-cert.sh'
+scp ops/issue-cert.sh $DEPLOY_USER@$DEPLOY_HOST:/tmp/issue-cert.sh
+ssh $DEPLOY_USER@$DEPLOY_HOST 'chmod +x /tmp/issue-cert.sh && /tmp/issue-cert.sh'
 ```
 
 The script does a DNS gate + HTTP-01 self-check, then runs certbot
@@ -83,14 +87,14 @@ nightly at 03:15 UTC so freshly renewed certs get picked up.
 
 ### Option 2: Cloudflare proxy
 
-Point `vibecell.dev` A record at 89.167.111.89, orange-cloud on. Cloudflare
+Point `vibecell.dev` A record at $DEPLOY_HOST, orange-cloud on. Cloudflare
 terminates TLS; backend sees HTTP. Set an origin rule so Cloudflare pulls
-from `http://89.167.111.89:8080`.
+from `http://$DEPLOY_HOST:8080`.
 
 ## Subsequent deploys
 
 ```bash
-ssh root@89.167.111.89 "cd /srv/hangar && git pull && ./ops/deploy.sh $(git rev-parse --short HEAD)"
+ssh $DEPLOY_USER@$DEPLOY_HOST "cd /srv/hangar && git pull && ./ops/deploy.sh $(git rev-parse --short HEAD)"
 ```
 
 (Assumes the server has been set up with a git remote. For v1 we tar-pipe
@@ -101,7 +105,7 @@ over SSH instead.)
 Install the cron (once):
 
 ```bash
-ssh root@89.167.111.89 'chmod +x /srv/hangar/ops/backup.sh && echo "0 3 * * * /srv/hangar/ops/backup.sh >> /var/log/hangar-backup.log 2>&1" | crontab -'
+ssh $DEPLOY_USER@$DEPLOY_HOST 'chmod +x /srv/hangar/ops/backup.sh && echo "0 3 * * * /srv/hangar/ops/backup.sh >> /var/log/hangar-backup.log 2>&1" | crontab -'
 ```
 
 Backups land in `/srv/hangar/backups/{daily,weekly,monthly}/`.
@@ -135,7 +139,7 @@ Point an external pinger (UptimeRobot free tier works) at:
 `deploy.sh` auto-rolls back on health-check fail. Manual rollback:
 
 ```bash
-ssh root@89.167.111.89 "cd /srv/hangar && HANGAR_SHA=<prev-sha> docker compose --env-file /etc/hangar/hangar.env -f ops/docker-compose.prod.yml up -d backend frontend nginx"
+ssh $DEPLOY_USER@$DEPLOY_HOST "cd /srv/hangar && HANGAR_SHA=<prev-sha> docker compose --env-file /etc/hangar/hangar.env -f ops/docker-compose.prod.yml up -d backend frontend nginx"
 ```
 
 ## Secret rotation
