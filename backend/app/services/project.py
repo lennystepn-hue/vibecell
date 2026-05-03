@@ -110,6 +110,7 @@ async def update_project(
     pitch: str | None = None,
     status: str | None = None,
     is_public: int | None = None,
+    primer_md: str | None = None,
 ) -> Project:
     if name is not None:
         project.name = name
@@ -130,6 +131,11 @@ async def update_project(
             project.archived_at = None
     if is_public is not None:
         project.is_public = is_public
+    # primer_md is None = "untouched", "" = "explicitly cleared". The PATCH
+    # caller never sends None for a present field; the schema's default is
+    # None so absent keys also pass through cleanly.
+    if primer_md is not None:
+        project.primer_md = primer_md or None
     await db.flush()
     return project
 

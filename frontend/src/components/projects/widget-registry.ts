@@ -21,6 +21,7 @@ import ProjectInfraCard from "@/components/projects/ProjectInfraCard.vue";
 import ProjectLaunchesCard from "@/components/projects/ProjectLaunchesCard.vue";
 import ProjectLinksCommands from "@/components/projects/ProjectLinksCommands.vue";
 import ProjectNotesCard from "@/components/projects/ProjectNotesCard.vue";
+import ProjectPrimerCard from "@/components/projects/ProjectPrimerCard.vue";
 import ProjectSecretsCard from "@/components/projects/ProjectSecretsCard.vue";
 import ProjectSessionsCard from "@/components/projects/ProjectSessionsCard.vue";
 import ProjectStackEditor from "@/components/projects/ProjectStackEditor.vue";
@@ -55,6 +56,15 @@ export const WIDGETS: Record<string, WidgetDef> = {
     component: ProjectBriefCard,
     props: (p) => ({ slug: p.slug }),
     minW: 3, minH: 3,
+  },
+  primer: {
+    id: "primer",
+    title: "Primer",
+    hint: "Long-form README aimed at AIs joining cold. Fetched via vibecell_primer.",
+    icon: "▤",
+    component: ProjectPrimerCard,
+    props: (p) => ({ project: p }),
+    minW: 4, minH: 4,
   },
   health: {
     id: "health",
@@ -207,27 +217,31 @@ export const DEFAULT_LAYOUT: WidgetLayout[] = [
   { i: "health",         x: 8,  y: 0,  w: 4, h: 4, minW: 3, minH: 3 },
   // Daily-driver row — what's the user supposed to do next
   { i: "focus",          x: 0,  y: 4,  w: 12, h: 3, minW: 4, minH: 3 },
+  // Primer — full-width long-form README aimed at AIs. Sits high in the
+  // layout because writing it once unlocks instant onboarding for every
+  // future session via the vibecell_primer MCP tool.
+  { i: "primer",         x: 0,  y: 7,  w: 12, h: 5, minW: 6, minH: 4 },
   // Work zone — todos always render full-bleed
-  { i: "todos",          x: 0,  y: 7,  w: 12, h: 5, minW: 5, minH: 4 },
+  { i: "todos",          x: 0,  y: 12, w: 12, h: 5, minW: 5, minH: 4 },
   // Project metadata triplet — always 3 cards in one row, fills cleanly
-  { i: "stack",          x: 0,  y: 12, w: 4, h: 3, minW: 3, minH: 3 },
-  { i: "tags",           x: 4,  y: 12, w: 4, h: 3, minW: 3, minH: 3 },
-  { i: "infra",          x: 8,  y: 12, w: 4, h: 3, minW: 3, minH: 3 },
+  { i: "stack",          x: 0,  y: 17, w: 4, h: 3, minW: 3, minH: 3 },
+  { i: "tags",           x: 4,  y: 17, w: 4, h: 3, minW: 3, minH: 3 },
+  { i: "infra",          x: 8,  y: 17, w: 4, h: 3, minW: 3, minH: 3 },
   // Recent activity pair
-  { i: "sessions",       x: 0,  y: 15, w: 6, h: 4, minW: 4, minH: 3 },
-  { i: "decisions",      x: 6,  y: 15, w: 6, h: 4, minW: 4, minH: 3 },
+  { i: "sessions",       x: 0,  y: 20, w: 6, h: 4, minW: 4, minH: 3 },
+  { i: "decisions",      x: 6,  y: 20, w: 6, h: 4, minW: 4, minH: 3 },
   // Operational links + envs
-  { i: "links-commands", x: 0,  y: 19, w: 8, h: 4, minW: 4, minH: 3 },
-  { i: "environments",   x: 8,  y: 19, w: 4, h: 4, minW: 3, minH: 3 },
+  { i: "links-commands", x: 0,  y: 24, w: 8, h: 4, minW: 4, minH: 3 },
+  { i: "environments",   x: 8,  y: 24, w: 4, h: 4, minW: 3, minH: 3 },
   // Notes + launches paired so empty-launch doesn't dominate
-  { i: "notes",          x: 0,  y: 23, w: 6, h: 4, minW: 4, minH: 3 },
-  { i: "launches",       x: 6,  y: 23, w: 6, h: 4, minW: 4, minH: 3 },
+  { i: "notes",          x: 0,  y: 28, w: 6, h: 4, minW: 4, minH: 3 },
+  { i: "launches",       x: 6,  y: 28, w: 6, h: 4, minW: 4, minH: 3 },
   // Secrets full-width — visually dense once populated, h=4 keeps it
   // under-the-fold for empty case
-  { i: "secrets",        x: 0,  y: 27, w: 12, h: 4, minW: 5, minH: 3 },
+  { i: "secrets",        x: 0,  y: 32, w: 12, h: 4, minW: 5, minH: 3 },
   // Activity timeline closes out — full width, taller because it's the
   // narrative of the project
-  { i: "activity",       x: 0,  y: 31, w: 12, h: 6, minW: 6, minH: 5 },
+  { i: "activity",       x: 0,  y: 36, w: 12, h: 6, minW: 6, minH: 5 },
 ];
 
 export function widgetById(id: string): WidgetDef | undefined {

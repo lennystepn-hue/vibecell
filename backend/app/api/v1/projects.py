@@ -56,6 +56,7 @@ def _to_out(project: Project) -> ProjectOut:
         updated_at=project.updated_at.isoformat() if project.updated_at else None,
         group_id=project.group_id,
         position=project.position,
+        primer_md=project.primer_md,
     )
 
 
@@ -173,6 +174,7 @@ async def patch(
         pitch=body.pitch,
         status=body.status,
         is_public=body.is_public,
+        primer_md=body.primer_md,
     )
     await db.commit()
     return _to_out(ctx.project)

@@ -23,6 +23,11 @@ class Project(Base, TimestampMixin):
     emoji: Mapped[str | None] = mapped_column(String(16))
     color: Mapped[str | None] = mapped_column(String(20))
     pitch: Mapped[str | None] = mapped_column(Text)
+    # Long-form per-project README aimed at AI consumers (CLAUDE.md / AGENTS.md
+    # rolled into one). Read via vibecell_primer MCP tool, edited via the
+    # ProjectPrimerCard. NULL until the user writes one — empty card hints
+    # the user (or AI generator) to fill it in.
+    primer_md: Mapped[str | None] = mapped_column(Text)
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="building", index=True)
     legal_entity_id: Mapped[str | None] = mapped_column(String(26))  # FK added in Spec 4
     is_public: Mapped[int] = mapped_column(Integer, nullable=False, default=0)

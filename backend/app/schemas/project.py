@@ -31,6 +31,10 @@ class ProjectOut(ProjectListItem):
     archived_at: str | None = None
     created_at: str | None = None
     updated_at: str | None = None
+    # Long-form per-project AI primer / README. NULL when never written.
+    # Surfaced on the dashboard as ProjectPrimerCard and via the
+    # vibecell_primer MCP tool.
+    primer_md: str | None = None
 
 
 class ProjectListPage(BaseModel):
@@ -61,6 +65,10 @@ class ProjectUpdate(BaseModel):
     pitch: str | None = Field(default=None, max_length=2000)
     status: str | None = None
     is_public: int | None = None
+    # 50KB ceiling — generous enough for a full README without inviting users
+    # to dump entire codebases into the field. None = "leave existing value
+    # untouched"; "" (empty string) = "explicitly clear the primer".
+    primer_md: str | None = Field(default=None, max_length=51200)
 
     @field_validator("status")
     @classmethod

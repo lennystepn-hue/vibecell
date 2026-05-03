@@ -332,6 +332,15 @@ TOOLS: list[Tool] = [
     Tool("vibecell_recent_projects", "Return up to n projects ordered by sidebar position.", RecentArgs, r.handle_recent),
     Tool("vibecell_claude_md", "Generate a CLAUDE.md-ready markdown brief for a project.", SlugArg, r.handle_claude_md),
     Tool("vibecell_handover", "Longer prose onboarding brief. Defaults to active.", SlugArg, r.handle_handover),
+    Tool(
+        "vibecell_primer",
+        "Return the project's long-form AI primer (the user-authored README "
+        "for AIs joining cold). Defaults to active project. Lightweight — "
+        "safe to call right after vibecell_active. Returns null + a hint "
+        "when no primer has been written yet, so the AI knows to either "
+        "ask the user or fall back to vibecell_handover.",
+        SlugArg, r.handle_primer,
+    ),
     # Write
     Tool("vibecell_switch", "Switch the active project within this workspace.", SlugRequired, w.handle_switch),
     Tool("vibecell_log_session", "Log a coding session.", LogSessionArgs, w.handle_log_session),

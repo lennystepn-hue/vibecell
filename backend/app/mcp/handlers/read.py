@@ -248,6 +248,42 @@ async def handle_activity(args: Any, ctx: MCPContext) -> str:
     return json.dumps(events)
 
 
+async def handle_primer(args: Any, ctx: MCPContext) -> str:
+    """Return the project's long-form AI primer (free-form markdown).
+
+    Two-mode response so cold-start AIs get something useful no matter the
+    project's state:
+
+      • Primer set → return it verbatim, plus minimal metadata
+        (slug, name, length, updated_at) so the AI can quote-attribute.
+      • Primer empty → return `{primer_md: null, hint: "..."}` with a
+        suggested action ("ask the user for project context, or call
+        vibecell_brief / vibecell_handover for an auto-generated summary").
+        The empty path stays cheap so it can be the first call after
+        vibecell_active without burning tokens on a 200-row project history.
+
+    The full JSON aggregate isn't included — that's what vibecell_get is
+    for. This tool is deliberately tight so it's safe to call early and
+    often.
+    """
+    project = await _resolve_project(args, ctx)
+    primer = (project.primer_md or "").strip()
+    payload: dict[str, Any] = {
+        "project_slug": project.slug,
+        "project_name": project.name,
+        "primer_md": primer or None,
+        "length": len(primer),
+        "updated_at": project.updated_at.isoformat() if project.updated_at else None,
+    }
+    if not primer:
+        payload["hint"] = (
+            "No primer written yet for this project. Suggest the user write one "
+            "from the dashboard's PRIMER card — or call vibecell_handover for an "
+            "auto-generated onboarding brief from existing project state."
+        )
+    return json.dumps(payload)
+
+
 async def handle_todo_list(args: Any, ctx: MCPContext) -> str:
     """List a project's todos (open + in_progress by default)."""
     from app.services import todo_svc
