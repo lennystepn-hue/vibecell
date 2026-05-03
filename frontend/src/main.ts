@@ -3,9 +3,15 @@ import { createPinia } from "pinia";
 import { createApp } from "vue";
 
 import App from "./App.vue";
+import { bootstrapAnalytics } from "./lib/analytics";
 import router from "./router";
 
 import "./assets/base.css";
+
+// Re-attach Google Analytics on hot reload only if the user has previously
+// granted consent. First-visit users see no GA traffic until they click
+// "Accept analytics" on the consent banner mounted in App.vue.
+bootstrapAnalytics(router);
 
 const app = createApp(App);
 

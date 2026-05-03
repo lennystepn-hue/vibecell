@@ -4,7 +4,14 @@ import { useRoute, useRouter } from "vue-router";
 
 import UserMenu from "@/components/app/UserMenu.vue";
 import { useRouteMeta } from "@/composables/useMeta";
+import { denyConsent } from "@/lib/analytics";
 import { useAuthStore } from "@/stores/auth";
+
+function revokeAnalytics() {
+  denyConsent();
+  // Tiny, native confirmation — no toast plumbing in this page yet.
+  alert("Analytics opt-out saved. Reload the page and gtag.js will not load.");
+}
 
 const route = useRoute();
 const router = useRouter();
@@ -141,8 +148,16 @@ const privacySections = computed<Section[]>(() => [
       "Project data — every project, session, decision, ship, idea, todo, note, secret label, and tag you create. Inline-encrypted secret values are stored AES-256-GCM-encrypted with your workspace data-encryption key.",
       "Usage logs — request timestamps, IP address (via the proxy, retained 30 days), MCP tool-call audit (which tool, when, success/failure — never the arguments).",
       "Billing data — Stripe customer ID, subscription state, invoice references. We never store card numbers; Stripe holds them under PCI DSS Level 1 certification.",
-      "Cookies — one signed httpOnly session cookie. No third-party analytics, no advertising pixels, no cross-site tracking. The session cookie is strictly necessary under Art. 6(1)(b) and ePrivacy Directive Art. 5(3) — no consent banner required.",
+      "Cookies — one signed httpOnly session cookie (strictly necessary under ePrivacy Art. 5(3); no consent required) + opt-in Google Analytics cookies (only set after you click \"Accept analytics\" on the consent banner; never pre-enabled).",
+      "Analytics — Google Analytics 4 with anonymise_ip enabled. Only loaded after explicit opt-in via the consent banner. To revoke: clear localStorage key \"vibecell.consent.analytics\" or click the \"Decline analytics\" button below; both stop further tracking immediately.",
     ],
+  },
+  {
+    heading: "Analytics opt-out",
+    body: [
+      "Google Analytics is opt-in via the consent banner that appears on your first visit. If you accepted earlier and want to revoke that decision, click below — we'll set the opt-out flag, drop any analytics cookies on your next reload, and never load gtag.js again from this browser.",
+    ],
+    list: [],
   },
   {
     heading: "Legal basis (RGPD Art. 6)",
@@ -397,6 +412,16 @@ const visibleSections = computed<Section[]>(() => {
             <span>{{ item }}</span>
           </li>
         </ul>
+        <!-- Inline opt-out button when the privacy "Analytics opt-out"
+             section renders. Single-purpose UI affordance for the
+             revocation right we promised in the body above. -->
+        <button
+          v-if="activeTab === 'privacy' && s.heading === 'Analytics opt-out'"
+          type="button"
+          class="mt-3 px-4 py-2 rounded-md font-mono text-small transition-colors hover:opacity-90"
+          style="background: rgba(255,107,107,0.1); color: #ff7e6c; border: 1px solid rgba(255,126,108,0.4)"
+          @click="revokeAnalytics"
+        >Decline analytics</button>
       </div>
     </article>
 

@@ -3,6 +3,7 @@ import { onBeforeUnmount, watch } from "vue";
 
 import AppLayout from "@/components/app/AppLayout.vue";
 import CommandPalette from "@/components/palette/CommandPalette.vue";
+import CookieConsent from "@/components/app/CookieConsent.vue";
 import KeyboardShortcuts from "@/components/app/KeyboardShortcuts.vue";
 import { useAuthStore } from "@/stores/auth";
 import { usePresenceStore } from "@/stores/presence";
@@ -33,4 +34,8 @@ onBeforeUnmount(() => presence.stop());
   </AppLayout>
   <CommandPalette />
   <KeyboardShortcuts />
+  <!-- Mounted globally so the analytics-consent banner appears once
+       across any route the user lands on first. Self-hides forever
+       once they pick Accept or Decline. -->
+  <CookieConsent />
 </template>
