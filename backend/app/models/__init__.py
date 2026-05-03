@@ -1,6 +1,7 @@
 """SQLAlchemy models. Import from here to ensure all tables are registered on Base.metadata."""
 
 from app.models.auth import (
+    AdminAuditLog,
     AuditLog,
     CliDevice,
     EmailChangeToken,
@@ -43,6 +44,7 @@ from app.models.todo import ProjectTodo
 
 __all__ = [
     "ActiveProject",
+    "AdminAuditLog",
     "AuditLog",
     "Base",
     "CliDevice",

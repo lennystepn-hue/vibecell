@@ -29,6 +29,8 @@ dependencies = [
   "Pillow>=11.0.0",
   "sentry-sdk[fastapi]>=2.18.0",
   "stripe>=11.4.0",
+  "pyotp>=2.9.0",
+  "qrcode>=8.2",
 ]
 
 [dependency-groups]

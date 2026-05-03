@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed } from "vue";
 import { RouterLink, useRoute } from "vue-router";
 
 import { useAuthStore } from "@/stores/auth";
@@ -11,6 +12,14 @@ const route = useRoute();
 const auth = useAuthStore();
 const palette = useCommandPaletteStore();
 const ui = useUiStore();
+
+// is_admin flows from /me; the OpenAPI types may lag behind a deploy, so
+// we narrow at the boundary here instead of forcing a `pnpm gen:api` step
+// into every iteration. Single computed = single read site for the gate.
+const isAdmin = computed<boolean>(() => {
+  const u = auth.user as { is_admin?: boolean } | null;
+  return Boolean(u?.is_admin);
+});
 </script>
 
 <template>
@@ -80,7 +89,10 @@ const ui = useUiStore();
 
     <!-- Quick-nav (projects / ideas / search) hidden on mobile — those routes
          are reachable from the UserMenu dropdown + the sidebar on /p. The
-         topbar on small screens commits to: brand, current project, actions. -->
+         topbar on small screens commits to: brand, current project, actions.
+         Admin link only renders when the auth store says is_admin=true; this
+         is a UI-level filter — server still enforces require_admin on every
+         admin endpoint regardless of what the frontend chooses to show. -->
     <nav v-if="auth.isAuthed" class="hidden md:flex ml-6 items-center gap-4 text-small">
       <RouterLink
         to="/p"
@@ -97,6 +109,13 @@ const ui = useUiStore();
         class="mono-label hover:text-fg-body transition-colors"
         active-class="text-fg-primary"
       >search</RouterLink>
+      <RouterLink
+        v-if="isAdmin"
+        to="/admin"
+        class="mono-label hover:text-fg-body transition-colors"
+        active-class="text-fg-primary"
+        :style="{ color: 'var(--signal-green)' }"
+      >admin</RouterLink>
     </nav>
 
     <div v-if="auth.isAuthed" class="ml-auto flex items-center gap-2">

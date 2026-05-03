@@ -29,6 +29,9 @@ if _sentry_dsn:
 # Activity timeline
 from app.api.v1.activity import router as activity_router
 
+# Spec-6 admin dashboard + 2FA
+from app.api.v1.admin import router as admin_router
+
 # BYOK AI features
 from app.api.v1.ai import router as ai_router
 from app.api.v1.auth import router as auth_router
@@ -75,6 +78,7 @@ from app.api.v1.tags import router as tags_router
 
 # Per-project TODOs
 from app.api.v1.todos import router as todos_router
+from app.api.v1.two_factor import router as two_factor_router
 from app.api.v1.workspaces import router as workspaces_router
 from app.core.audit import install_audit_listener
 from app.core.middleware import install_session_middleware
@@ -177,6 +181,9 @@ app.include_router(passkey_router)
 app.include_router(health_router)
 # Spec-6 C4 — Public status endpoint
 app.include_router(status_router)
+# Spec-6 admin dashboard + 2FA (gated by require_admin / require_admin_2fa)
+app.include_router(two_factor_router)
+app.include_router(admin_router)
 # Spec 5B — Portfolio-Intel
 app.include_router(portfolio_router)
 # Activity timeline

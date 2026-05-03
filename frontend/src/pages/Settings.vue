@@ -4,6 +4,7 @@ import { useRouter } from "vue-router";
 
 import SettingsNav from "@/components/settings/SettingsNav.vue";
 import SettingsSection from "@/components/settings/SettingsSection.vue";
+import TwoFactorCard from "@/components/settings/TwoFactorCard.vue";
 import PrimaryButton from "@/components/ui/PrimaryButton.vue";
 import TextField from "@/components/ui/TextField.vue";
 
@@ -174,6 +175,13 @@ async function logout() {
               <span class="font-mono text-small text-fg-subtle">{{ auth.user?.id ?? "—" }}</span>
             </div>
           </div>
+        </SettingsSection>
+
+        <SettingsSection
+          title="Two-factor authentication"
+          subtitle="TOTP via Google Authenticator / 1Password / Authy. Required for admin actions."
+        >
+          <TwoFactorCard />
         </SettingsSection>
 
         <SettingsSection

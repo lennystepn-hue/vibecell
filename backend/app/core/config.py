@@ -23,6 +23,16 @@ class Settings(BaseSettings):
     # the Google button. Set both values to enable.
     google_client_id: str = Field(default="")
     google_client_secret: str = Field(default="")
+
+    # Admin dashboard allowlist (Spec-6 follow-up). Comma-separated emails.
+    # require_admin demands BOTH this list AND the user's is_admin DB flag —
+    # defense-in-depth so flipping either alone isn't enough to access
+    # /api/v1/admin/*. Default is the founder address.
+    admin_emails: str = Field(
+        default="lennystepn@gmail.com",
+        description="Comma-separated emails that may access /api/v1/admin/*. "
+                    "Combined with users.is_admin DB flag (both required).",
+    )
     base_url: str = Field(..., description="public root URL (for magic-link emails, OAuth redirects)")
     cookie_domain: str = Field(default="localhost")
     session_max_age: int = Field(default=2592000, description="session cookie TTL in seconds (default 30 days)")

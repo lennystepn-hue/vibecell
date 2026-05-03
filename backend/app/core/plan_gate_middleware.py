@@ -63,6 +63,15 @@ _EXEMPT_PREFIXES: tuple[str, ...] = (
     "/api/v1/metrics",
     # Webhooks come from third parties (Stripe). Not user-scoped.
     "/api/v1/billing/webhook",
+    # Admin dashboard — its own gate (require_admin + require_admin_2fa)
+    # is stricter than the plan-gate. Admin actions must work even when
+    # billing is broken (otherwise an outage in Stripe could lock the
+    # founder out of the dashboard they need to fix it).
+    "/api/v1/admin/",
+    # 2FA setup — required for admin actions; can't be gated by a
+    # subscription state (admin email account isn't expected to have
+    # an active sub anyway).
+    "/api/v1/2fa/",
 )
 
 

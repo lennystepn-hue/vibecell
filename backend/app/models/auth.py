@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import TIMESTAMP, ForeignKey, String, Text, func
+from sqlalchemy import TIMESTAMP, Boolean, ForeignKey, String, Text, func
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -22,6 +22,52 @@ class User(Base, TimestampMixin):
     # (Stripe customer creation, support tooling, account-change flows).
     # See docs/superpowers/decisions/2026-04-25-email-verification-already-implicit.md
     email_verified_at: Mapped[datetime | None] = mapped_column(TIMESTAMP(timezone=True))
+    # DB-level admin flag (Spec-6 admin dashboard). Required IN ADDITION to
+    # the user's email being in HANGAR_ADMIN_EMAILS — both layers must
+    # agree before require_admin lets the request through.
+    is_admin: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default="false")
+    # TOTP (RFC 6238) second-factor secret, AES-256-GCM encrypted with the
+    # platform master key (stored as base64 string — wrap_dek/unwrap_dek
+    # work on strings). Provisioned via /api/v1/2fa/setup, confirmed via
+    # /api/v1/2fa/verify. NULL until setup completes; totp_enabled_at
+    # gets stamped on confirmation.
+    totp_secret_enc: Mapped[str | None] = mapped_column(Text)
+    totp_enabled_at: Mapped[datetime | None] = mapped_column(TIMESTAMP(timezone=True))
+
+    @property
+    def totp_enabled(self) -> bool:
+        """Pydantic-friendly boolean: TOTP is enabled iff a secret is
+        stored AND we've stamped a confirmation timestamp. Surfaced via
+        UserOut so the frontend Settings page can show the right state
+        without exposing the encrypted secret blob itself."""
+        return self.totp_secret_enc is not None and self.totp_enabled_at is not None
+
+
+class AdminAuditLog(Base):
+    """Append-only record of every admin write action.
+
+    Separate from the existing audit table — admin actions are higher-
+    sensitivity (could grant / revoke money, access, billing) so they
+    deserve a dedicated audit surface that's only readable by admins
+    themselves and has long-term retention.
+    """
+    __tablename__ = "admin_audit_log"
+
+    id: Mapped[str] = ulid_pk()
+    actor_user_id: Mapped[str] = mapped_column(
+        String(26), ForeignKey("users.id", ondelete="RESTRICT"), nullable=False, index=True,
+    )
+    action: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    target_type: Mapped[str | None] = mapped_column(String(32), index=True)
+    target_id: Mapped[str | None] = mapped_column(String(128), index=True)
+    payload: Mapped[dict[str, Any]] = mapped_column(
+        JSONB, nullable=False, default=dict, server_default="{}",
+    )
+    ip: Mapped[str | None] = mapped_column(String(64))
+    user_agent: Mapped[str | None] = mapped_column(String(500))
+    at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True), nullable=False, server_default=func.now(), index=True,
+    )
 
 
 class Workspace(Base, TimestampMixin):

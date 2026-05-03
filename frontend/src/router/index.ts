@@ -122,6 +122,15 @@ const router = createRouter({
       component: () => import("@/pages/Settings.vue"),
     },
     {
+      // Admin dashboard — gated server-side (require_admin) AND client-side
+      // (the beforeEach guard below redirects non-admins to /p before the
+      // bundle even loads). Both gates required: defense-in-depth.
+      path: "/admin",
+      name: "admin",
+      component: () => import("@/pages/Admin.vue"),
+      meta: { requiresAdmin: true },
+    },
+    {
       path: "/settings/integrations",
       name: "settings-integrations",
       component: () => import("@/pages/SettingsIntegrations.vue"),
@@ -166,6 +175,13 @@ router.beforeEach(async (to) => {
   }
   if (!auth.isAuthed && to.meta.anonymous !== true) {
     return { name: "login", query: { next: to.fullPath } };
+  }
+  // Admin route guard — server-side require_admin is the real gate, but
+  // we also block client-side so non-admins don't even hit the bundle
+  // and don't see a "loading then 403" flash. is_admin flows from /me.
+  if (to.meta.requiresAdmin) {
+    const u = auth.user as { is_admin?: boolean } | null;
+    if (!u?.is_admin) return { name: "projects-index" };
   }
   return true;
 });
