@@ -134,7 +134,7 @@ async def overview(_: AdminDep, db: DbDep) -> OverviewOut:
         # Plan price is in cents; assume monthly cadence for the headline
         # MRR (annual subs would be amortised but our `pro` plan is
         # monthly-priced so this is correct for the current pricing model).
-        mrr_cents += int(plan.price_cents) * int(count)
+        mrr_cents += int(plan.monthly_price_eur_cents) * int(count)
     mrr_eur = round(mrr_cents / 100, 2)
     arr_eur = round(mrr_eur * 12, 2)
 
@@ -260,15 +260,17 @@ async def list_users(
         return UsersListOut(items=[], total=total)
 
     user_ids = [u.id for u in users]
-    ws_counts = dict(
-        (
-            await db.execute(
-                select(Workspace.owner_id, func.count(Workspace.id))
-                .where(Workspace.owner_id.in_(user_ids))
-                .group_by(Workspace.owner_id)
-            )
-        ).all()
-    )
+    ws_count_rows = (
+        await db.execute(
+            select(Workspace.owner_id, func.count(Workspace.id))
+            .where(Workspace.owner_id.in_(user_ids))
+            .group_by(Workspace.owner_id)
+        )
+    ).all()
+    # Explicit dict construction — feeding a Sequence[Row[...]] directly
+    # to dict() trips mypy because Row's tuple shape is wider than what
+    # dict() narrowly expects.
+    ws_counts: dict[str, int] = {row[0]: int(row[1]) for row in ws_count_rows}
     sub_rows = (
         await db.execute(
             select(Subscription).where(Subscription.user_id.in_(user_ids))
@@ -276,25 +278,26 @@ async def list_users(
     ).scalars().all()
     subs_by_user = {s.user_id: s for s in sub_rows}
 
-    items = [
-        UserRow(
-            id=u.id,
-            email=u.email,
-            name=u.name,
-            created_at=u.created_at.isoformat() if u.created_at else None,
-            email_verified_at=u.email_verified_at.isoformat() if u.email_verified_at else None,
-            is_admin=bool(u.is_admin),
-            totp_enabled=bool(u.totp_secret_enc and u.totp_enabled_at),
-            workspace_count=int(ws_counts.get(u.id, 0)),
-            sub_status=subs_by_user[u.id].status if u.id in subs_by_user else None,
-            sub_trial_ends_at=(
-                subs_by_user[u.id].trial_ends_at.isoformat()
-                if u.id in subs_by_user and subs_by_user[u.id].trial_ends_at
-                else None
-            ),
+    items: list[UserRow] = []
+    for u in users:
+        sub = subs_by_user.get(u.id)
+        trial_ends_at_iso: str | None = None
+        if sub is not None and sub.trial_ends_at is not None:
+            trial_ends_at_iso = sub.trial_ends_at.isoformat()
+        items.append(
+            UserRow(
+                id=u.id,
+                email=u.email,
+                name=u.name,
+                created_at=u.created_at.isoformat() if u.created_at else None,
+                email_verified_at=u.email_verified_at.isoformat() if u.email_verified_at else None,
+                is_admin=bool(u.is_admin),
+                totp_enabled=bool(u.totp_secret_enc and u.totp_enabled_at),
+                workspace_count=int(ws_counts.get(u.id, 0)),
+                sub_status=sub.status if sub is not None else None,
+                sub_trial_ends_at=trial_ends_at_iso,
+            )
         )
-        for u in users
-    ]
     return UsersListOut(items=items, total=total)
 
 

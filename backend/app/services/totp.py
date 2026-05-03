@@ -17,11 +17,12 @@ from __future__ import annotations
 
 import base64
 import io
-import time
+from datetime import datetime
 from typing import TYPE_CHECKING
 
 import pyotp
 import qrcode
+from qrcode.image.pil import PilImage
 
 from app.core.config import get_settings
 from app.core.crypto import decrypt_with_master, encrypt_with_master
@@ -69,9 +70,11 @@ def qr_data_uri(*, otpauth: str) -> str:
 
     PNG (vs SVG) so we don't have to worry about the user's browser
     rejecting an svg with embedded data, and the size is fine — typical
-    QR for an otpauth URI is under 2KB.
+    QR for an otpauth URI is under 2KB. Explicit PilImage factory so we
+    get a PIL.Image (with format='PNG' kw on save) rather than the
+    library's pure-Python PyPNGImage fallback.
     """
-    img = qrcode.make(otpauth, box_size=8, border=2)
+    img = qrcode.make(otpauth, box_size=8, border=2, image_factory=PilImage)
     buf = io.BytesIO()
     img.save(buf, format="PNG")
     b64 = base64.b64encode(buf.getvalue()).decode("ascii")
@@ -90,7 +93,10 @@ def verify_code(*, secret: str, code: str) -> bool:
         return False
     totp = pyotp.TOTP(secret, interval=_STEP_SECONDS)
     # Use for_time + valid_window for explicit control over the window.
-    return totp.verify(code, for_time=int(time.time()), valid_window=_VALID_WINDOW)
+    # pyotp accepts both datetime and int (seconds) — recent type stubs
+    # narrowed to datetime, so pass datetime.now() to satisfy mypy AND
+    # keep the same UTC-based behaviour as a unix timestamp would have.
+    return totp.verify(code, for_time=datetime.now(), valid_window=_VALID_WINDOW)
 
 
 def is_enabled(user: User) -> bool:
