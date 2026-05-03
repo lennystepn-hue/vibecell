@@ -88,6 +88,20 @@ class RenameProjectArgs(BaseModel):
     slug: str | None = None
 
 
+class SetPrimerArgs(BaseModel):
+    """Replace the project's long-form AI primer.
+
+    The primer is the README an AI joining cold reads first (fetched via
+    vibecell_primer). The dashboard renders it read-only — authoring is
+    intentionally an MCP-only path so the AI keeps the primer in sync with
+    the codebase as the project evolves. Pass an empty string to clear.
+
+    Soft-cap at 51,200 chars (50KB) to match the REST PATCH endpoint.
+    """
+    primer_md: str = Field(..., max_length=51200)
+    slug: str | None = None
+
+
 class DecisionArgs(BaseModel):
     title: str
     decision: str
@@ -334,11 +348,12 @@ TOOLS: list[Tool] = [
     Tool("vibecell_handover", "Longer prose onboarding brief. Defaults to active.", SlugArg, r.handle_handover),
     Tool(
         "vibecell_primer",
-        "Return the project's long-form AI primer (the user-authored README "
-        "for AIs joining cold). Defaults to active project. Lightweight — "
-        "safe to call right after vibecell_active. Returns null + a hint "
-        "when no primer has been written yet, so the AI knows to either "
-        "ask the user or fall back to vibecell_handover.",
+        "Return the project's long-form AI primer (the README an AI joining "
+        "cold should read first). Defaults to active project. Lightweight — "
+        "safe to call right after vibecell_active. Returns primer_md=null + "
+        "a hint when no primer has been written yet, signalling that the AI "
+        "should generate one via vibecell_set_primer using the project's "
+        "code and history as the source of truth.",
         SlugArg, r.handle_primer,
     ),
     # Write
@@ -398,6 +413,20 @@ TOOLS: list[Tool] = [
         "At least one of name / emoji required. Slug stays the same (slug "
         "rename is intentionally not supported — too disruptive to URLs/MCP).",
         RenameProjectArgs, w.handle_rename_project,
+    ),
+    Tool(
+        "vibecell_set_primer",
+        "Author or update the project's long-form AI primer (markdown). "
+        "This is the README an AI joining cold reads via vibecell_primer "
+        "to ramp up in 30 seconds. Author it from the actual codebase + "
+        "session/decision/ship history — never invent specifics. Keep it "
+        "evergreen, not a here-and-now status update (use vibecell_set_focus "
+        "for that). Default sections: What this is / Tech stack / Where "
+        "things live / Conventions / Watch out for / Operations / What "
+        "'done' looks like. Pass empty string to clear. The dashboard "
+        "renders this read-only — authoring is intentionally MCP-only so "
+        "the AI keeps the primer in lockstep with the codebase as it evolves.",
+        SetPrimerArgs, w.handle_set_primer,
     ),
     Tool("vibecell_decision", "Record an ADR-lite decision on the active project.", DecisionArgs, w.handle_decision),
     Tool("vibecell_idea", "Capture an idea. Workspace inbox if project omitted.", IdeaArgs, w.handle_idea),

@@ -283,6 +283,27 @@ async def handle_rename_project(args, ctx: MCPContext) -> str:
     })
 
 
+async def handle_set_primer(args, ctx: MCPContext) -> str:
+    """Replace the project's primer markdown.
+
+    The primer is the long-form per-project README aimed at AIs joining
+    cold (read via vibecell_primer). The dashboard renders it read-only —
+    AIs author and maintain it via this tool so it stays in sync with the
+    codebase as the project evolves.
+
+    Empty string clears the primer (the read tool will then return null
+    + a regeneration hint). Length validation lives in SetPrimerArgs.
+    """
+    project = await _resolve_project(args, ctx)
+    primer = (args.primer_md or "").strip()
+    project.primer_md = primer or None
+    return json.dumps({
+        "project_slug": project.slug,
+        "length": len(primer),
+        "saved": True,
+    })
+
+
 async def handle_decision(args, ctx: MCPContext) -> str:
     """Record an ADR-lite decision on the active project."""
     from app.services.decision_svc import create_decision
