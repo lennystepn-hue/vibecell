@@ -320,16 +320,16 @@ const steps = [
           </p>
         </div>
 
-        <!-- Right: Hero orb — slowly-rotating aurora-glass sphere. Carries
-             the same visual language as the per-project orbs used throughout
-             the dashboard, scaled up and animated.
-             Mobile: cap at 78vw so the orb's drop-shadow has breathing room
-             on each side and the section's overflow-hidden doesn't clip the
-             halo into a visible square edge against the bg gradient. -->
-        <div class="relative flex items-center justify-center">
+        <!-- Right: Hero orb — slowly-rotating aurora-glass sphere. Desktop
+             only. On mobile/tablet the headline + CTAs already carry the
+             page and the orb's halo + heavy drop-shadows fight the section
+             edges in ways that read as visual noise. Hidden below lg so
+             the stacked mobile layout stays tight (copy + buttons, no
+             400px sphere consuming half the viewport). -->
+        <div class="relative hidden lg:flex items-center justify-center">
           <div
             class="relative w-full"
-            style="aspect-ratio: 1; max-width: min(78vw, 520px); margin: auto"
+            style="aspect-ratio: 1; max-width: 520px; margin: auto"
           >
             <HeroOrb class="w-full h-full" />
           </div>
