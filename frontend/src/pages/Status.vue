@@ -13,6 +13,14 @@
 import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 
 import MonoLabel from "@/components/ui/MonoLabel.vue";
+import { useRouteMeta } from "@/composables/useMeta";
+
+useRouteMeta({
+  title: "Status — Vibecell · live system health",
+  description:
+    "Real-time status of vibecell.dev — API, database, cache, MCP server, billing webhooks, GitHub commit-sync. Auto-refresh every 30 seconds.",
+  canonical: "https://vibecell.dev/status",
+});
 
 type ComponentStatus = "ok" | "degraded" | "down";
 

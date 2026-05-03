@@ -3,7 +3,15 @@ import { computed, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 
 import UserMenu from "@/components/app/UserMenu.vue";
+import { useRouteMeta } from "@/composables/useMeta";
 import { useAuthStore } from "@/stores/auth";
+
+useRouteMeta({
+  title: "Pricing — Vibecell · €8.99/mo or €69.99/yr launch coupon",
+  description:
+    "Vibecell Pro: €8.99/month or €99.99/year (LAUNCH69 = €69.99/yr first 100 customers). 7-day no-card trial. Unlimited projects, MCP server, workspace secrets, AI BYOK. GDPR + EU-VAT.",
+  canonical: "https://vibecell.dev/pricing",
+});
 
 const router = useRouter();
 const auth = useAuthStore();

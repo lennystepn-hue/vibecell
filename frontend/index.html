@@ -5,7 +5,111 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#070b10" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <title>Vibecell</title>
+
+    <!-- ── SEO + AI-readability ──────────────────────────────────────
+         Vibecell is a public SaaS targeting "AI project management",
+         "Claude Code project tracker", "MCP-native dashboard", etc.
+         The Vue Router runtime updates these tags per-route via
+         src/composables/useMeta.ts; what's here are the production
+         defaults that ship in the static HTML so non-JS crawlers
+         (most LLM agents, Bing, social-share previewers) still see
+         a complete picture without executing the bundle.
+    -->
+    <title>Vibecell — AI project management & MCP-native console for shipping devs</title>
+    <meta
+      name="description"
+      content="Vibecell is the AI-native project console for indie devs. One source of truth per project — todos, sessions, decisions, ships — plugged straight into Claude Code, Cursor, Zed via MCP. €8.99/mo · 7-day trial."
+    />
+    <meta
+      name="keywords"
+      content="AI project management, KI Projektmanagement, MCP server, Claude Code, Cursor, Zed, vibecoding, indie SaaS, project tracker, dev productivity, session logging, OAuth 2.1, GDPR-compliant SaaS"
+    />
+    <meta name="author" content="Lenny David Enderle" />
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+    <link rel="canonical" href="https://vibecell.dev/" />
+
+    <!-- Open Graph (Facebook, LinkedIn, Discord, Slack, …) -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Vibecell" />
+    <meta property="og:title" content="Vibecell — AI project management for shipping devs" />
+    <meta
+      property="og:description"
+      content="MCP-native project console. Plugs into Claude Code / Cursor / Zed in one click. Auto-logs sessions, ticks todos from commits, recovers context across machines."
+    />
+    <meta property="og:url" content="https://vibecell.dev/" />
+    <meta property="og:image" content="https://vibecell.dev/landing-dashboard.png" />
+    <meta property="og:image:alt" content="Vibecell project dashboard — sidebar, project header, cards for health/environments/stack/focus/sessions/decisions" />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:locale:alternate" content="de_DE" />
+
+    <!-- Twitter / X -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Vibecell — AI project management for shipping devs" />
+    <meta
+      name="twitter:description"
+      content="The MCP-native project console. Auto-logs sessions, ticks todos from commits, recovers context across machines. €8.99/mo · 7-day trial."
+    />
+    <meta name="twitter:image" content="https://vibecell.dev/landing-dashboard.png" />
+
+    <!-- llms.txt convention (https://llmstxt.org) — points AI agents at
+         a single document that summarises the product without parsing
+         the SPA bundle. -->
+    <link rel="llms-txt" href="/llms.txt" />
+
+    <!-- ── Schema.org JSON-LD ──────────────────────────────────────
+         SoftwareApplication is the right shape for a SaaS product.
+         AggregateRating intentionally omitted — we don't have public
+         reviews yet and inventing them is asking for a Google penalty.
+         FAQPage is built per-page (Pricing has a real FAQ section).
+    -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "Vibecell",
+      "description": "AI-native project management console for indie developers. MCP server plugs into Claude Code, Cursor, Zed — auto-logs sessions, ticks todos from commits, recovers project context across sessions.",
+      "applicationCategory": "DeveloperApplication",
+      "operatingSystem": "Web, macOS, Windows, Linux",
+      "url": "https://vibecell.dev",
+      "image": "https://vibecell.dev/landing-dashboard.png",
+      "softwareVersion": "1.0",
+      "offers": {
+        "@type": "Offer",
+        "price": "8.99",
+        "priceCurrency": "EUR",
+        "availability": "https://schema.org/InStock",
+        "url": "https://vibecell.dev/pricing"
+      },
+      "featureList": [
+        "MCP-native (Model Context Protocol 2025-06)",
+        "OAuth 2.1 with PKCE for editor integrations",
+        "Auto-logs coding sessions from git commits",
+        "Per-project AI primer fetched at session start",
+        "Integrated workspace secrets (1Password / Bitwarden / inline-encrypted)",
+        "Per-project dashboard with focus, todos, decisions, ships",
+        "GDPR Art. 17 + 20 compliant (export + erasure)",
+        "Stripe Tax automated EU-VAT invoicing"
+      ],
+      "publisher": {
+        "@type": "Organization",
+        "name": "Vibecell",
+        "url": "https://vibecell.dev",
+        "logo": "https://vibecell.dev/favicon.svg",
+        "founder": {
+          "@type": "Person",
+          "name": "Lenny David Enderle"
+        },
+        "address": {
+          "@type": "PostalAddress",
+          "streetAddress": "Rua Padre Manuel Bernardes 16",
+          "addressLocality": "Costa da Caparica",
+          "postalCode": "2825-359",
+          "addressCountry": "PT"
+        }
+      }
+    }
+    </script>
+
     <style>
       html, body { background: #070b10; margin: 0; }
     </style>

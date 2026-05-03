@@ -16,7 +16,15 @@ import { ref } from "vue";
 
 import MonoLabel from "@/components/ui/MonoLabel.vue";
 import PrimaryButton from "@/components/ui/PrimaryButton.vue";
+import { useRouteMeta } from "@/composables/useMeta";
 import { INSTALL_PROMPT_PITCH, VIBECELL_INSTALL_PROMPT } from "@/lib/installPrompt";
+
+useRouteMeta({
+  title: "Install — Vibecell · paste one prompt, AI installs itself",
+  description:
+    "Skip the settings dance. Paste one prompt into Claude Code, Claude Desktop, Cursor, Zed — the AI installs the Vibecell MCP, runs OAuth, reads the operating manual, and reports back. ~10 seconds.",
+  canonical: "https://vibecell.dev/install",
+});
 
 const copied = ref(false);
 

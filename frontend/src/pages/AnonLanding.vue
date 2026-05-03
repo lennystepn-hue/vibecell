@@ -5,7 +5,15 @@ import HeroOrb from "@/components/landing/HeroOrb.vue";
 import DashboardPreview from "@/components/landing/DashboardPreview.vue";
 import UserMenu from "@/components/app/UserMenu.vue";
 import ProjectOrb from "@/components/ui/ProjectOrb.vue";
+import { useRouteMeta } from "@/composables/useMeta";
 import { useAuthStore } from "@/stores/auth";
+
+useRouteMeta({
+  title: "Vibecell — AI project management & MCP-native console for shipping devs",
+  description:
+    "AI-native project console for indie devs. One source of truth per project — todos, sessions, decisions, ships — plugged straight into Claude Code, Cursor, Zed via MCP. €8.99/mo · 7-day trial.",
+  canonical: "https://vibecell.dev/",
+});
 
 const router = useRouter();
 const auth = useAuthStore();

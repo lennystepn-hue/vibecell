@@ -3,6 +3,7 @@ import { computed, onMounted, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
 import UserMenu from "@/components/app/UserMenu.vue";
+import { useRouteMeta } from "@/composables/useMeta";
 import { useAuthStore } from "@/stores/auth";
 
 const route = useRoute();
@@ -10,6 +11,26 @@ const router = useRouter();
 const auth = useAuthStore();
 
 type Tab = "imprint" | "privacy" | "terms";
+
+const META_TITLES: Record<Tab, string> = {
+  imprint: "Imprint — Vibecell",
+  privacy: "Privacy — Vibecell · GDPR / RGPD compliant",
+  terms:   "Terms — Vibecell · DL 24/2014",
+};
+const META_DESCS: Record<Tab, string> = {
+  imprint: "Imprint + operator details for Vibecell — Lenny David Enderle, Costa da Caparica, VAT PT297035770.",
+  privacy: "How Vibecell handles your data — GDPR Art. 13–14, 17, 20 compliant. EU-hosted, BYOK AI, no third-party analytics.",
+  terms:   "Vibecell Terms of Service — DL 24/2014 compliant, 14-day Widerruf, EU-VAT invoicing via Stripe Tax.",
+};
+
+useRouteMeta(() => {
+  const tab = (typeof route.query.tab === "string" ? route.query.tab : "imprint") as Tab;
+  return {
+    title: META_TITLES[tab] ?? META_TITLES.imprint,
+    description: META_DESCS[tab] ?? META_DESCS.imprint,
+    canonical: `https://vibecell.dev/legal?tab=${tab}`,
+  };
+});
 const activeTab = ref<Tab>("imprint");
 
 function setTab(t: Tab) {
