@@ -220,9 +220,12 @@ const steps = [
       </nav>
       <div class="flex items-center gap-3">
         <UserMenu v-if="auth.isAuthed" variant="light" />
+        <!-- "Open dashboard" button hidden on mobile when authed — the
+             UserMenu dropdown already has a Dashboard link and showing
+             both crams the header. Desktop keeps both. -->
         <button
           v-if="auth.isAuthed"
-          class="px-4 py-1.5 rounded text-small font-mono bg-signal-green hover:opacity-90 transition-opacity"
+          class="hidden sm:inline-flex px-4 py-1.5 rounded text-small font-mono bg-signal-green hover:opacity-90 transition-opacity"
           style="color: #070b10"
           @click="goDashboard">
           Open dashboard →

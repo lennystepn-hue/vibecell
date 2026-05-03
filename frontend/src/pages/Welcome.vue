@@ -267,16 +267,19 @@ onMounted(async () => {
         <span class="font-mono text-small tracking-[0.08em] uppercase">Vibecell · welcome</span>
       </div>
 
-      <!-- Step indicator: 01 / 02 / 03 -->
+      <!-- Step indicator: 01 / 02 / 03.
+           Mobile shows ONLY the active step's label so 3 labels don't fight
+           320px of available width and truncate to garbage. Desktop shows
+           every label. -->
       <ol class="flex items-center gap-3 mb-10 select-none">
         <li
           v-for="(n, i) in [1, 2, 3] as const"
           :key="n"
-          class="flex items-center gap-3 flex-1"
+          class="flex items-center gap-3 flex-1 min-w-0"
         >
           <div class="flex items-center gap-2.5 min-w-0">
             <span
-              class="w-7 h-7 rounded-md flex items-center justify-center font-mono text-[11px] tracking-tight transition-colors"
+              class="w-7 h-7 rounded-md flex items-center justify-center font-mono text-[11px] tracking-tight transition-colors shrink-0"
               :style="
                 step === n
                   ? { background: 'var(--signal-green)', color: 'var(--bg-body-to)', boxShadow: '0 0 0 1px var(--signal-green), 0 0 12px rgba(92,200,164,0.25)' }
@@ -289,6 +292,7 @@ onMounted(async () => {
             </span>
             <span
               class="font-mono text-small uppercase tracking-[0.06em] truncate"
+              :class="step === n ? '' : 'hidden sm:inline'"
               :style="step === n ? { color: 'var(--fg-primary)' } : { color: 'var(--fg-subtle)' }"
             >
               {{ n === 1 ? "first project" : n === 2 ? "pair editor" : "console live" }}
@@ -325,7 +329,9 @@ onMounted(async () => {
           </header>
 
           <form class="flex flex-col gap-4" @submit.prevent="createProject">
-            <div class="grid grid-cols-[1fr_120px] gap-3">
+            <!-- Mobile: stack name + emoji so name has full width.
+                 Desktop: side-by-side with emoji as a 120px column. -->
+            <div class="grid grid-cols-1 sm:grid-cols-[1fr_120px] gap-3">
               <TextField
                 v-model="projectName"
                 label="name"

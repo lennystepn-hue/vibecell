@@ -22,7 +22,9 @@ const palette = useCommandPaletteStore();
         aria-label="Back to projects"
       >
         <span class="text-signal-green font-mono tracking-wider" aria-hidden="true">◈</span>
-        <span class="font-medium text-fg-primary truncate max-w-[20ch]">
+        <!-- Workspace slug truncates harder on mobile (12ch) so the right-
+             side actions never overlap. Desktop keeps 20ch breathing room. -->
+        <span class="font-medium text-fg-primary truncate max-w-[12ch] sm:max-w-[20ch]">
           {{ auth.activeWorkspace.slug }}
         </span>
       </RouterLink>
@@ -30,7 +32,7 @@ const palette = useCommandPaletteStore();
       <RouterLink
         v-if="route.params.slug"
         :to="`/p/${route.params.slug}`"
-        class="font-mono text-fg-body truncate max-w-[24ch] hover:opacity-80 transition-opacity"
+        class="font-mono text-fg-body truncate max-w-[14ch] sm:max-w-[24ch] hover:opacity-80 transition-opacity"
       >
         {{ route.params.slug }}
       </RouterLink>
@@ -44,7 +46,10 @@ const palette = useCommandPaletteStore();
       </div>
     </template>
 
-    <nav v-if="auth.isAuthed" class="ml-6 flex items-center gap-4 text-small">
+    <!-- Quick-nav (projects / ideas / search) hidden on mobile — those routes
+         are reachable from the UserMenu dropdown + the sidebar on /p. The
+         topbar on small screens commits to: brand, current project, actions. -->
+    <nav v-if="auth.isAuthed" class="hidden md:flex ml-6 items-center gap-4 text-small">
       <RouterLink
         to="/p"
         class="mono-label hover:text-fg-body transition-colors"
@@ -63,11 +68,17 @@ const palette = useCommandPaletteStore();
     </nav>
 
     <div v-if="auth.isAuthed" class="ml-auto flex items-center gap-2">
+      <!-- Mobile: collapse the project-switcher to icon-only (⌘K still wired
+           via the global keyboard shortcut in KeyboardShortcuts.vue). The
+           verbose "switch project…" label only appears at sm+ where there's
+           room for it. The button itself stays clickable on mobile so users
+           without a keyboard can still open the palette. -->
       <button
-        class="flex items-center gap-3 h-7 px-3 rounded-md border border-border bg-bg-surface text-fg-muted text-small transition-colors hover:bg-bg-surface-hi"
+        class="flex items-center gap-3 h-7 px-2 sm:px-3 rounded-md border border-border bg-bg-surface text-fg-muted text-small transition-colors hover:bg-bg-surface-hi"
         @click="palette.toggle"
+        aria-label="Switch project"
       >
-        <span>switch project…</span>
+        <span class="hidden sm:inline">switch project…</span>
         <KbdHint keys="⌘K" />
       </button>
       <UserMenu variant="chrome" />
