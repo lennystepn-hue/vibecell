@@ -80,11 +80,10 @@ class Subscription(Base, TimestampMixin):
     cancel_at_period_end: Mapped[bool] = mapped_column(
         Boolean, nullable=False, server_default="false"
     )
-    # Last-trial-end-warning email sent at — set by the daily cron so we
-    # don't double-email a user.
-    last_trial_email_at: Mapped[datetime | None] = mapped_column(
-        TIMESTAMP(timezone=True)
-    )
+    # Trial-lifecycle state machine marker. NULL initially, advances
+    # through "warned_3d" → "warned_1d" → "expired" as the hourly
+    # trial_lifecycle cron runs. Only ever advances; idempotent.
+    trial_email_stage: Mapped[str | None] = mapped_column(String(20))
 
 
 class StripeEvent(Base):

@@ -89,7 +89,7 @@ from app.jobs.health_cron import schedule_health_jobs
 from app.jobs.oauth_cleanup import refresh_active_connections_gauge
 from app.jobs.oauth_cleanup import run_once as oauth_cleanup_run_once
 from app.jobs.screenshot_cron import schedule_screenshot_jobs
-from app.jobs.trial_warnings import schedule_trial_warning_job
+from app.jobs.trial_lifecycle import schedule_trial_lifecycle_job
 from app.mcp.server import router as mcp_router
 from app.metrics.endpoint import router as metrics_router
 from app.oauth.discovery import router as oauth_discovery_router
@@ -121,8 +121,11 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     # every 10 min, regardless of whether Claude called vibecell_log_session
     # or not. Keeps dashboards accurate even when the SKILL rule is missed.
     schedule_commit_sync_jobs(_scheduler)
-    # Spec-6 B5: daily trial-end warning email at 09:00 UTC
-    schedule_trial_warning_job(_scheduler)
+    # Spec-6 trial lifecycle — hourly state machine. Replaces the old
+    # daily trial_warning_job; this one also flips status to past_due
+    # when trial_ends_at passes (the old job left it at "trialing"
+    # forever).
+    schedule_trial_lifecycle_job(_scheduler)
     _scheduler.start()
     yield
     _scheduler.shutdown(wait=False)

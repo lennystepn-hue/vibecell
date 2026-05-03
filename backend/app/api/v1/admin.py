@@ -37,6 +37,7 @@ from app.core.admin_auth import (
 from app.core.config import get_settings
 from app.core.db import get_db
 from app.core.errors import HangarError, NotFoundError, ValidationError
+from app.jobs.trial_lifecycle import sync_subscription_to_stripe
 from app.models import (
     AdminAuditLog,
     Decision,
@@ -51,6 +52,7 @@ from app.models import (
 from app.models import (
     Session as SessionModel,
 )
+from app.services.account_purge import purge as purge_user_data
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v1/admin", tags=["admin"])
@@ -222,7 +224,29 @@ class UserRow(BaseModel):
     totp_enabled: bool
     workspace_count: int
     sub_status: str | None
+    # Effective status — same as sub_status EXCEPT when DB says
+    # "trialing" but trial_ends_at is in the past. The hourly cron
+    # eventually flips these to past_due, but the dashboard shouldn't
+    # wait an hour to display the truth.
+    effective_status: str | None
     sub_trial_ends_at: str | None
+    sub_trial_email_stage: str | None
+    has_stripe_subscription: bool
+
+
+def _effective_status(sub: Subscription | None, now: datetime) -> str | None:
+    """Render-time correction for "trialing" rows whose trial_ends_at
+    is in the past. The cron flips these on the next hourly tick; the
+    dashboard pretends it already happened so the UI never lies."""
+    if sub is None:
+        return None
+    if (
+        sub.status == "trialing"
+        and sub.trial_ends_at is not None
+        and sub.trial_ends_at <= now
+    ):
+        return "expired_trial"
+    return sub.status
 
 
 class UsersListOut(BaseModel):
@@ -278,6 +302,7 @@ async def list_users(
     ).scalars().all()
     subs_by_user = {s.user_id: s for s in sub_rows}
 
+    now = datetime.now(UTC)
     items: list[UserRow] = []
     for u in users:
         sub = subs_by_user.get(u.id)
@@ -295,7 +320,10 @@ async def list_users(
                 totp_enabled=bool(u.totp_secret_enc and u.totp_enabled_at),
                 workspace_count=int(ws_counts.get(u.id, 0)),
                 sub_status=sub.status if sub is not None else None,
+                effective_status=_effective_status(sub, now),
                 sub_trial_ends_at=trial_ends_at_iso,
+                sub_trial_email_stage=sub.trial_email_stage if sub is not None else None,
+                has_stripe_subscription=bool(sub and sub.stripe_subscription_id),
             )
         )
     return UsersListOut(items=items, total=total)
@@ -388,6 +416,7 @@ async def user_detail(user_id: str, _: AdminDep, db: DbDep) -> UserDetailOut:
         )
     ).scalar_one_or_none()
 
+    now = datetime.now(UTC)
     user_row = UserRow(
         id=user.id,
         email=user.email,
@@ -398,7 +427,10 @@ async def user_detail(user_id: str, _: AdminDep, db: DbDep) -> UserDetailOut:
         totp_enabled=bool(user.totp_secret_enc and user.totp_enabled_at),
         workspace_count=len(ws_rows),
         sub_status=sub.status if sub else None,
+        effective_status=_effective_status(sub, now),
         sub_trial_ends_at=sub.trial_ends_at.isoformat() if sub and sub.trial_ends_at else None,
+        sub_trial_email_stage=sub.trial_email_stage if sub else None,
+        has_stripe_subscription=bool(sub and sub.stripe_subscription_id),
     )
     return UserDetailOut(
         user=user_row,
@@ -669,17 +701,9 @@ class TrialExtendIn(BaseModel):
     days: int = Field(..., ge=1, le=180)
 
 
-@router.post("/users/{user_id}/extend-trial")
-async def extend_trial(
-    user_id: str,
-    body: TrialExtendIn,
-    admin: AdminWriteDep,
-    db: DbDep,
-    request: Request,
-) -> dict[str, Any]:
-    """Push the user's `trial_ends_at` further into the future. Works on
-    DB-level Subscription rows; does NOT call Stripe (Stripe-side trial
-    extensions require a different flow we'll wire when needed)."""
+async def _resolve_user_sub(
+    db: AsyncSession, user_id: str,
+) -> tuple[User, Subscription]:
     user = (
         await db.execute(select(User).where(User.id == user_id))
     ).scalar_one_or_none()
@@ -690,25 +714,388 @@ async def extend_trial(
     ).scalar_one_or_none()
     if sub is None:
         raise NotFoundError("subscription", user_id)
+    return user, sub
+
+
+@router.post("/users/{user_id}/extend-trial")
+async def extend_trial(
+    user_id: str,
+    body: TrialExtendIn,
+    admin: AdminWriteDep,
+    db: DbDep,
+    request: Request,
+) -> dict[str, Any]:
+    """Push trial_ends_at further into the future + reset email-stage so
+    the warning emails fire again. ALSO syncs to Stripe when the
+    subscription has a stripe_subscription_id (so the customer's
+    Stripe-side trial-end matches our DB)."""
+    user, sub = await _resolve_user_sub(db, user_id)
 
     base = sub.trial_ends_at if sub.trial_ends_at and sub.trial_ends_at > datetime.now(UTC) else datetime.now(UTC)
-    sub.trial_ends_at = base + timedelta(days=body.days)
-    if sub.status not in ("trialing", "active"):
-        sub.status = "trialing"
+    new_end = base + timedelta(days=body.days)
+    sub.trial_ends_at = new_end
+    sub.status = "trialing"
+    # Reset the email state so warning + ended emails fire again on the
+    # new trial cycle. Without this, an extended trial silently ends
+    # without notification.
+    sub.trial_email_stage = None
     await db.flush()
+
+    stripe_status = await sync_subscription_to_stripe(
+        sub, intent="extend_trial", value=new_end,
+    )
 
     await log_admin_action(
         db, actor=admin.user, action="trial.extend",
         target_type="user", target_id=user.id,
-        payload={"days": body.days, "new_trial_ends_at": sub.trial_ends_at.isoformat()},
+        payload={
+            "days": body.days,
+            "new_trial_ends_at": new_end.isoformat(),
+            "stripe_sync": stripe_status,
+        },
         request=request,
     )
     await db.commit()
     return {
         "user_id": user.id,
-        "trial_ends_at": sub.trial_ends_at.isoformat(),
+        "trial_ends_at": new_end.isoformat(),
         "status": sub.status,
+        "stripe_sync": stripe_status,
     }
+
+
+# ---------------------------------------------------------------------------
+# More power actions: cancel / comp / verify / toggle-admin / delete
+# ---------------------------------------------------------------------------
+
+class CancelSubIn(BaseModel):
+    reason: str = Field(..., min_length=2, max_length=200)
+    immediate: bool = Field(
+        default=False,
+        description="True = cancel right now. False = cancel at period end (Stripe default).",
+    )
+
+
+@router.post("/users/{user_id}/cancel-subscription")
+async def cancel_subscription(
+    user_id: str,
+    body: CancelSubIn,
+    admin: AdminWriteDep,
+    db: DbDep,
+    request: Request,
+) -> dict[str, Any]:
+    """Cancel the user's subscription. DB always updates; Stripe sync
+    happens when stripe_subscription_id is set."""
+    user, sub = await _resolve_user_sub(db, user_id)
+
+    if body.immediate:
+        sub.status = "canceled"
+        sub.cancel_at_period_end = False
+        sub.trial_ends_at = None
+    else:
+        sub.cancel_at_period_end = True
+    await db.flush()
+
+    stripe_status = await sync_subscription_to_stripe(sub, intent="cancel")
+    await log_admin_action(
+        db, actor=admin.user, action="subscription.cancel",
+        target_type="user", target_id=user.id,
+        payload={"reason": body.reason, "immediate": body.immediate, "stripe_sync": stripe_status},
+        request=request,
+    )
+    await db.commit()
+    return {"user_id": user.id, "status": sub.status, "stripe_sync": stripe_status}
+
+
+class CompDaysIn(BaseModel):
+    days: int = Field(..., ge=1, le=365)
+    reason: str = Field(..., min_length=2, max_length=200)
+
+
+@router.post("/users/{user_id}/comp-days")
+async def comp_days(
+    user_id: str,
+    body: CompDaysIn,
+    admin: AdminWriteDep,
+    db: DbDep,
+    request: Request,
+) -> dict[str, Any]:
+    """Comp the user N days of free service. Sets status to "active"
+    (or "trialing" if already in trial) and pushes either trial_ends_at
+    or current_period_end forward by N days. Always updates DB; syncs
+    to Stripe via trial_end if a Stripe sub exists."""
+    user, sub = await _resolve_user_sub(db, user_id)
+    now = datetime.now(UTC)
+
+    # Use trial_ends_at when in trial, otherwise current_period_end. If
+    # neither is set or both are in the past, anchor on now.
+    if sub.status == "trialing" and sub.trial_ends_at and sub.trial_ends_at > now:
+        new_end = sub.trial_ends_at + timedelta(days=body.days)
+        sub.trial_ends_at = new_end
+    elif sub.current_period_end and sub.current_period_end > now:
+        new_end = sub.current_period_end + timedelta(days=body.days)
+        sub.current_period_end = new_end
+    else:
+        new_end = now + timedelta(days=body.days)
+        sub.trial_ends_at = new_end
+        sub.status = "trialing"
+    sub.trial_email_stage = None  # let trial-lifecycle send emails again on the new period
+    await db.flush()
+
+    stripe_status = await sync_subscription_to_stripe(
+        sub, intent="extend_trial", value=new_end,
+    )
+    await log_admin_action(
+        db, actor=admin.user, action="subscription.comp",
+        target_type="user", target_id=user.id,
+        payload={"days": body.days, "reason": body.reason, "new_end": new_end.isoformat(), "stripe_sync": stripe_status},
+        request=request,
+    )
+    await db.commit()
+    return {
+        "user_id": user.id, "status": sub.status,
+        "new_end": new_end.isoformat(), "stripe_sync": stripe_status,
+    }
+
+
+@router.post("/users/{user_id}/mark-email-verified")
+async def mark_email_verified(
+    user_id: str,
+    admin: AdminWriteDep,
+    db: DbDep,
+    request: Request,
+) -> dict[str, Any]:
+    """Force-stamp users.email_verified_at = now(). Useful for support
+    cases where the magic-link bounced but you've otherwise verified
+    the user identity."""
+    user = (await db.execute(select(User).where(User.id == user_id))).scalar_one_or_none()
+    if user is None:
+        raise NotFoundError("user", user_id)
+    if user.email_verified_at is None:
+        user.email_verified_at = datetime.now(UTC)
+        await db.flush()
+    await log_admin_action(
+        db, actor=admin.user, action="user.mark_email_verified",
+        target_type="user", target_id=user.id,
+        payload={"email": user.email},
+        request=request,
+    )
+    await db.commit()
+    return {"user_id": user.id, "email_verified_at": user.email_verified_at.isoformat() if user.email_verified_at else None}
+
+
+class ToggleAdminIn(BaseModel):
+    is_admin: bool
+
+
+@router.post("/users/{user_id}/toggle-admin")
+async def toggle_admin(
+    user_id: str,
+    body: ToggleAdminIn,
+    admin: AdminWriteDep,
+    db: DbDep,
+    request: Request,
+) -> dict[str, Any]:
+    """Promote / demote a user as admin. The HANGAR_ADMIN_EMAILS env list
+    is the OTHER required gate — flipping is_admin alone doesn't grant
+    admin access until the env list is also updated. By design (defense-
+    in-depth)."""
+    user = (await db.execute(select(User).where(User.id == user_id))).scalar_one_or_none()
+    if user is None:
+        raise NotFoundError("user", user_id)
+
+    # Defensive: don't let an admin demote themselves to nothing — would
+    # lock the dashboard out if no other admins remain.
+    if not body.is_admin and user.id == admin.user.id:
+        other_admins = int(
+            (
+                await db.execute(
+                    select(func.count(User.id))
+                    .where(User.is_admin.is_(True))
+                    .where(User.id != user.id)
+                )
+            ).scalar_one()
+        )
+        if other_admins == 0:
+            raise ValidationError(detail="cannot demote yourself — no other admins remain")
+
+    user.is_admin = body.is_admin
+    await db.flush()
+    await log_admin_action(
+        db, actor=admin.user, action="user.toggle_admin",
+        target_type="user", target_id=user.id,
+        payload={"is_admin": body.is_admin, "email": user.email},
+        request=request,
+    )
+    await db.commit()
+    return {"user_id": user.id, "is_admin": user.is_admin}
+
+
+@router.delete("/users/{user_id}", status_code=204)
+async def delete_user(
+    user_id: str,
+    admin: AdminWriteDep,
+    db: DbDep,
+    request: Request,
+) -> None:
+    """GDPR Art. 17 forced erasure on behalf of the user. Reuses the
+    same purge service /me/delete uses, plus an audit log entry that
+    records who-purged-whom."""
+    user = (await db.execute(select(User).where(User.id == user_id))).scalar_one_or_none()
+    if user is None:
+        raise NotFoundError("user", user_id)
+    if user.id == admin.user.id:
+        raise ValidationError(detail="cannot delete your own account from /admin — use /me/delete")
+
+    email = user.email
+    await purge_user_data(db, user_id=user.id)
+    await log_admin_action(
+        db, actor=admin.user, action="user.delete",
+        target_type="user", target_id=user_id,
+        payload={"email": email},
+        request=request,
+    )
+    await db.commit()
+
+
+# ---------------------------------------------------------------------------
+# System health (cron heartbeats, DB row counts, redis stats)
+# ---------------------------------------------------------------------------
+
+class HealthRow(BaseModel):
+    label: str
+    value: str
+    accent: str | None = None
+
+
+class SystemHealthOut(BaseModel):
+    rows: list[HealthRow]
+    generated_at: str
+
+
+@router.get("/system-health", response_model=SystemHealthOut)
+async def system_health(_: AdminDep, db: DbDep) -> SystemHealthOut:
+    """One-shot snapshot of moving-part health: row counts, recent
+    cron output, redis presence count. Designed for the right rail of
+    the admin page."""
+    from app.core.redis import get_redis
+
+    rows: list[HealthRow] = []
+    now = datetime.now(UTC)
+
+    # ── DB row counts ────────────────────────────────────────────────
+    user_count = (await db.execute(select(func.count(User.id)))).scalar_one()
+    project_count = (await db.execute(select(func.count(Project.id)))).scalar_one()
+    session_count = (await db.execute(select(func.count(SessionModel.id)))).scalar_one()
+    audit_count = (await db.execute(select(func.count(AdminAuditLog.id)))).scalar_one()
+    stripe_event_count = (await db.execute(select(func.count(StripeEvent.id)))).scalar_one()
+    rows.append(HealthRow(label="users", value=str(user_count)))
+    rows.append(HealthRow(label="projects", value=str(project_count)))
+    rows.append(HealthRow(label="sessions", value=str(session_count)))
+    rows.append(HealthRow(label="stripe events", value=str(stripe_event_count)))
+    rows.append(HealthRow(label="admin actions", value=str(audit_count)))
+
+    # ── Most recent github-sourced session = commit_sync heartbeat ───
+    latest_github = (
+        await db.execute(
+            select(SessionModel.started_at)
+            .where(SessionModel.source == "github")
+            .order_by(desc(SessionModel.started_at)).limit(1)
+        )
+    ).scalar_one_or_none()
+    if latest_github:
+        age = now - latest_github
+        rows.append(HealthRow(
+            label="commit_sync",
+            value=_humanize(age) + " ago",
+            accent="green" if age < timedelta(minutes=15) else "amber",
+        ))
+    else:
+        rows.append(HealthRow(label="commit_sync", value="never run", accent="amber"))
+
+    # ── Redis ping ────────────────────────────────────────────────────
+    try:
+        r = await get_redis()
+        await r.ping()
+        info = await r.info("memory")
+        used = info.get("used_memory_human", "?") if isinstance(info, dict) else "?"
+        keys = await r.dbsize()
+        rows.append(HealthRow(label="redis", value=f"{keys} keys · {used}", accent="green"))
+    except Exception as exc:
+        rows.append(HealthRow(label="redis", value=f"down: {exc}"[:120], accent="red"))
+
+    # ── Stripe configured? ───────────────────────────────────────────
+    rows.append(HealthRow(
+        label="stripe",
+        value="configured" if get_settings().stripe_secret_key else "not configured",
+        accent="green" if get_settings().stripe_secret_key else "amber",
+    ))
+
+    return SystemHealthOut(rows=rows, generated_at=now.isoformat())
+
+
+def _humanize(delta: timedelta) -> str:
+    s = int(delta.total_seconds())
+    if s < 60:
+        return f"{s}s"
+    if s < 3600:
+        return f"{s // 60}m"
+    if s < 86400:
+        return f"{s // 3600}h"
+    return f"{s // 86400}d"
+
+
+# ---------------------------------------------------------------------------
+# Usage metrics (DAU / WAU / MAU)
+# ---------------------------------------------------------------------------
+
+class UsageOut(BaseModel):
+    dau: int
+    wau: int
+    mau: int
+    active_now: int  # last 5 min
+    sessions_today: int
+    ships_today: int
+
+
+@router.get("/usage-metrics", response_model=UsageOut)
+async def usage_metrics(_: AdminDep, db: DbDep) -> UsageOut:
+    """Active-user counts derived from session activity. DAU = users
+    with >=1 session in last 24h; WAU = last 7 days; MAU = last 30."""
+    now = datetime.now(UTC)
+    last_5m = now - timedelta(minutes=5)
+    last_24h = now - timedelta(hours=24)
+    last_7d = now - timedelta(days=7)
+    last_30d = now - timedelta(days=30)
+    today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+
+    # Distinct users active in each window — by joining sessions →
+    # projects → workspaces → users.
+    async def _distinct_active(since: datetime) -> int:
+        return int((await db.execute(
+            select(func.count(func.distinct(Workspace.owner_id)))
+            .select_from(SessionModel)
+            .join(Project, Project.id == SessionModel.project_id)
+            .join(Workspace, Workspace.id == Project.workspace_id)
+            .where(SessionModel.started_at >= since)
+        )).scalar_one())
+
+    active_now = await _distinct_active(last_5m)
+    dau = await _distinct_active(last_24h)
+    wau = await _distinct_active(last_7d)
+    mau = await _distinct_active(last_30d)
+
+    sessions_today = int((await db.execute(
+        select(func.count(SessionModel.id)).where(SessionModel.started_at >= today_start)
+    )).scalar_one())
+    ships_today = int((await db.execute(
+        select(func.count(Ship.id)).where(Ship.shipped_at >= today_start)
+    )).scalar_one())
+
+    return UsageOut(
+        dau=dau, wau=wau, mau=mau, active_now=active_now,
+        sessions_today=sessions_today, ships_today=ships_today,
+    )
 
 
 # ---------------------------------------------------------------------------

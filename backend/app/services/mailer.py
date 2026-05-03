@@ -131,8 +131,8 @@ _PAYMENT_FAILED_HTML = """<!doctype html>
 
 
 async def send_trial_ending_email(*, to: str, billing_url: str) -> None:
-    """Daily cron sends this when trial_ends_at is < 2 days away. Idempotent
-    via subscription.last_trial_email_at."""
+    """Sent at T-3 days AND T-1 day before trial_ends_at (multi-stage
+    state machine in trial_lifecycle.py keeps this idempotent)."""
     settings = get_settings()
     if settings.dev_mode:
         logger.info("DEV TRIAL ENDING → to=%s billing_url=%s", to, billing_url)
@@ -143,6 +143,48 @@ async def send_trial_ending_email(*, to: str, billing_url: str) -> None:
         "to": [to],
         "subject": _TRIAL_ENDING_SUBJECT,
         "html": _TRIAL_ENDING_HTML.format(billing_url=billing_url),
+    }
+    client.Emails.send(payload)
+
+
+_TRIAL_ENDED_SUBJECT = "Your Vibecell trial has ended"
+_TRIAL_ENDED_HTML = """\
+<html>
+  <body style="font-family:ui-sans-serif,system-ui,sans-serif;background:#070b10;color:#cfd4dc;padding:32px;">
+    <div style="max-width:520px;margin:0 auto;background:#0d1218;border:1px solid rgba(138,180,255,0.08);border-radius:12px;padding:32px;">
+      <p style="font-family:ui-monospace,monospace;color:#5cc8a4;font-size:11px;letter-spacing:.12em;text-transform:uppercase;margin:0 0 12px;">// trial expired</p>
+      <h1 style="color:#fff;font-size:22px;margin:0 0 16px;">Your Vibecell trial has ended.</h1>
+      <p style="margin:0 0 12px;line-height:1.55;">
+        Your account is now read-only — your projects, sessions, decisions and
+        ships are all preserved. To resume writing (logging sessions, ticking
+        todos, shipping) drop a card below.
+      </p>
+      <p style="margin:24px 0;">
+        <a href="{billing_url}" style="display:inline-block;background:#5cc8a4;color:#070b10;padding:10px 20px;border-radius:6px;text-decoration:none;font-weight:600;">Activate paid plan</a>
+      </p>
+      <p style="color:#5e7088;font-size:12px;line-height:1.5;">
+        €8.99/mo monthly · €99.99/yr annual · LAUNCH69 (€69.99/yr) for the
+        first 100 customers. Read-only access stays forever — your data isn't
+        going anywhere.
+      </p>
+    </div>
+  </body>
+</html>"""
+
+
+async def send_trial_ended_email(*, to: str, billing_url: str) -> None:
+    """Sent at T-0 when status flips trialing → past_due. Final
+    notification — user's account just became read-only."""
+    settings = get_settings()
+    if settings.dev_mode:
+        logger.info("DEV TRIAL ENDED → to=%s billing_url=%s", to, billing_url)
+        return
+    client = _resend_client()
+    payload = {
+        "from": "Vibecell <noreply@vibecell.dev>",
+        "to": [to],
+        "subject": _TRIAL_ENDED_SUBJECT,
+        "html": _TRIAL_ENDED_HTML.format(billing_url=billing_url),
     }
     client.Emails.send(payload)
 
