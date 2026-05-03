@@ -122,13 +122,21 @@ const router = createRouter({
       component: () => import("@/pages/Settings.vue"),
     },
     {
-      // Admin dashboard — gated server-side (require_admin) AND client-side
-      // (the beforeEach guard below redirects non-admins to /p before the
-      // bundle even loads). Both gates required: defense-in-depth.
+      // Admin layout shell — sidebar + nested sub-pages. Gated server-side
+      // (require_admin) AND client-side (the beforeEach guard below
+      // redirects non-admins to /p before the bundle even loads).
       path: "/admin",
-      name: "admin",
       component: () => import("@/pages/Admin.vue"),
       meta: { requiresAdmin: true },
+      redirect: "/admin/overview",
+      children: [
+        { path: "overview", name: "admin", component: () => import("@/pages/admin/AdminOverview.vue") },
+        { path: "users",    name: "admin-users",    component: () => import("@/pages/admin/AdminUsers.vue") },
+        { path: "coupons",  name: "admin-coupons",  component: () => import("@/pages/admin/AdminCoupons.vue") },
+        { path: "audit",    name: "admin-audit",    component: () => import("@/pages/admin/AdminAudit.vue") },
+        { path: "system",   name: "admin-system",   component: () => import("@/pages/admin/AdminSystem.vue") },
+        { path: "settings", name: "admin-settings", component: () => import("@/pages/admin/AdminSettings.vue") },
+      ],
     },
     {
       path: "/settings/integrations",
