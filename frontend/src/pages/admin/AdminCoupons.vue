@@ -17,12 +17,6 @@ const adminActions = useAdminActions();
 const coupons = ref<CouponRow[]>([]);
 const loading = ref(false);
 
-const newCoupon = ref({
-  code: "", name: "", percent_off: 20, amount_off_cents: 0,
-  duration: "once" as "once" | "repeating" | "forever",
-  duration_in_months: 1, max_redemptions: 100, use_amount: false,
-});
-
 async function load() {
   loading.value = true;
   try {
@@ -39,25 +33,9 @@ onMounted(() => { unregister = adminActions.onActionCompleted(load); });
 onBeforeUnmount(() => unregister?.());
 
 function openCreate() {
-  newCoupon.value = {
-    code: "", name: "", percent_off: 20, amount_off_cents: 0,
-    duration: "once", duration_in_months: 1, max_redemptions: 100, use_amount: false,
-  };
   adminActions.open({
     kind: "create-coupon",
     url: "/api/v1/admin/coupons",
-    body: () => {
-      const c = newCoupon.value;
-      return {
-        code: c.code.trim(),
-        name: c.name.trim() || null,
-        percent_off: c.use_amount ? null : c.percent_off,
-        amount_off_cents: c.use_amount ? c.amount_off_cents : null,
-        duration: c.duration,
-        duration_in_months: c.duration === "repeating" ? c.duration_in_months : null,
-        max_redemptions: c.max_redemptions || null,
-      };
-    },
   });
 }
 function openDelete(c: CouponRow) {
@@ -86,49 +64,8 @@ function openDelete(c: CouponRow) {
       >+ new coupon</button>
     </header>
 
-    <!-- Create form (always visible above the list) -->
-    <section class="glass rounded-lg p-5 mb-6">
-      <h3 class="mono-label text-fg-muted mb-3">// new coupon (configure here, click + new coupon to confirm with 2FA)</h3>
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <label class="block">
-          <span class="mono-label">// code</span>
-          <input v-model="newCoupon.code" type="text" maxlength="40" placeholder="LAUNCH69" class="mt-1 h-10 w-full px-3 rounded-md font-mono uppercase bg-bg-surface border border-border text-fg-primary" />
-        </label>
-        <label class="block">
-          <span class="mono-label">// display name (optional)</span>
-          <input v-model="newCoupon.name" type="text" maxlength="40" class="mt-1 h-10 w-full px-3 rounded-md font-sans bg-bg-surface border border-border text-fg-primary" />
-        </label>
-        <label class="flex items-center gap-2 text-small text-fg-body sm:col-span-2">
-          <input v-model="newCoupon.use_amount" type="checkbox" class="accent-signal-green" /> fixed-amount discount instead of percent
-        </label>
-        <label v-if="!newCoupon.use_amount" class="block">
-          <span class="mono-label">// percent off</span>
-          <input v-model.number="newCoupon.percent_off" type="number" min="1" max="100" class="mt-1 h-10 w-full px-3 rounded-md font-mono bg-bg-surface border border-border text-fg-primary" />
-        </label>
-        <label v-else class="block">
-          <span class="mono-label">// cents (eur)</span>
-          <input v-model.number="newCoupon.amount_off_cents" type="number" min="50" max="100000" class="mt-1 h-10 w-full px-3 rounded-md font-mono bg-bg-surface border border-border text-fg-primary" />
-        </label>
-        <label class="block">
-          <span class="mono-label">// duration</span>
-          <select v-model="newCoupon.duration" class="mt-1 h-10 w-full px-3 rounded-md font-mono bg-bg-surface border border-border text-fg-primary">
-            <option value="once">once</option>
-            <option value="repeating">repeating</option>
-            <option value="forever">forever</option>
-          </select>
-        </label>
-        <label v-if="newCoupon.duration === 'repeating'" class="block">
-          <span class="mono-label">// months</span>
-          <input v-model.number="newCoupon.duration_in_months" type="number" min="1" max="24" class="mt-1 h-10 w-full px-3 rounded-md font-mono bg-bg-surface border border-border text-fg-primary" />
-        </label>
-        <label class="block sm:col-span-2">
-          <span class="mono-label">// max redemptions (0 = unlimited)</span>
-          <input v-model.number="newCoupon.max_redemptions" type="number" min="0" max="10000" class="mt-1 h-10 w-full px-3 rounded-md font-mono bg-bg-surface border border-border text-fg-primary" />
-        </label>
-      </div>
-    </section>
-
-    <!-- Existing coupons -->
+    <!-- Existing coupons (create form lives in the action modal — keeps
+         all admin writes behind the same 2FA gate). -->
     <section class="glass rounded-lg p-1">
       <div v-if="loading && !coupons.length" class="p-4 text-small text-fg-subtle font-mono">loading…</div>
       <div v-else-if="!coupons.length" class="p-4 text-small text-fg-muted">No Stripe coupons defined.</div>

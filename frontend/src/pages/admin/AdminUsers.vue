@@ -7,7 +7,7 @@
  */
 import { onBeforeUnmount, onMounted, ref } from "vue";
 
-import { useAdminActions, type AdminActionConfig } from "@/composables/useAdminActions";
+import { useAdminActions } from "@/composables/useAdminActions";
 
 interface UserRow {
   id: string; email: string; name: string | null;
@@ -81,42 +81,40 @@ onMounted(() => {
 onBeforeUnmount(() => unregister?.());
 
 // ── Action openers ────────────────────────────────────────────────
-
-const trialDays = ref(14);
-const compDays = ref(30);
-const compReason = ref("");
-const cancelReason = ref("");
-const cancelImmediate = ref(false);
+// Per-action form values live ON the composable so the shared modal
+// can render the right inputs without each page wiring teleports.
+// Pages call open(config, prefill) to pre-fill defaults that depend
+// on the target row (e.g. flipping the current is_admin).
 
 function openExtendTrial(u: UserRow) {
-  trialDays.value = 14;
-  const cfg: AdminActionConfig = {
-    kind: "extend-trial",
-    url: `/api/v1/admin/users/${u.id}/extend-trial`,
-    body: () => ({ days: trialDays.value }),
-    targetLabel: u.email,
-  };
-  adminActions.open(cfg);
+  adminActions.open(
+    {
+      kind: "extend-trial",
+      url: `/api/v1/admin/users/${u.id}/extend-trial`,
+      targetLabel: u.email,
+    },
+    { extendTrial: { days: 14 } },
+  );
 }
 function openCompDays(u: UserRow) {
-  compDays.value = 30;
-  compReason.value = "";
-  adminActions.open({
-    kind: "comp-days",
-    url: `/api/v1/admin/users/${u.id}/comp-days`,
-    body: () => ({ days: compDays.value, reason: compReason.value || "comped" }),
-    targetLabel: u.email,
-  });
+  adminActions.open(
+    {
+      kind: "comp-days",
+      url: `/api/v1/admin/users/${u.id}/comp-days`,
+      targetLabel: u.email,
+    },
+    { compDays: { days: 30, reason: "" } },
+  );
 }
 function openCancelSub(u: UserRow) {
-  cancelReason.value = "";
-  cancelImmediate.value = false;
-  adminActions.open({
-    kind: "cancel-sub",
-    url: `/api/v1/admin/users/${u.id}/cancel-subscription`,
-    body: () => ({ reason: cancelReason.value || "admin cancel", immediate: cancelImmediate.value }),
-    targetLabel: u.email,
-  });
+  adminActions.open(
+    {
+      kind: "cancel-sub",
+      url: `/api/v1/admin/users/${u.id}/cancel-subscription`,
+      targetLabel: u.email,
+    },
+    { cancelSub: { reason: "", immediate: false } },
+  );
 }
 function openMarkVerified(u: UserRow) {
   adminActions.open({
@@ -126,12 +124,14 @@ function openMarkVerified(u: UserRow) {
   });
 }
 function openToggleAdmin(u: UserRow) {
-  adminActions.open({
-    kind: "toggle-admin",
-    url: `/api/v1/admin/users/${u.id}/toggle-admin`,
-    body: () => ({ is_admin: !u.is_admin }),
-    targetLabel: u.email,
-  });
+  adminActions.open(
+    {
+      kind: "toggle-admin",
+      url: `/api/v1/admin/users/${u.id}/toggle-admin`,
+      targetLabel: u.email,
+    },
+    { toggleAdmin: { is_admin: !u.is_admin } },
+  );
 }
 function openDeleteUser(u: UserRow) {
   adminActions.open({
