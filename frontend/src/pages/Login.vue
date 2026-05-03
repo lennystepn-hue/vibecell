@@ -198,7 +198,10 @@ function reset() {
           </PrimaryButton>
 
           <p class="text-small text-fg-subtle text-center">
-            By continuing, you agree to our terms — which don't exist yet.
+            By continuing you agree to our
+            <RouterLink to="/legal?tab=terms" class="underline-offset-2 hover:underline">Terms</RouterLink>
+            and
+            <RouterLink to="/legal?tab=privacy" class="underline-offset-2 hover:underline">Privacy</RouterLink>.
           </p>
         </form>
 

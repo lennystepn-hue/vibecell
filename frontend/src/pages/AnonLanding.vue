@@ -22,9 +22,11 @@ function scrollToDemo() {
   document.getElementById("how-it-works")?.scrollIntoView({ behavior: "smooth" });
 }
 
-// Animated counter for stat strip
+// Animated counter for stat strip. MCP-tools count is the live registry
+// length on the backend (mirrors the "X tools registered" string returned
+// by /api/v1/status). Bump in lockstep with new tools.
 const counters = ref([
-  { value: 0, target: 38, label: "MCP tools", suffix: "" },
+  { value: 0, target: 49, label: "MCP tools", suffix: "" },
   { value: 0, target: 5, label: "IDE clients", suffix: "" },
   { value: 0, target: 2, label: "setup", suffix: "s" },
   { value: 0, target: 0, label: "install", suffix: "" },
@@ -33,11 +35,14 @@ const counters = ref([
 // MCP tool catalog — 6 capability cards. Seeded so every category gets
 // its own orb (consistent visual language with the rest of the page).
 // One sentence of plain English + a single signature tool name.
+// MCP tool buckets — counts must sum to the live total (49 as of f82141c).
+// Re-bucket carefully when adding new tools so the hero stat strip
+// (49 above) and these per-category counts stay consistent.
 const mcpGroups = [
   {
     seed: "mcp-spawn",
     tag: "Spawn",
-    count: 4,
+    count: 3,
     blurb: "Describe an idea in Claude — a project appears in the dashboard with stack, tags, pitch pre-filled.",
     signature: "vibecell_create_project",
     accent: true,
@@ -45,14 +50,14 @@ const mcpGroups = [
   {
     seed: "mcp-read",
     tag: "Read",
-    count: 11,
-    blurb: "Claude pulls the full project aggregate, searches your history, generates a resurrection brief.",
+    count: 12,
+    blurb: "Claude pulls the full project aggregate, the AI primer, search history, generates resurrection briefs.",
     signature: "vibecell_active",
   },
   {
     seed: "mcp-write",
     tag: "Write",
-    count: 13,
+    count: 20,
     blurb: "Every session, decision, ship, URL or script Claude touches lands as a one-line tool call.",
     signature: "vibecell_log_session",
   },
@@ -130,7 +135,7 @@ const orbShowcase = [
   {
     seed: "mcp-tools",
     label: "mcp-tools",
-    blurb: "38 typed endpoints Claude can drive — create, log, ship, search.",
+    blurb: "49 typed endpoints Claude can drive — create, log, ship, search.",
   },
   {
     seed: "portfolio",
@@ -301,11 +306,13 @@ const steps = [
             </button>
           </div>
 
-          <!-- AI-paste install. Faster than the trial flow for anyone whose
-               editor already speaks MCP — paste a prompt, AI installs itself,
-               OAuth pops, done. Inline link rather than a third button so it
-               doesn't compete with the primary CTA. -->
-          <p class="mb-7 font-mono text-[11px]" style="color: #cfd4dc; letter-spacing: 0.02em">
+          <!-- Two friction-free shortcut paths below the primary trial CTA:
+               1. AI-paste install for users whose editor already speaks MCP.
+               2. Google one-click sign-in for everyone else.
+               Both are inline links rather than buttons — keeps the primary
+               accent on the green "Start 7-day trial" button per the
+               .impeccable.md "single accent per surface" rule. -->
+          <p class="mb-2 font-mono text-[11px]" style="color: #cfd4dc; letter-spacing: 0.02em">
             <span aria-hidden="true" style="color: #5cc8a4">✦</span>
             Already in Claude / Cursor / Zed?
             <RouterLink
@@ -314,12 +321,28 @@ const steps = [
               style="color: #5cc8a4"
             >Paste one prompt — AI installs itself →</RouterLink>
           </p>
+          <a
+            v-if="!auth.isAuthed"
+            href="/api/v1/auth/google/start?next=%2Fp"
+            class="mb-7 inline-flex items-center gap-2 font-mono text-[11px] hover:underline underline-offset-2"
+            style="color: #cfd4dc; letter-spacing: 0.02em"
+          >
+            <svg width="12" height="12" viewBox="0 0 18 18" aria-hidden="true">
+              <path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.25-.164-1.84H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615Z"/>
+              <path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18Z"/>
+              <path fill="#FBBC05" d="M3.964 10.706A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.706V4.962H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.038l3.007-2.332Z"/>
+              <path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.962L3.964 7.294C4.672 5.167 6.656 3.58 9 3.58Z"/>
+            </svg>
+            <span>Or sign up with Google — one click →</span>
+          </a>
+          <div v-else class="mb-7" />
+
 
           <!-- Feature signal — surfaces the actual product surface
                (dashboard + MCP tools + cron + secrets + history) rather
                than infrastructure. Mono-label cadence, no marketing copy. -->
           <p class="font-mono text-[11px]" style="color: #5e7088; letter-spacing: 0.04em">
-            dashboard · 47 MCP tools · auto-cron · session log · workspace secrets
+            dashboard · 49 MCP tools · auto-cron · session log · workspace secrets
           </p>
         </div>
 
@@ -347,42 +370,46 @@ const steps = [
           Works with
         </p>
         <div class="flex flex-wrap items-center justify-center gap-x-8 gap-y-4 opacity-80">
-          <!-- Claude (Anthropic 4-point star) -->
+          <!-- Brand logomarks below come from simple-icons.org (CC0 / public
+               domain). All rendered fill="currentColor" so they pick up the
+               cockpit-grey text color and stay theme-stable in light/dark.
+               Stylistically subordinate to the wordmark next to them — the
+               icons read as a tiny prefix, not a heavy logo wall. -->
+          <!-- Claude / Anthropic — angular A-mark (simple-icons: anthropic) -->
           <span class="flex items-center gap-2 transition-opacity hover:opacity-100" style="color: #cfd4dc; font-size: 14px">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-              <path d="M12 2 L13.5 10.5 L22 12 L13.5 13.5 L12 22 L10.5 13.5 L2 12 L10.5 10.5 Z"/>
+              <path d="M17.304 3.541h-3.672l6.696 16.918H24Zm-10.608 0L0 20.459h3.744l1.37-3.553h7.005l1.37 3.553h3.744L10.536 3.541Zm-.371 10.223 2.291-5.946 2.292 5.946Z"/>
             </svg>
             <span class="font-mono text-[13px]">Claude</span>
           </span>
-          <!-- Cursor (curl icon) -->
+          <!-- Cursor — official cursor mark (simple-icons: cursor) -->
           <span class="flex items-center gap-2 transition-opacity hover:opacity-100" style="color: #cfd4dc; font-size: 14px">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-              <path d="M4 4 L20 12 L4 20 L12 12 Z" fill="currentColor" fill-opacity="0.2"/>
-              <path d="M4 4 L20 12 L4 20 L12 12 Z"/>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M11.925 24l10.425-6V6L11.925 0 1.5 6v12l10.425 6zm10.425-6L11.925 12 1.5 18l10.425 6 10.425-6zm0-12L11.925 12V0l10.425 6zM1.5 6v12l10.425-6V0L1.5 6z"/>
             </svg>
             <span class="font-mono text-[13px]">Cursor</span>
           </span>
-          <!-- OpenAI (hex flower) -->
+          <!-- OpenAI — petal/knot logomark (simple-icons: openai) -->
           <span class="flex items-center gap-2 transition-opacity hover:opacity-100" style="color: #cfd4dc; font-size: 14px">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
-              <circle cx="12" cy="8" r="3.5"/>
-              <circle cx="7.2" cy="14.5" r="3.5"/>
-              <circle cx="16.8" cy="14.5" r="3.5"/>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M22.282 9.821a5.985 5.985 0 0 0-.516-4.91 6.046 6.046 0 0 0-6.51-2.9A6.065 6.065 0 0 0 4.981 4.18a5.985 5.985 0 0 0-3.998 2.9 6.046 6.046 0 0 0 .743 7.097 5.98 5.98 0 0 0 .51 4.911 6.051 6.051 0 0 0 6.515 2.9A5.985 5.985 0 0 0 13.26 24a6.056 6.056 0 0 0 5.772-4.206 5.99 5.99 0 0 0 3.998-2.9 6.056 6.056 0 0 0-.747-7.073zM13.26 22.43a4.476 4.476 0 0 1-2.876-1.04l.142-.08 4.778-2.758a.795.795 0 0 0 .393-.681v-6.737l2.02 1.168a.07.07 0 0 1 .038.052v5.583a4.504 4.504 0 0 1-4.495 4.494zM3.6 18.304a4.47 4.47 0 0 1-.535-3.014l.142.085 4.783 2.759a.771.771 0 0 0 .781 0l5.843-3.369v2.332a.08.08 0 0 1-.033.062L9.74 19.95a4.5 4.5 0 0 1-6.14-1.646zM2.34 7.896a4.485 4.485 0 0 1 2.366-1.973V11.6a.766.766 0 0 0 .388.677l5.815 3.354-2.02 1.168a.076.076 0 0 1-.071 0l-4.83-2.786A4.504 4.504 0 0 1 2.34 7.872zm16.597 3.855L13.103 8.364 15.12 7.2a.076.076 0 0 1 .07 0l4.83 2.792a4.494 4.494 0 0 1-.676 8.104V12.42a.79.79 0 0 0-.407-.667zm2.01-3.024-.142-.085-4.774-2.782a.776.776 0 0 0-.785 0L9.409 9.23V6.897a.066.066 0 0 1 .028-.062l4.83-2.787a4.5 4.5 0 0 1 6.681 4.66zM8.307 12.863l-2.02-1.164a.08.08 0 0 1-.038-.057V6.074a4.5 4.5 0 0 1 7.376-3.454l-.142.081L8.704 5.46a.795.795 0 0 0-.393.681zm1.098-2.366 2.602-1.5 2.607 1.5v3l-2.598 1.5-2.607-1.5Z"/>
             </svg>
             <span class="font-mono text-[13px]">OpenAI</span>
           </span>
-          <!-- Zed (stylised Z) -->
+          <!-- Zed — angular Z arrow (simple-icons: zedindustries) -->
           <span class="flex items-center gap-2 transition-opacity hover:opacity-100" style="color: #cfd4dc; font-size: 14px">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-              <path d="M5 6 H19 L5 18 H19" stroke-linecap="round" stroke-linejoin="round"/>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M11.999 0a11.999 11.999 0 1 0 0 23.998A11.999 11.999 0 0 0 12 0Zm5.997 5.987-7.992 7.991h7.992v3.998H5.962v-3.998l7.991-7.991H5.962V1.989h12.034Z"/>
             </svg>
             <span class="font-mono text-[13px]">Zed</span>
           </span>
-          <!-- Continue -->
+          <!-- Continue.dev — chevron continuation mark. Their actual logo
+               is a stylised "carrot/play" pair; this is a faithful inline
+               approximation since they don't ship a CC0 SVG. -->
           <span class="flex items-center gap-2 transition-opacity hover:opacity-100" style="color: #cfd4dc; font-size: 14px">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-              <path d="M6 4 L18 12 L6 20" stroke-linecap="round" stroke-linejoin="round"/>
-              <path d="M2 4 L14 12 L2 20" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.45"/>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M3 5.5v13a1 1 0 0 0 1.546.838l8.5-5.5a1 1 0 0 0 0-1.676l-8.5-5.5A1 1 0 0 0 3 5.5Z" opacity=".5"/>
+              <path d="M11 5.5v13a1 1 0 0 0 1.546.838l8.5-5.5a1 1 0 0 0 0-1.676l-8.5-5.5A1 1 0 0 0 11 5.5Z"/>
             </svg>
             <span class="font-mono text-[13px]">Continue</span>
           </span>
@@ -436,12 +463,12 @@ const steps = [
           </p>
           <h2 class="font-semibold leading-tight mb-4"
             style="font-size: clamp(1.8rem, 3.5vw, 2.6rem); letter-spacing: -0.03em; color: #ffffff">
-            38 tools. One mental model.<br>
+            49 tools. One mental model.<br>
             <span style="color: #8ba1bd">Claude drives everything.</span>
           </h2>
           <p class="max-w-2xl mx-auto leading-relaxed"
             style="font-size: 14px; color: #8ba1bd; line-height: 1.7">
-            Vibecell isn&rsquo;t an app that happens to talk MCP. It&rsquo;s a set of 38 typed tool
+            Vibecell isn&rsquo;t an app that happens to talk MCP. It&rsquo;s a set of 49 typed tool
             endpoints that Claude (or Cursor, or Zed) can wire itself into in under 10 seconds.
             Every capability in the dashboard &mdash; creating projects, logging sessions, tracking
             drift, managing secrets &mdash; is a first-class tool call.
@@ -912,16 +939,16 @@ const steps = [
         </h2>
         <p class="mb-10" style="font-size: 14px; color: #8ba1bd; line-height: 1.65">
           Join the builders who never lose project context again.<br>
-          Free forever. No credit card.
+          7-day trial. No card to start. €8.99/mo after.
         </p>
         <button
           class="px-10 py-4 rounded-xl font-mono font-semibold text-[14px] transition-all hover:opacity-90 hover:scale-[1.02] active:scale-[0.99]"
           style="background: #5cc8a4; color: #070b10; box-shadow: 0 0 40px rgba(92,200,164,0.3), 0 4px 20px rgba(0,0,0,0.3)"
           @click="goSignIn">
-          {{ auth.isAuthed ? 'Open dashboard →' : 'Get started — free →' }}
+          {{ auth.isAuthed ? 'Open dashboard →' : 'Start 7-day trial →' }}
         </button>
         <p class="mt-4 font-mono" style="font-size: 11px; color: #5e7088">
-          vibecell.dev · No install · Free plan · GDPR compliant
+          vibecell.dev · No install · GDPR compliant · Cancel anytime
         </p>
       </div>
     </section>
