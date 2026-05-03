@@ -133,7 +133,7 @@ onMounted(() => loadIntegrations());
 </script>
 
 <template>
-  <div class="max-w-[960px] mx-auto px-6 py-8">
+  <div class="max-w-[960px] mx-auto px-4 sm:px-6 py-6 sm:py-8">
     <header class="mb-8">
       <h1 class="text-display text-fg-primary tracking-tight">Import from GitHub</h1>
       <p class="text-fg-muted mt-1">

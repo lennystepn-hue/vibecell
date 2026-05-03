@@ -3,18 +3,50 @@ import { RouterLink, useRoute } from "vue-router";
 
 import { useAuthStore } from "@/stores/auth";
 import { useCommandPaletteStore } from "@/stores/command-palette";
+import { useUiStore } from "@/stores/ui";
 import KbdHint from "@/components/ui/KbdHint.vue";
 import UserMenu from "./UserMenu.vue";
 
 const route = useRoute();
 const auth = useAuthStore();
 const palette = useCommandPaletteStore();
+const ui = useUiStore();
 </script>
 
 <template>
   <header
     class="chrome sticky top-0 z-30 flex items-center gap-3 px-4 h-11 border-b font-sans text-body"
   >
+    <!-- Mobile-only hamburger that drives the SidebarProjects drawer.
+         Only renders when a sidebar is mounted (set by SidebarProjects in
+         onMounted) so it doesn't appear on /p, /settings, /ideas etc. where
+         there's nothing to toggle. md:hidden because at md+ the sidebar is
+         always visible in the static flex layout. -->
+    <button
+      v-if="auth.isAuthed && ui.sidebarMounted"
+      class="md:hidden -ml-1.5 h-8 w-8 inline-flex items-center justify-center rounded-md text-fg-muted hover:bg-bg-surface-hi hover:text-fg-body transition-colors"
+      :aria-label="ui.mobileSidebarOpen ? 'Close sidebar' : 'Open sidebar'"
+      :aria-expanded="ui.mobileSidebarOpen"
+      @click="ui.toggleSidebar()"
+    >
+      <svg
+        v-if="!ui.mobileSidebarOpen"
+        width="18" height="18" viewBox="0 0 24 24"
+        fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+        aria-hidden="true"
+      >
+        <path d="M3 6h18M3 12h18M3 18h18" />
+      </svg>
+      <svg
+        v-else
+        width="18" height="18" viewBox="0 0 24 24"
+        fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+        aria-hidden="true"
+      >
+        <path d="M6 6l12 12M6 18L18 6" />
+      </svg>
+    </button>
+
     <template v-if="auth.isAuthed && auth.activeWorkspace">
       <RouterLink
         to="/p"

@@ -11,7 +11,7 @@
  *   remove, restore-all), open the "+ add widget" popover to bring hidden
  *   cards back.
  */
-import { computed, onBeforeUnmount, ref, watch, nextTick } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref, watch, nextTick } from "vue";
 import { GridLayout } from "grid-layout-plus";
 
 import { useDashboardLayoutStore } from "@/stores/dashboard-layout";
@@ -21,6 +21,28 @@ import { DEFAULT_LAYOUT, widgetById } from "./widget-registry";
 // auto-sizer's math reproduces grid-layout-plus's own geometry.
 const ROW_HEIGHT = 40;
 const MARGIN_V = 16;
+
+// Below this breakpoint we bypass GridLayout entirely and render widgets
+// as a vertically-stacked single-column list. The 12-col grid + drag
+// affordances make no sense at <640px and the absolute positioning was
+// producing 0px-tall cards on phones. md = 768px in Tailwind, but here
+// we use 700 so iPad portrait (768) still gets the grid.
+const MOBILE_BP = 700;
+const isMobile = ref(false);
+let mq: MediaQueryList | null = null;
+function onMqChange(e: MediaQueryListEvent | MediaQueryList) {
+  isMobile.value = e.matches;
+}
+onMounted(() => {
+  if (typeof window !== "undefined") {
+    mq = window.matchMedia(`(max-width: ${MOBILE_BP - 1}px)`);
+    isMobile.value = mq.matches;
+    mq.addEventListener("change", onMqChange);
+  }
+});
+onBeforeUnmount(() => {
+  if (mq) mq.removeEventListener("change", onMqChange);
+});
 
 const props = defineProps<{ project: { slug: string; [k: string]: unknown } }>();
 
@@ -32,6 +54,20 @@ watch(
   (slug) => store.hydrate(slug, DEFAULT_LAYOUT),
   { immediate: true },
 );
+
+// Mobile widget order: pull visible (non-hidden) widgets from the user's
+// stored layout in the same vertical order as the desktop grid (sort by
+// y, tiebreak by x). Falls back to DEFAULT_LAYOUT order for projects
+// where the store hasn't hydrated yet (race on first paint).
+const mobileWidgets = computed(() => {
+  const source =
+    store.layout.length > 0 ? store.layout : DEFAULT_LAYOUT;
+  return [...source]
+    .filter((l) => !(l as { hidden?: boolean }).hidden)
+    .sort((a, b) => (a.y - b.y) || (a.x - b.x))
+    .map((l) => ({ id: String(l.i), def: widgetById(String(l.i)) }))
+    .filter((row): row is { id: string; def: NonNullable<ReturnType<typeof widgetById>> } => Boolean(row.def));
+});
 
 // Hidden widget pool (shown in the "+ add widget" menu).
 const hiddenWidgets = computed(() =>
@@ -249,7 +285,11 @@ function autoSizeAgain(id: string): void {
          "//dashboard" label on the left and a single "rearrange" button on
          the right. In edit mode it expands with add-widget / reset / hint.
          Same outer box in both modes so the page doesn't jump when toggling. -->
+    <!-- Toolbar: hidden on mobile because the grid (and edit-mode) doesn't
+         exist there. Mobile users get a clean stacked card list with no
+         "rearrange" affordance to misuse. -->
     <header
+      v-if="!isMobile"
       class="sticky top-[44px] z-20 flex items-center gap-3 mb-4 px-3 h-10 rounded-md transition-colors"
       :style="store.editMode
         ? 'background: rgba(92,200,164,0.06); border: 1px solid rgba(92,200,164,0.25); backdrop-filter: blur(8px)'
@@ -326,11 +366,28 @@ function autoSizeAgain(id: string): void {
       </button>
     </header>
 
-    <!-- ── Grid ───────────────────────────────────────────────────────── -->
-    <!-- margin = [horizontal, vertical] px between items. Back to 16/16
-         — the original spacing reads best with the toolbar band above. -->
+    <!-- ── Mobile: stacked single-column ───────────────────────────────
+         The grid-layout-plus library uses absolute positioning + math
+         tied to a fixed col-num (12). On a 320-700px viewport the math
+         produces 0px-tall cards or 26px-wide cards — visually broken.
+         Mobile bypasses the grid entirely: cards render in their natural
+         vertical-sort order, full-width, with a sane gap. Desktop layout
+         persistence (drag-to-rearrange) is preserved on lg+. -->
+    <div v-if="isMobile" class="space-y-4">
+      <article
+        v-for="w in mobileWidgets"
+        :key="w.id"
+        class="widget rounded-lg overflow-hidden glass"
+      >
+        <component :is="w.def.component" v-bind="w.def.props(project)" />
+      </article>
+    </div>
 
+    <!-- ── Grid (desktop) ──────────────────────────────────────────────
+         margin = [horizontal, vertical] px between items. Back to 16/16
+         — the original spacing reads best with the toolbar band above. -->
     <GridLayout
+      v-else
       v-model:layout="store.layout"
       :class="{ 'grid-is-editing': store.editMode }"
       :col-num="12"

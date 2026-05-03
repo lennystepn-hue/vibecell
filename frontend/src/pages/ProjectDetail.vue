@@ -139,21 +139,27 @@ useProjectLive(
         <p class="mono-label">loading project…</p>
       </div>
 
-      <div v-else-if="projects.active" class="max-w-[1400px] px-8 py-8 mx-auto">
+      <div v-else-if="projects.active" class="max-w-[1400px] px-4 sm:px-8 py-6 sm:py-8 mx-auto">
 
-        <!-- Hero -->
+        <!-- Hero
+             Mobile (< md): orb + name on row 1, status/slug/live-pulse wrap on
+             row 2, ProjectPreviewImage hides (saving 80px of vertical real
+             estate that the user can scroll to via the dashboard cards), and
+             ShipButton + edit + delete drop to a dedicated bottom row so the
+             layout never tries to fit 3 segments in <320px.
+             Desktop (≥ md): unchanged side-by-side layout. -->
         <header class="mb-6">
-          <div class="flex items-start justify-between gap-6">
-            <div class="flex items-start gap-4 min-w-0">
-              <ProjectOrb :seed="projects.active.slug" :size="56" />
-              <div class="min-w-0">
-                <div class="flex items-baseline gap-3 flex-wrap">
-                  <h1 class="text-display text-fg-primary tracking-tight truncate">{{ projects.active.name }}</h1>
+          <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4 md:gap-6">
+            <div class="flex items-start gap-3 sm:gap-4 min-w-0 flex-1">
+              <ProjectOrb :seed="projects.active.slug" :size="48" class="sm:!w-14 sm:!h-14" />
+              <div class="min-w-0 flex-1">
+                <h1 class="text-title sm:text-display text-fg-primary tracking-tight break-words">{{ projects.active.name }}</h1>
+                <div class="flex items-baseline gap-2 sm:gap-3 flex-wrap mt-2">
                   <ProjectStatusDropdown :project="projects.active" />
                   <CopyableValue :value="projects.active.slug" mono small class="text-fg-subtle" />
                   <LivePulse :slug="projects.active.slug" variant="pill" />
                 </div>
-                <p v-if="projects.active.pitch" class="text-body text-fg-muted mt-1 max-w-3xl">{{ projects.active.pitch }}</p>
+                <p v-if="projects.active.pitch" class="text-body text-fg-muted mt-2 max-w-3xl">{{ projects.active.pitch }}</p>
                 <!-- Created/updated timestamps only. Status is already shown by
                      the StatusPill dropdown above — no need for a redundant
                      "Active/Archived" word here. Before, that line stayed on
@@ -166,15 +172,20 @@ useProjectLive(
                 <ProjectOverviewChips :slug="projects.active.slug" class="mt-3" />
               </div>
             </div>
-            <!-- Top-right: live preview mini + actions stacked -->
-            <div class="flex flex-col items-end gap-3 shrink-0">
+            <!-- Top-right cluster.
+                 Mobile: only the action row (ship + edit + delete) shown,
+                 stretched full width and right-aligned. The mini preview is
+                 desktop-only — it competes hard for vertical space on phones.
+                 Desktop: preview thumb + actions stacked, right-aligned. -->
+            <div class="flex flex-col items-stretch md:items-end gap-3 md:shrink-0">
               <ProjectPreviewImage
                 :slug="projects.active.slug"
                 variant="mini"
                 :href="livePreviewUrl || undefined"
                 empty-label="// no preview yet"
+                class="hidden md:block"
               />
-              <div class="flex items-center gap-2">
+              <div class="flex items-center gap-3 sm:gap-2 justify-end">
                 <ShipButton :project="projects.active" />
                 <button
                   type="button"

@@ -50,7 +50,7 @@ function connectedOn(iso: string): string {
   <div class="flex h-[calc(100vh-44px)]">
     <SettingsNav />
     <div class="flex-1 overflow-y-auto">
-      <div class="max-w-[720px] mx-auto px-8 py-8">
+      <div class="max-w-[720px] mx-auto px-4 sm:px-8 py-6 sm:py-8">
         <h1 class="text-display text-fg-primary tracking-tight mb-8">Integrations</h1>
 
         <div v-if="loading" class="text-fg-muted">
@@ -61,11 +61,11 @@ function connectedOn(iso: string): string {
           <SettingsSection title="GitHub" subtitle="Read-only access to repo metadata.">
             <template v-for="i in integrations.filter((x) => x.kind === 'github')" :key="i.id">
               <div class="space-y-3">
-                <div class="grid grid-cols-[120px_1fr] gap-3 items-baseline">
+                <div class="grid grid-cols-[88px_1fr] sm:grid-cols-[120px_1fr] gap-3 items-baseline">
                   <span class="mono-label">login</span>
                   <span class="font-mono text-body text-fg-body">{{ ghLogin(i) }}</span>
                 </div>
-                <div class="grid grid-cols-[120px_1fr] gap-3 items-baseline">
+                <div class="grid grid-cols-[88px_1fr] sm:grid-cols-[120px_1fr] gap-3 items-baseline">
                   <span class="mono-label">connected</span>
                   <span class="font-mono text-small text-fg-subtle">{{ connectedOn(i.connected_at) }}</span>
                 </div>

@@ -190,7 +190,11 @@ const lastProbed = computed<string>(() => {
 </script>
 
 <template>
-  <aside class="chrome border-l w-[240px] shrink-0 flex flex-col h-full overflow-y-auto">
+  <!-- Telemetry rail is desktop-only (lg+). On smaller screens it stole
+       half the viewport from the main content; instead the user can find
+       its info inline (repo branch on the project header, lifecycle in
+       the activity card, health on its own card). -->
+  <aside class="chrome border-l w-[240px] shrink-0 hidden lg:flex flex-col h-full overflow-y-auto">
     <div class="p-4 space-y-5">
       <!-- ── //REPO ─────────────────────────────────────────────────── -->
       <section>

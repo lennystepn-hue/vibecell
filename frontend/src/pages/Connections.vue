@@ -39,7 +39,7 @@ async function confirmRevoke() {
   <div class="flex h-[calc(100vh-44px)]">
     <SettingsNav />
     <div class="flex-1 overflow-y-auto">
-      <div class="max-w-[900px] mx-auto px-8 py-8">
+      <div class="max-w-[900px] mx-auto px-4 sm:px-8 py-6 sm:py-8">
         <header class="mb-6">
           <h1 class="text-display text-fg-primary tracking-tight">Connections</h1>
           <p class="text-body text-fg-muted mt-1">Apps and clients with access to your workspaces.</p>

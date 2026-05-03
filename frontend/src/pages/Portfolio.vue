@@ -178,7 +178,9 @@ function projectSlug(pid: string): string {
     <SidebarProjects />
 
     <main class="flex-1 min-w-0 overflow-y-auto">
-      <div class="max-w-[1100px] px-8 py-8 mx-auto">
+      <!-- px-4 on mobile so the heatmap rows + stat cards have edge breathing
+           room without consuming half the viewport in margins. -->
+      <div class="max-w-[1100px] px-4 sm:px-8 py-6 sm:py-8 mx-auto">
         <!-- Header -->
         <header class="mb-8">
           <h1 class="text-display text-fg-primary mb-2">Portfolio</h1>

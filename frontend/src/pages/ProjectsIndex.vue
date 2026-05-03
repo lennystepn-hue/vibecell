@@ -39,22 +39,25 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="max-w-[1400px] mx-auto px-6 py-8">
-    <header class="flex items-baseline justify-between mb-8">
+  <div class="max-w-[1400px] mx-auto px-4 sm:px-6 py-6 sm:py-8">
+    <!-- Header: stacks on mobile so the 2 action buttons get their own row
+         instead of squishing the title or being cut off. -->
+    <header class="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-4 mb-6 sm:mb-8">
       <div>
-        <h1 class="text-display text-fg-primary tracking-tight">Projects</h1>
+        <h1 class="text-title sm:text-display text-fg-primary tracking-tight">Projects</h1>
         <p class="text-fg-muted mt-1">
           <span class="tabular-nums">{{ projects.list.length }}</span>
           {{ projects.list.length === 1 ? "project" : "projects" }} in your workspace
         </p>
       </div>
-      <div class="flex gap-2">
+      <div class="flex gap-2 flex-wrap">
         <RouterLink
           to="/import/github"
           class="inline-flex h-10 items-center gap-2 rounded-md px-4 font-medium text-body border border-border bg-bg-surface text-fg-body hover:bg-bg-surface-hi transition-colors"
         >
           <span aria-hidden="true">↗</span>
-          <span>Import from GitHub</span>
+          <span class="hidden sm:inline">Import from GitHub</span>
+          <span class="sm:hidden">Import</span>
         </RouterLink>
         <PrimaryButton @click="quickAddOpen = true">
           <span aria-hidden="true">+</span>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { RouterLink, useRoute } from "vue-router";
 
 import LivePulse from "@/components/app/LivePulse.vue";
@@ -8,6 +8,7 @@ import SignalDot from "@/components/ui/SignalDot.vue";
 import { useGroupsStore } from "@/stores/groups";
 import { usePresenceStore } from "@/stores/presence";
 import { useProjectsStore } from "@/stores/projects";
+import { useUiStore } from "@/stores/ui";
 import type { components } from "@/api/types.gen";
 
 type Project = components["schemas"]["ProjectListItem"];
@@ -16,6 +17,7 @@ const route = useRoute();
 const projects = useProjectsStore();
 const groups = useGroupsStore();
 const presence = usePresenceStore();
+const ui = useUiStore();
 // Reference `presence` to ensure the store is instantiated even if sidebar
 // mounts before App.vue's watcher fires. The actual reactivity flows through
 // LivePulse component reads.
@@ -24,7 +26,22 @@ void presence;
 onMounted(async () => {
   if (projects.list.length === 0) await projects.fetchList();
   if (groups.list.length === 0) await groups.fetchList();
+  // Tell TopBar the sidebar is here so its hamburger button can render.
+  ui.registerSidebar();
 });
+onBeforeUnmount(() => {
+  ui.unregisterSidebar();
+});
+
+// Auto-close the mobile drawer when the route changes. Picking a project
+// while the drawer is open should navigate AND collapse so the user lands
+// on the new page with full content width visible.
+watch(
+  () => route.fullPath,
+  () => {
+    if (ui.mobileSidebarOpen) ui.closeSidebar();
+  },
+);
 
 const grouped = computed(() => {
   const map = new Map<string, Project[]>();
@@ -174,8 +191,25 @@ function rowClick() {
 </script>
 
 <template>
+  <!-- Mobile backdrop. Click closes the drawer. md:hidden so it's gone on
+       desktop where the sidebar is part of the static flex layout. -->
+  <div
+    v-if="ui.mobileSidebarOpen"
+    class="fixed inset-0 z-30 md:hidden transition-opacity duration-200"
+    style="background: rgba(7,11,16,0.55); backdrop-filter: blur(2px)"
+    @click="ui.closeSidebar()"
+  />
   <aside
-    class="chrome border-r w-[200px] shrink-0 flex flex-col h-full relative"
+    :class="[
+      'chrome border-r flex flex-col h-full',
+      // Desktop: in-flow, fixed 200px wide, no transform.
+      'md:relative md:w-[200px] md:shrink-0 md:translate-x-0',
+      // Mobile: fixed drawer that slides in from the left. 240px gives
+      // project rows breathing room on a 320px viewport (60% width).
+      // top-11 sits below the 44px TopBar; bottom-0 fills the rest.
+      'fixed top-11 bottom-0 left-0 z-40 w-[240px] transform transition-transform duration-200 ease-out',
+      ui.mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full',
+    ]"
     @contextmenu="onContextSidebar"
     @click="rowClick"
   >

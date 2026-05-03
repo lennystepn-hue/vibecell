@@ -165,7 +165,7 @@ const faqs = [
     </header>
 
     <!-- ─── Hero ─────────────────────────────────────────────────────────── -->
-    <section class="max-w-3xl mx-auto px-6 pt-24 pb-12 text-center">
+    <section class="max-w-3xl mx-auto px-4 sm:px-6 pt-16 sm:pt-24 pb-8 sm:pb-12 text-center">
       <p class="font-mono text-[11px] uppercase tracking-[0.15em] mb-4" style="color: #5cc8a4">
         Pricing
       </p>
@@ -181,7 +181,7 @@ const faqs = [
     <!-- ─── Launch marker (only renders when launch coupon is still active) ─ -->
     <section
       v-if="launch.active"
-      class="max-w-md mx-auto px-6 mb-6"
+      class="max-w-md mx-auto px-4 sm:px-6 mb-6"
     >
       <div
         class="rounded-md px-4 py-2.5 font-mono flex items-baseline justify-between gap-3"
@@ -197,7 +197,7 @@ const faqs = [
     </section>
 
     <!-- ─── Cycle toggle ─────────────────────────────────────────────────── -->
-    <section class="max-w-md mx-auto px-6 mb-6 flex justify-center">
+    <section class="max-w-md mx-auto px-4 sm:px-6 mb-6 flex justify-center">
       <div
         class="inline-flex rounded-full p-1 font-mono"
         style="background: rgba(20,33,50,0.6); border: 1px solid rgba(138,180,255,0.1)"
@@ -234,7 +234,7 @@ const faqs = [
     </section>
 
     <!-- ─── Plan card (single, centered) ─────────────────────────────────── -->
-    <section class="max-w-md mx-auto px-6 pb-24">
+    <section class="max-w-md mx-auto px-4 sm:px-6 pb-16 sm:pb-24">
       <div class="rounded-xl p-8 flex flex-col relative overflow-hidden"
         style="background: rgba(92,200,164,0.04); border: 1px solid rgba(92,200,164,0.28); box-shadow: 0 0 64px rgba(92,200,164,0.08), inset 0 1px 0 rgba(92,200,164,0.12)">
 
@@ -314,7 +314,7 @@ const faqs = [
     </section>
 
     <!-- ─── FAQ ──────────────────────────────────────────────────────────── -->
-    <section class="max-w-2xl mx-auto px-6 pb-28">
+    <section class="max-w-2xl mx-auto px-4 sm:px-6 pb-16 sm:pb-28">
       <div class="text-center mb-12">
         <p class="font-mono text-[11px] uppercase tracking-[0.15em] mb-3" style="color: #5cc8a4">FAQ</p>
         <h2 class="font-semibold" style="font-size: clamp(1.4rem, 2.5vw, 2rem); letter-spacing: -0.03em; color: #ffffff">
@@ -351,7 +351,7 @@ const faqs = [
     </section>
 
     <!-- ─── Bottom CTA ───────────────────────────────────────────────────── -->
-    <section class="text-center py-20 px-6"
+    <section class="text-center py-16 sm:py-20 px-4 sm:px-6"
       style="background: rgba(92,200,164,0.03); border-top: 1px solid rgba(92,200,164,0.1)">
       <h2 class="font-semibold mb-4" style="font-size: clamp(1.4rem, 2.5vw, 2rem); letter-spacing: -0.03em; color: #ffffff">
         Ready when you are.

@@ -227,7 +227,7 @@ onMounted(() => {
   <div class="flex h-[calc(100vh-44px)]">
     <SettingsNav />
     <div class="flex-1 overflow-y-auto" style="background: var(--bg-canvas)">
-      <div class="max-w-[860px] mx-auto px-8 py-8">
+      <div class="max-w-[860px] mx-auto px-4 sm:px-8 py-6 sm:py-8">
         <h1 class="text-display text-fg-primary tracking-tight mb-8">Billing</h1>
 
         <div v-if="loadingSub" class="text-fg-muted py-12 text-center font-mono text-small">

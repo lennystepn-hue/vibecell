@@ -317,7 +317,7 @@ const visibleSections = computed<Section[]>(() => {
     </header>
 
     <!-- Hero -->
-    <section class="max-w-3xl mx-auto px-6 pt-20 pb-10 text-center">
+    <section class="max-w-3xl mx-auto px-4 sm:px-6 pt-16 sm:pt-20 pb-8 sm:pb-10 text-center">
       <p class="font-mono text-[10px] uppercase tracking-[0.18em] mb-3" style="color: #5cc8a4">
         // legal
       </p>
@@ -330,7 +330,7 @@ const visibleSections = computed<Section[]>(() => {
     </section>
 
     <!-- Tabs -->
-    <div class="max-w-3xl mx-auto px-6 mb-8">
+    <div class="max-w-3xl mx-auto px-4 sm:px-6 mb-6 sm:mb-8">
       <div class="inline-flex rounded-md p-1 font-mono"
         style="background: rgba(20,33,50,0.6); border: 1px solid rgba(138,180,255,0.1)">
         <button
@@ -348,7 +348,7 @@ const visibleSections = computed<Section[]>(() => {
     </div>
 
     <!-- Body -->
-    <article class="max-w-3xl mx-auto px-6 pb-32">
+    <article class="max-w-3xl mx-auto px-4 sm:px-6 pb-20 sm:pb-32">
       <div
         v-for="(s, i) in visibleSections"
         :key="`${activeTab}-${i}`"

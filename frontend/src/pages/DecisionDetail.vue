@@ -55,7 +55,7 @@ function fmtTime(iso: string | null): string {
   <div class="flex h-full">
     <SidebarProjects />
     <div class="flex-1 overflow-y-auto">
-      <div class="max-w-3xl mx-auto px-8 py-8">
+      <div class="max-w-3xl mx-auto px-4 sm:px-8 py-6 sm:py-8">
         <nav class="mb-6 text-small">
           <RouterLink :to="`/p/${route.params.slug}`" class="text-fg-muted hover:text-fg-body transition-colors">
             ← Back to {{ route.params.slug }}
