@@ -238,25 +238,36 @@ const steps = [
     </header>
 
     <!-- ─── Hero ─────────────────────────────────────────────────────────── -->
-    <section class="relative flex items-center overflow-hidden pt-20 pb-12 min-h-[88vh]">
+    <!-- Mobile note: min-h drops on small viewports so the section sizes to
+         its content (copy + orb stack) instead of forcing 88vh and leaving
+         the orb floating below the fold with awkward whitespace.
+         pb-0 on mobile so the next section's bg-bloom flows in cleanly
+         without a visible cutoff between hero and "Works with" strip. -->
+    <section class="relative flex items-center overflow-hidden pt-20 pb-8 md:pb-12 md:min-h-[88vh]">
       <!-- Subtle grid background -->
       <div class="absolute inset-0 pointer-events-none"
         style="background-image: linear-gradient(rgba(138,180,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(138,180,255,0.03) 1px, transparent 1px); background-size: 60px 60px" />
       <!-- Orb-palette gradient blooms — soft violet + mint + pink washes that
-           tie the hero bg into the orb's own colors. -->
-      <div class="absolute -top-40 -left-40 w-[780px] h-[780px] rounded-full pointer-events-none"
-        style="background: radial-gradient(circle, rgba(181,146,255,0.10) 0%, transparent 65%); filter: blur(20px)" />
-      <div class="absolute top-1/3 right-[-20%] w-[700px] h-[700px] rounded-full pointer-events-none"
-        style="background: radial-gradient(circle, rgba(92,200,164,0.09) 0%, transparent 65%); filter: blur(20px)" />
-      <div class="absolute bottom-0 left-1/2 -translate-x-1/2 w-[900px] h-[400px] rounded-full pointer-events-none"
-        style="background: radial-gradient(ellipse, rgba(255,107,157,0.06) 0%, transparent 70%); filter: blur(30px)" />
+           tie the hero bg into the orb's own colors. Sized in vmax so they
+           shrink on mobile instead of overflowing the viewport sideways. -->
+      <div class="absolute -top-40 -left-40 rounded-full pointer-events-none"
+        style="width: 60vmax; height: 60vmax; max-width: 780px; max-height: 780px; background: radial-gradient(circle, rgba(181,146,255,0.10) 0%, transparent 65%); filter: blur(20px)" />
+      <div class="absolute top-1/3 right-[-20%] rounded-full pointer-events-none"
+        style="width: 55vmax; height: 55vmax; max-width: 700px; max-height: 700px; background: radial-gradient(circle, rgba(92,200,164,0.09) 0%, transparent 65%); filter: blur(20px)" />
+      <div class="absolute bottom-0 left-1/2 -translate-x-1/2 rounded-full pointer-events-none"
+        style="width: 80vmax; height: 32vmax; max-width: 900px; max-height: 400px; background: radial-gradient(ellipse, rgba(255,107,157,0.06) 0%, transparent 70%); filter: blur(30px)" />
 
-      <div class="relative z-10 w-full max-w-7xl mx-auto px-6 grid lg:grid-cols-2 gap-12 items-center py-20">
+      <!-- Mobile: gap-8 instead of gap-12 (stacked layout doubles vertical
+           cost). py-12 instead of py-20 — the outer pt-20 already gave us
+           room under the fixed nav. -->
+      <div class="relative z-10 w-full max-w-7xl mx-auto px-6 grid lg:grid-cols-2 gap-8 lg:gap-12 items-center py-12 md:py-20">
 
         <!-- Left: copy — ruthlessly trimmed. H1 + one-line subhead + CTAs. -->
         <div>
+          <!-- clamp shrinks safely on narrow viewports (2.1rem = 33.6px on
+               iPhone SE) and tops out at 4.4rem on widescreens. -->
           <h1 class="font-sans font-semibold mb-6 leading-[1.04] tracking-tight"
-            style="font-size: clamp(2.6rem, 5.5vw, 4.4rem); letter-spacing: -0.04em; color: #ffffff">
+            style="font-size: clamp(2.1rem, 5.5vw, 4.4rem); letter-spacing: -0.04em; color: #ffffff">
             The project console<br>
             for
             <!-- Same color band as the orb (mint → violet → mint → pink) —
@@ -311,9 +322,15 @@ const steps = [
 
         <!-- Right: Hero orb — slowly-rotating aurora-glass sphere. Carries
              the same visual language as the per-project orbs used throughout
-             the dashboard, scaled up and animated. -->
+             the dashboard, scaled up and animated.
+             Mobile: cap at 78vw so the orb's drop-shadow has breathing room
+             on each side and the section's overflow-hidden doesn't clip the
+             halo into a visible square edge against the bg gradient. -->
         <div class="relative flex items-center justify-center">
-          <div class="relative w-full" style="aspect-ratio: 1; max-width: 520px; margin: auto">
+          <div
+            class="relative w-full"
+            style="aspect-ratio: 1; max-width: min(78vw, 520px); margin: auto"
+          >
             <HeroOrb class="w-full h-full" />
           </div>
         </div>
@@ -400,7 +417,7 @@ const steps = [
     </div>
 
     <!-- ─── MCP-native: tool catalog ─────────────────────────────────────── -->
-    <section class="relative py-28 px-6 overflow-hidden">
+    <section class="relative py-16 md:py-28 px-6 overflow-hidden">
       <!-- Ambient fabric: terminal-green wash with mesh -->
       <div class="absolute inset-0 pointer-events-none"
         style="background:
@@ -433,18 +450,24 @@ const steps = [
              card patterns used elsewhere on the page. Reads like a reference
              index — dense, scannable, calm. -->
         <div class="mt-16 divide-y" style="border-color: rgba(138,180,255,0.08); border-top: 1px solid rgba(138,180,255,0.08); border-bottom: 1px solid rgba(138,180,255,0.08)">
+          <!-- Mobile layout: orb + (tag/count + signature pill) on row 1,
+               blurb hidden. Desktop: original 4-col grid with rigid 160px
+               middle column + 1fr blurb. The grid-cols only kicks in at md;
+               below that we use flex-wrap so nothing overflows. -->
           <div
             v-for="g in mcpGroups"
             :key="g.tag"
-            class="grid grid-cols-[auto_160px_1fr_auto] items-center gap-6 py-5 px-2 transition-colors hover:bg-white/[0.02]"
+            class="flex flex-wrap items-center gap-x-4 gap-y-2 py-5 px-2 transition-colors hover:bg-white/[0.02]
+                   md:grid md:grid-cols-[auto_160px_1fr_auto] md:gap-6"
             style="border-top: 1px solid rgba(138,180,255,0.08)"
           >
             <!-- Orb — the category identity -->
             <ProjectOrb :seed="g.seed" :size="44" />
 
-            <!-- Tag + count -->
-            <div>
-              <p class="font-semibold"
+            <!-- Tag + count — flex-1 on mobile so it pushes the pill to
+                 the right edge; auto on desktop because the grid handles it. -->
+            <div class="flex-1 md:flex-none min-w-0">
+              <p class="font-semibold truncate"
                 style="font-size: 15px; color: #ffffff; letter-spacing: -0.01em">
                 {{ g.tag }}
               </p>
@@ -456,15 +479,17 @@ const steps = [
               </p>
             </div>
 
-            <!-- Blurb -->
-            <p class="leading-relaxed hidden md:block"
+            <!-- Blurb — only shown md+ to keep mobile rows compact. -->
+            <p class="hidden md:block leading-relaxed"
               style="font-size: 13px; color: #8ba1bd; line-height: 1.55">
               {{ g.blurb }}
             </p>
 
-            <!-- Signature tool name -->
+            <!-- Signature tool name. order-last on mobile keeps it on the
+                 same first row as the tag block; on desktop the grid puts
+                 it at the far right anyway. -->
             <span
-              class="font-mono text-[11px] px-2.5 py-1 rounded-md whitespace-nowrap tabular-nums"
+              class="font-mono text-[11px] px-2.5 py-1 rounded-md whitespace-nowrap tabular-nums shrink-0"
               :style="g.accent
                 ? 'background: rgba(92,200,164,0.08); color: #a9e5cc; border: 1px solid rgba(92,200,164,0.18)'
                 : 'background: rgba(7,11,16,0.5); color: #8ba1bd; border: 1px solid rgba(138,180,255,0.1)'"
@@ -492,7 +517,7 @@ const steps = [
     </section>
 
     <!-- ─── Orb feature storytelling ─────────────────────────────────────── -->
-    <section class="relative py-28 px-6 overflow-hidden">
+    <section class="relative py-16 md:py-28 px-6 overflow-hidden">
       <!-- Subtle radial glow behind the orbs — same aesthetic as the hero -->
       <div class="absolute inset-0 pointer-events-none"
         style="background: radial-gradient(ellipse 70% 50% at 50% 40%, rgba(138,180,255,0.06) 0%, transparent 70%)" />
@@ -614,7 +639,7 @@ const steps = [
     </section>
 
     <!-- ─── Session in action: terminal mockup ───────────────────────────── -->
-    <section class="relative py-28 px-6 overflow-hidden">
+    <section class="relative py-16 md:py-28 px-6 overflow-hidden">
       <div class="max-w-5xl mx-auto relative z-10">
         <div class="text-center mb-12">
           <p class="font-mono text-[11px] uppercase tracking-[0.15em] mb-3" style="color: #5cc8a4">
@@ -719,7 +744,7 @@ const steps = [
     </section>
 
     <!-- ─── How it works ─────────────────────────────────────────────────── -->
-    <section id="how-it-works" class="py-28 px-6"
+    <section id="how-it-works" class="py-16 md:py-28 px-6"
       style="background: rgba(20,33,50,0.25); border-top: 1px solid rgba(138,180,255,0.07); border-bottom: 1px solid rgba(138,180,255,0.07)">
       <div class="max-w-5xl mx-auto">
         <div class="text-center mb-16">
@@ -757,7 +782,7 @@ const steps = [
     </section>
 
     <!-- ─── Pricing teaser ───────────────────────────────────────────────── -->
-    <section class="py-28 px-6">
+    <section class="py-16 md:py-28 px-6">
       <div class="max-w-2xl mx-auto">
         <div class="text-center mb-10">
           <p class="font-mono text-[10px] uppercase tracking-[0.18em] mb-3" style="color: #5cc8a4">
@@ -868,7 +893,7 @@ const steps = [
     </section>
 
     <!-- ─── Final CTA ────────────────────────────────────────────────────── -->
-    <section class="py-32 px-6 text-center relative overflow-hidden"
+    <section class="py-20 md:py-32 px-6 text-center relative overflow-hidden"
       style="background: rgba(20,33,50,0.4); border-top: 1px solid rgba(138,180,255,0.07)">
       <!-- Background glow -->
       <div class="absolute inset-0 pointer-events-none"

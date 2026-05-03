@@ -111,10 +111,17 @@ const specularStyle = computed(() => ({
   border-radius: 50%;
   overflow: hidden;
   z-index: 1;
+  /* No 1px ring. On dark canvas at desktop DPI it reads as faint glow,
+     but at mobile DPI + when the parent section is overflow-hidden, it
+     renders as a hard pixel border around the sphere — user-visible
+     "rand". The rim layer below already gives us the inset-light
+     definition the orb needs.
+     Bottom drop-shadows kept but softened + pulled in so they don't
+     get clipped to a visible horizontal line by the section's
+     overflow-hidden boundary. */
   box-shadow:
-    0 50px 100px rgba(92, 200, 164, 0.22),
-    0 20px 50px rgba(181, 146, 255, 0.12),
-    0 0 0 1px rgba(255, 255, 255, 0.08);
+    0 24px 60px rgba(92, 200, 164, 0.18),
+    0 10px 30px rgba(181, 146, 255, 0.10);
 }
 
 /* Radial blobs — violet, mint, soft-pink, teal over a deep mint→violet base */
