@@ -18,6 +18,11 @@ class Settings(BaseSettings):
     resend_api_key: str = Field(...)
     github_client_id: str = Field(...)
     github_client_secret: str = Field(...)
+    # Google Sign-In (Spec-6 follow-up). Optional — when client_id is empty
+    # the /api/v1/auth/google/* routes return 503 and the frontend hides
+    # the Google button. Set both values to enable.
+    google_client_id: str = Field(default="")
+    google_client_secret: str = Field(default="")
     base_url: str = Field(..., description="public root URL (for magic-link emails, OAuth redirects)")
     cookie_domain: str = Field(default="localhost")
     session_max_age: int = Field(default=2592000, description="session cookie TTL in seconds (default 30 days)")
