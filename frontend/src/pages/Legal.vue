@@ -64,7 +64,7 @@ const TAB_LABELS: Record<Tab, string> = {
 
 // One last-updated date for all three documents — bumped together when
 // any of them changes substantively.
-const LAST_UPDATED = "2026-04-26";
+const LAST_UPDATED = "2026-05-03";
 
 const ADDRESS_LINES = [
   "Lenny David Enderle",
@@ -85,59 +85,81 @@ interface Section {
 
 // ── Imprint / Aviso Legal ────────────────────────────────────────────────
 // Required disclosures per DL 7/2004 (Portuguese e-Commerce Law,
-// transposing EU Directive 2000/31/EC), art. 10.
+// transposing EU Directive 2000/31/EC), art. 10. Plus DSGVO Art. 13(1)(a)
+// controller-identification disclosure piggy-backed where it overlaps.
 const imprintSections = computed<Section[]>(() => [
   {
     heading: "Service provider",
     body: [
-      "Vibecell is a service operated by Lenny David Enderle, sole proprietor (trabalhador independente) registered in Portugal.",
+      "Vibecell (\"the Service\") is operated by Lenny David Enderle, sole proprietor (Empresário em Nome Individual / trabalhador independente) registered in Portugal. There is no separate legal entity behind Vibecell — the operator is a natural person trading under the Vibecell brand.",
     ],
     list: ADDRESS_LINES,
   },
   {
-    heading: "Tax / commercial identification",
+    heading: "Tax + commercial identification",
     body: [],
     list: [
-      `VAT (NIF): ${VAT}`,
-      `CAE: ${CAE}`,
-      "Form: Sole proprietorship (PT trabalhador independente)",
+      `VAT (NIF): ${VAT} — issued under Art. 36 CIVA, valid for intra-EU B2B reverse-charge`,
+      `Activity code (CAE): ${CAE}`,
+      "Form: Empresário em Nome Individual (PT sole proprietor)",
+      "Tax authority of registration: Autoridade Tributária e Aduaneira (AT), Portugal",
+      "Professional supervisory authority: not applicable — independent IT service provision is not a regulated profession in Portugal",
+      "Professional indemnity insurance: not currently carried; service is offered without warranty as set out in the Terms",
     ],
   },
   {
     heading: "Contact",
-    body: [],
+    body: [
+      "We respond to written enquiries within 3 business days during normal operations. Emergency security or privacy requests are prioritised.",
+    ],
     list: [
-      `Email: ${CONTACT_EMAIL}`,
-      "Mail: see address above",
+      `Email (general / billing / privacy): ${CONTACT_EMAIL}`,
+      "Postal: see address above",
+      "Phone: not published — to limit social-engineering vectors against the founder. Email is the only supported written channel.",
     ],
   },
   {
     heading: "Responsible for content",
     body: [
-      "Lenny David Enderle is responsible for the content of this site, the Vibecell service, and the data processed therein, in accordance with art. 11 of DL 7/2004.",
+      "Lenny David Enderle is responsible for the content of this website, the Vibecell service, and the data processed therein, in accordance with art. 11 of DL 7/2004 and § 18(2) of the German Medienstaatsvertrag for any content reachable from Germany.",
     ],
   },
   {
-    heading: "Hosting",
+    heading: "Hosting + infrastructure",
     body: [
-      "Vibecell runs on Hetzner Cloud (Hetzner Online GmbH, Industriestr. 25, 91710 Gunzenhausen, Germany — within the EU). The marketing-site CDN edge is operated by Cloudflare, Inc. — visitor traffic flows through their EU points of presence by default.",
+      "Vibecell runs on Hetzner Cloud (Hetzner Online GmbH, Industriestr. 25, 91710 Gunzenhausen, Germany — EU). The marketing-site CDN edge is operated by Cloudflare, Inc. — visitor traffic flows through their EU points of presence by default. Off-site backups land at Backblaze B2 (Backblaze, Inc., US) under Standard Contractual Clauses with Schrems II safeguards.",
     ],
   },
   {
     heading: "Out-of-court dispute resolution",
     body: [
-      "EU consumers may use the European Commission's Online Dispute Resolution platform at https://ec.europa.eu/consumers/odr. We are not currently obliged or willing to participate in dispute-resolution proceedings before a consumer arbitration board.",
+      "EU consumers may use the European Commission's Online Dispute Resolution platform at https://ec.europa.eu/consumers/odr. We are not currently obliged or willing to participate in dispute-resolution proceedings before a specific consumer arbitration board (under § 36(1)(1) VSBG / Lei 144/2015 art. 18). The right to bring a claim before a competent court remains unaffected.",
+    ],
+  },
+  {
+    heading: "Liability for content + links",
+    body: [
+      "We take reasonable care that the content presented on this site is accurate and current, but provide it without warranty. External links to third-party sites point to content over which we have no control; their operators are solely responsible for their own content. Where we become aware of unlawful content on a linked page, the link is removed without delay.",
+    ],
+  },
+  {
+    heading: "Copyright",
+    body: [
+      "Unless otherwise marked, all content on this website (text, graphics, logos, source code excerpts shown for documentation purposes) is © 2026 Lenny David Enderle, all rights reserved. Reproduction beyond the scope of normal browser caching requires prior written permission. Open-source software components used by the Service retain their respective licences (see github.com/lennystepn-hue/vibecell for the SBOM).",
     ],
   },
 ]);
 
 // ── Privacy Policy / Política de Privacidade ─────────────────────────────
-// Drafted to satisfy RGPD/GDPR Art. 13–14 disclosure requirements.
+// Drafted to satisfy RGPD/GDPR Art. 13–14 disclosure requirements + the
+// transparency-of-processing principles in Art. 5(1)(a). We deliberately
+// over-document so a CNPD inquiry can be answered with "see section X"
+// rather than improvised explanations.
 const privacySections = computed<Section[]>(() => [
   {
     heading: "Controller",
     body: [
-      "The data controller for the personal data processed via Vibecell is Lenny David Enderle, contactable at the address and email shown in the Imprint tab.",
+      "The data controller for the personal data processed via Vibecell is Lenny David Enderle, contactable at the address and email shown in the Imprint tab. As a sole proprietor below the Art. 37 RGPD threshold (no large-scale special-category processing, no large-scale monitoring of public spaces), no Data Protection Officer is appointed. Privacy enquiries are handled directly by the controller at the contact email.",
     ],
   },
   {
@@ -169,18 +191,45 @@ const privacySections = computed<Section[]>(() => [
     ],
   },
   {
-    heading: "Sub-processors",
+    heading: "Cookies + local storage we use",
     body: [
-      "We use the following processors. Each runs under a Data Processing Agreement and SCCs where applicable:",
+      "The full inventory of state we keep on your device:",
     ],
     list: [
-      "Hetzner Online GmbH (DE / EU) — primary hosting, all customer data at rest.",
-      "Stripe Payments Europe Ltd. (IE / EU) — subscription billing + payment processing.",
-      "Cloudflare, Inc. (US, with EU points of presence) — marketing-site CDN + DDoS mitigation under SCCs.",
-      "Resend Inc. (US) — transactional email (sign-in links, billing notices) under SCCs.",
-      "Anthropic PBC (US) — AI enrichment for opt-in features that summarise your project content. Routed through your own Anthropic key when you set one. SCCs apply.",
-      "Functional Software, Inc. d/b/a Sentry (US) — error monitoring with PII scrubbing enabled (we set send_default_pii=False).",
-      "Backblaze, Inc. (US) — encrypted off-site backup of the Postgres dump under SCCs. Data is also held primarily in Hetzner DE.",
+      "hangar (httpOnly, Secure, SameSite=Lax, 30 days) — your signed authentication session. Strictly necessary under ePrivacy Directive Art. 5(3) — set without consent, cannot be disabled while you are signed in.",
+      "_ga (host-only, 2 years) — Google Analytics 4 visitor identifier. Set ONLY after you click \"Accept analytics\" on the consent banner. Removed on opt-out.",
+      "_ga_WT6LNN2TTG (host-only, 2 years) — Google Analytics 4 session state. Same opt-in gate as _ga.",
+      "vibecell.consent.analytics (localStorage, until cleared) — your stored consent decision (granted / denied). UI state only — never sent to any server. Lawful under Art. 6(1)(f) RGPD.",
+      "vibecell.theme + vibecell.sidebar.* (localStorage) — UI preferences (dark/light theme, sidebar collapse state). Never leave the browser.",
+      "hangar.dashboard.layout.<slug> (localStorage) — your per-project dashboard arrangement. Never leave the browser.",
+    ],
+  },
+  {
+    heading: "Sub-processors",
+    body: [
+      "We use the following processors. Each runs under a Data Processing Agreement (DPA) and the EU Standard Contractual Clauses where applicable. The list reflects the deployment as of the \"Last updated\" date above; we will notify account holders by email at least 14 days before adding any new sub-processor.",
+    ],
+    list: [
+      "Hetzner Online GmbH (Industriestr. 25, 91710 Gunzenhausen, Germany / EU) — primary hosting; all customer data at rest, primary database, application servers.",
+      "Stripe Payments Europe Ltd. (1 Grand Canal Street Lower, Dublin 2, Ireland / EU) — subscription billing + payment processing. Card numbers are tokenised by Stripe and never reach our servers.",
+      "Cloudflare, Inc. (101 Townsend St., San Francisco, CA 94107, USA, with EU points of presence) — marketing-site CDN + DDoS mitigation under SCCs.",
+      "Resend Inc. (Wilmington, DE 19801, USA) — transactional email (sign-in links, billing notices) under SCCs.",
+      "Google Ireland Ltd. (Gordon House, Barrow Street, Dublin 4, D04 E5W5, Ireland — entity for EEA Google Analytics) — opt-in usage analytics with anonymise_ip enabled; data flow to Google LLC (US) under SCCs.",
+      "Anthropic PBC (548 Market Street, San Francisco, CA 94104, USA) — AI enrichment for opt-in features that summarise your project content. Routed through your own Anthropic key when you set one. SCCs apply.",
+      "Functional Software, Inc. d/b/a Sentry (45 Fremont Street, San Francisco, CA 94105, USA) — error monitoring with PII scrubbing enabled (send_default_pii=False).",
+      "Backblaze, Inc. (500 Ben Franklin Ct., San Mateo, CA 94401, USA) — encrypted off-site backup of the Postgres dump under SCCs. Data is also held primarily at Hetzner DE.",
+    ],
+  },
+  {
+    heading: "Children",
+    body: [
+      "Vibecell is not directed at minors. The Service is intended for use by persons of full legal capacity (≥ 18 years in most jurisdictions, ≥ 16 years in line with art. 8(1) RGPD where the local age of digital consent is lowered). If you become aware that a minor has created an account, please contact us so we can purge the account.",
+    ],
+  },
+  {
+    heading: "Breach notification",
+    body: [
+      "In the event of a personal-data breach posing risk to your rights and freedoms, we will notify the Comissão Nacional de Proteção de Dados (CNPD) within 72 hours of becoming aware of it (RGPD Art. 33), and notify affected account holders without undue delay where the breach is likely to result in high risk (RGPD Art. 34). We maintain a written breach response procedure internally.",
     ],
   },
   {
@@ -276,32 +325,100 @@ const termsSections = computed<Section[]>(() => [
   {
     heading: "Acceptable use",
     body: [
-      "You agree not to use the Service to (a) violate any law, (b) infringe intellectual-property or privacy rights of third parties, (c) attempt to bypass billing or rate limits, (d) reverse-engineer or stress-test the platform without our written permission, (e) store data subject to special category protection (RGPD Art. 9) — Vibecell is not designed for healthcare, financial, or biometric special-category data.",
+      "You agree not to use the Service, and not to permit any user under your account to use it, to:",
+    ],
+    list: [
+      "Violate any applicable law, regulation, court order, or right of any third party (including intellectual-property, publicity, privacy, or contractual rights).",
+      "Upload, store, or transmit data classified as special-category under RGPD Art. 9 (health, biometric, racial, religious, political, sexual, trade-union data) — Vibecell is not designed for those uses and we do not assume the additional safeguards required.",
+      "Upload payment-card data (PAN/CVV) outside of Stripe Checkout, or any data subject to PCI DSS, HIPAA, or comparable special regimes.",
+      "Attempt to circumvent billing controls, rate limits, plan-gate restrictions, or the read-only-on-lapse mode.",
+      "Reverse-engineer, decompile, scrape, stress-test, or probe the Service for vulnerabilities without our prior written permission. Coordinated security disclosure to the contact email is welcome and will not be pursued legally.",
+      "Misuse the MCP API to enumerate accounts, exfiltrate other workspaces' data, or amplify attacks against third parties.",
+      "Use the Service to generate or store CSAM, terrorist content, malware, phishing infrastructure, or material designed to harass or defame a natural or legal person.",
+      "Resell, sub-licence, white-label, or otherwise repackage the Service to third parties without prior written agreement.",
+    ],
+  },
+  {
+    heading: "User content + your responsibilities",
+    body: [
+      "You retain all ownership of the project data, sessions, decisions, ships, ideas, todos, notes, and secrets you upload (\"Your Content\"). You grant us a limited, non-exclusive, worldwide, royalty-free licence to host, process, transmit, display, and back up Your Content for the sole purpose of operating the Service for you. We do not read, train on, or share Your Content beyond that purpose.",
+      "You warrant that you own or have the necessary rights to all of Your Content, and that uploading it to Vibecell does not violate any law or third-party right. You are solely responsible for the accuracy, legality, and consequences of Your Content. You shall maintain your own backups for content you cannot tolerate losing — we maintain backups (Backblaze B2) but do not guarantee zero data loss.",
     ],
   },
   {
     heading: "Read-only mode on lapsed subscription",
     body: [
-      "When your subscription becomes inactive (canceled, unpaid, or trial expired without payment method), the Service moves into read-only mode: you keep access to read all your existing data, export it, and delete your account, but cannot create new sessions, decisions, ships, or projects until you re-subscribe. Data is preserved indefinitely for re-subscribe.",
+      "When your subscription becomes inactive (canceled, unpaid, or trial expired without a payment method), the Service moves into read-only mode: you keep access to read all your existing data, export it via the GDPR portability endpoint, and delete your account, but cannot create new sessions, decisions, ships, or projects, and MCP write tools return a 402 error until you re-subscribe. Data is preserved while the account exists; subject to the retention schedule in the Privacy notice on account deletion.",
     ],
   },
   {
-    heading: "Service availability",
+    heading: "Service availability + \"as-is\"",
     body: [
-      "We aim for high availability but do not commit to a formal SLA. We perform planned maintenance with reasonable notice via email and the in-app status banner. Emergency security maintenance may proceed without prior notice.",
+      "The Service is provided \"AS IS\" and \"AS AVAILABLE\" without warranties of any kind, whether express, implied, or statutory, including without limitation the implied warranties of merchantability, fitness for a particular purpose, title, accuracy of data, or non-infringement, except for warranties that cannot be lawfully excluded. We do not warrant that the Service will be uninterrupted, error-free, or that defects will be corrected. The above limitations apply to the maximum extent permitted by law and do not affect mandatory consumer rights you may have under your local law.",
+      "We aim for high availability but do not commit to a formal SLA. We perform planned maintenance with reasonable notice via email and the in-app status banner. Emergency security maintenance may proceed without prior notice. Public component-level health is shown at https://status.vibecell.dev.",
     ],
   },
   {
-    heading: "Liability",
+    heading: "Third-party integrations + AI output disclaimer",
     body: [
-      "To the maximum extent permitted by law, our total liability under or in connection with the Service is limited to the amount you paid us in the twelve (12) months preceding the event giving rise to the claim, but in no event less than €20 nor more than €1,000.",
-      "We exclude liability for indirect, consequential, special, or punitive damages, including loss of profits, business, or data — except where such exclusion is prohibited (e.g., consumer mandatory rights, gross negligence, intentional misconduct, death/personal injury, art. 6 of DL 67/2003).",
+      "Vibecell integrates with third-party services that we do not control: Anthropic Claude (via Bring-Your-Own-Key), GitHub, Stripe, the various MCP clients (Claude Code, Claude Desktop, Cursor, Zed, Continue, etc.). The behaviour, output, availability, and pricing of those third-party services are governed by their respective terms — not by us. We are not liable for outages, data loss, billing changes, or output quality on the third-party side.",
+      "AI-generated content (resume briefs, retros, plan-todos, primer drafts, launch copy) is produced by the AI provider you have selected. We make no warranty as to its accuracy, completeness, fitness for purpose, or freedom from infringement. You are responsible for reviewing AI output before relying on it for any business or legal decision.",
+    ],
+  },
+  {
+    heading: "Beta features",
+    body: [
+      "Features explicitly marked as \"Beta\", \"Preview\", \"Experimental\", or similar are provided on a best-efforts basis, may change incompatibly, and may be discontinued without notice. Beta features are excluded from the warranty + service-availability commitments above. Use them at your own risk and do not build production dependencies on them.",
+    ],
+  },
+  {
+    heading: "Limitation of liability",
+    body: [
+      "To the maximum extent permitted by applicable law, our total aggregate liability under or in connection with the Service — whether in contract, tort (including negligence), breach of statutory duty, or otherwise — is limited to the GREATER of (a) the amount you paid us in the twelve (12) months preceding the event giving rise to the claim, or (b) one hundred euro (€100). Liability shall not, in any case, exceed five thousand euro (€5,000) per account.",
+      "We exclude liability for any indirect, consequential, special, incidental, or punitive damages, including without limitation loss of profits, loss of revenue, loss of business, loss of data, loss of goodwill, or cost of substitute services — even if we have been advised of the possibility of such damages.",
+      "Nothing in these terms limits or excludes liability for: (i) death or personal injury caused by negligence; (ii) intentional misconduct or gross negligence; (iii) liability under Art. 6 of DL 67/2003 (consumer-rights regime) where you act as a consumer; (iv) any other liability that cannot be lawfully limited or excluded.",
+    ],
+  },
+  {
+    heading: "Indemnification",
+    body: [
+      "You agree to indemnify, defend, and hold harmless the operator, affiliated developers, and any individual contractors of the Service from and against any third-party claims, damages, losses, costs, and expenses (including reasonable legal fees) arising out of or related to: (a) Your Content, (b) your use of the Service in breach of these Terms or applicable law, (c) your infringement of any third-party right via the Service, or (d) your violation of the Acceptable Use clause. We will notify you of any such claim and cooperate reasonably in your defence at your expense.",
+    ],
+  },
+  {
+    heading: "Force majeure",
+    body: [
+      "Neither party is liable for any delay or failure to perform any obligation under these Terms (other than payment) where the delay or failure results from causes beyond reasonable control, including without limitation acts of God, war, terrorism, riots, embargoes, civil or military authority, fire, flood, accidents, network outages, denial-of-service attacks, electrical or telecommunications failures, or shortages of equipment, materials, or transportation.",
+    ],
+  },
+  {
+    heading: "Suspension",
+    body: [
+      "We reserve the right to suspend access to the Service immediately without notice if (a) we reasonably believe such suspension is necessary to protect the Service or other users from imminent harm (e.g. ongoing attack from your account), (b) we are required to do so by law, court order, or competent authority, or (c) your account is more than 14 days past due. Suspension does not waive amounts due. We will inform you of the reason for suspension as soon as it is operationally reasonable.",
     ],
   },
   {
     heading: "Termination",
     body: [
-      "You may terminate by deleting your account at any time. We may suspend or terminate your account immediately if you breach these terms, fail to pay for two consecutive billing cycles, or are required to do so by law. Sections that by their nature should survive termination (Liability, Governing law, Tax retention) survive.",
+      "You may terminate by deleting your account at any time at /settings/account → Danger zone. We may terminate your account on 14 days' notice for convenience, or immediately if you breach these Terms materially, fail to pay for two consecutive billing cycles, or we are required to do so by law. Sections that by their nature should survive termination (User Content, Limitation of Liability, Indemnification, Governing Law, Tax retention) survive.",
+    ],
+  },
+  {
+    heading: "Assignment",
+    body: [
+      "You may not assign these Terms or transfer your account to another person without our prior written consent. We may assign these Terms in connection with a merger, acquisition, or sale of substantially all assets of the Service, or to an affiliate, by giving you 30 days' written notice. You may terminate within those 30 days if you do not consent to the assignment.",
+    ],
+  },
+  {
+    heading: "Notices",
+    body: [
+      "Notices to you are valid when sent to the email address on file for your account. Notices to us are valid when sent to the email shown in the Imprint tab. We may also publish service-wide notices via the in-app banner or the public status page.",
+    ],
+  },
+  {
+    heading: "Severability + entire agreement + no waiver",
+    body: [
+      "If any provision of these Terms is held unenforceable, that provision will be modified to the minimum extent necessary to make it enforceable, and the rest of the Terms will remain in effect. These Terms together with the Privacy notice and Pricing page constitute the entire agreement between you and us regarding the Service, and supersede any prior or contemporaneous understanding. Failure to enforce any right under these Terms is not a waiver of that right.",
     ],
   },
   {
