@@ -2,7 +2,7 @@
 import { computed, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 
-import UserMenu from "@/components/app/UserMenu.vue";
+import MarketingHeader from "@/components/marketing/MarketingHeader.vue";
 import { useRouteMeta } from "@/composables/useMeta";
 import { useAuthStore } from "@/stores/auth";
 
@@ -154,26 +154,10 @@ const faqs = [
 <template>
   <div class="min-h-screen text-fg-primary" style="background: #070b10">
 
-    <!-- ─── Nav ──────────────────────────────────────────────────────────── -->
-    <header class="flex items-center justify-between px-6 py-4"
-      style="border-bottom: 1px solid rgba(138,180,255,0.08)">
-      <router-link to="/" class="flex items-center gap-2.5">
-        <span class="font-mono" style="font-size: 18px; color: #5cc8a4">◈</span>
-        <span class="font-mono text-[11px] tracking-[0.15em] uppercase" style="color: #5e7088">Vibecell</span>
-      </router-link>
-      <div class="flex items-center gap-3">
-        <UserMenu v-if="auth.isAuthed" variant="light" />
-        <button
-          class="px-4 py-1.5 rounded font-mono text-[12px] hover:opacity-90 transition-opacity"
-          style="background: #5cc8a4; color: #070b10"
-          @click="goSignIn">
-          {{ auth.isAuthed ? 'Open dashboard →' : 'Start free trial →' }}
-        </button>
-      </div>
-    </header>
+    <MarketingHeader cta="Start free trial →" />
 
-    <!-- ─── Hero ─────────────────────────────────────────────────────────── -->
-    <section class="max-w-3xl mx-auto px-4 sm:px-6 pt-16 sm:pt-24 pb-8 sm:pb-12 text-center">
+    <!-- ─── Hero — pt-[88px] floor compensates for the fixed header. ────── -->
+    <section class="max-w-3xl mx-auto px-4 sm:px-6 pt-[88px] sm:pt-[112px] pb-8 sm:pb-12 text-center">
       <p class="font-mono text-[11px] uppercase tracking-[0.15em] mb-4" style="color: #5cc8a4">
         Pricing
       </p>

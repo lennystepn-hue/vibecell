@@ -12,6 +12,7 @@
  */
 import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 
+import MarketingHeader from "@/components/marketing/MarketingHeader.vue";
 import MonoLabel from "@/components/ui/MonoLabel.vue";
 import { useRouteMeta } from "@/composables/useMeta";
 
@@ -115,19 +116,13 @@ const shortSha = computed(() => {
 </script>
 
 <template>
-  <div class="min-h-[calc(100vh-44px)] px-6 py-12">
+  <MarketingHeader />
+  <!-- pt-[88px] floor clears the fixed marketing header. -->
+  <div class="min-h-[calc(100vh-44px)] px-4 sm:px-6 pt-[88px] pb-12">
     <div class="w-full max-w-[720px] mx-auto">
-      <!-- Brand -->
-      <div class="flex items-center justify-between mb-10">
-        <div class="flex items-center gap-2 text-fg-subtle">
-          <span class="text-signal-green font-mono text-section">◈</span>
-          <span class="font-mono text-small tracking-[0.08em] uppercase">Vibecell · status</span>
-        </div>
-        <a
-          href="/"
-          class="font-mono text-small text-fg-subtle hover:text-fg-body transition-colors"
-        >← back to vibecell.dev</a>
-      </div>
+      <!-- Status sub-brand stripe — keeps "// status" identification without
+           re-rendering the wordmark (already in MarketingHeader above). -->
+      <div class="mono-label text-fg-subtle mb-8">// system · status</div>
 
       <!-- Loading -->
       <div v-if="loading" class="mono-label opacity-50">probing components…</div>

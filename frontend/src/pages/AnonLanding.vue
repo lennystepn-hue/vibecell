@@ -3,7 +3,7 @@ import { ref, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import HeroOrb from "@/components/landing/HeroOrb.vue";
 import DashboardPreview from "@/components/landing/DashboardPreview.vue";
-import UserMenu from "@/components/app/UserMenu.vue";
+import MarketingHeader from "@/components/marketing/MarketingHeader.vue";
 import ProjectOrb from "@/components/ui/ProjectOrb.vue";
 import { useRouteMeta } from "@/composables/useMeta";
 import { useAuthStore } from "@/stores/auth";
@@ -20,10 +20,6 @@ const auth = useAuthStore();
 
 function goSignIn() {
   router.push(auth.isAuthed ? "/p" : "/login");
-}
-
-function goDashboard() {
-  router.push("/p");
 }
 
 function scrollToDemo() {
@@ -210,48 +206,8 @@ const steps = [
 <template>
   <div class="min-h-screen text-fg-primary overflow-x-hidden" style="background: #070b10">
 
-    <!-- ─── Nav ──────────────────────────────────────────────────────────── -->
-    <header class="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 py-3"
-      style="background: rgba(7,11,16,0.75); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(138,180,255,0.08)">
-      <div class="flex items-center gap-2.5">
-        <span class="text-signal-green font-mono text-[18px] leading-none select-none">◈</span>
-        <span class="font-mono text-[11px] tracking-[0.15em] uppercase text-fg-subtle">Vibecell</span>
-      </div>
-      <nav class="hidden sm:flex items-center gap-6">
-        <router-link to="/pricing"
-          class="text-small text-fg-muted hover:text-fg-primary transition-colors duration-150">
-          Pricing
-        </router-link>
-        <router-link to="/legal"
-          class="text-small text-fg-muted hover:text-fg-primary transition-colors duration-150">
-          Legal
-        </router-link>
-        <a href="https://github.com/lennystepn-hue/vibecell" target="_blank" rel="noopener"
-          class="text-small text-fg-muted hover:text-fg-primary transition-colors duration-150">
-          GitHub
-        </a>
-      </nav>
-      <div class="flex items-center gap-3">
-        <UserMenu v-if="auth.isAuthed" variant="light" />
-        <!-- "Open dashboard" button hidden on mobile when authed — the
-             UserMenu dropdown already has a Dashboard link and showing
-             both crams the header. Desktop keeps both. -->
-        <button
-          v-if="auth.isAuthed"
-          class="hidden sm:inline-flex px-4 py-1.5 rounded text-small font-mono bg-signal-green hover:opacity-90 transition-opacity"
-          style="color: #070b10"
-          @click="goDashboard">
-          Open dashboard →
-        </button>
-        <button
-          v-else
-          class="px-4 py-1.5 rounded text-small font-mono bg-signal-green hover:opacity-90 transition-opacity"
-          style="color: #070b10"
-          @click="goSignIn">
-          Get started →
-        </button>
-      </div>
-    </header>
+    <!-- ─── Nav (shared MarketingHeader) ────────────────────────────────── -->
+    <MarketingHeader cta="Get started →" />
 
     <!-- ─── Hero ─────────────────────────────────────────────────────────── -->
     <!-- Mobile note: min-h drops on small viewports so the section sizes to
