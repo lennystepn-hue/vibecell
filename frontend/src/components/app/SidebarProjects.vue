@@ -202,13 +202,18 @@ function rowClick() {
   <aside
     :class="[
       'chrome border-r flex flex-col h-full',
-      // Desktop: in-flow, fixed 200px wide, no transform.
-      'md:relative md:w-[200px] md:shrink-0 md:translate-x-0',
-      // Mobile: fixed drawer that slides in from the left. 240px gives
-      // project rows breathing room on a 320px viewport (60% width).
-      // top-11 sits below the 44px TopBar; bottom-0 fills the rest.
-      'fixed top-11 bottom-0 left-0 z-40 w-[240px] transform transition-transform duration-200 ease-out',
-      ui.mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full',
+      // Mobile (<md): fixed slide-in drawer, 240px wide, sits below the
+      // 44px TopBar. ALL fixed-position styles scoped via max-md so they
+      // don't bleed into desktop layout (a previous version applied
+      // `top-11` globally which left a 44px gap below the TopBar on
+      // wide screens — `md:relative` doesn't unset top/bottom/left).
+      'max-md:fixed max-md:top-11 max-md:bottom-0 max-md:left-0 max-md:z-40',
+      'max-md:w-[240px] max-md:transform max-md:transition-transform',
+      'max-md:duration-200 max-md:ease-out',
+      ui.mobileSidebarOpen ? 'max-md:translate-x-0' : 'max-md:-translate-x-full',
+      // Desktop (md+): static in the flex flow, fixed 200px wide. No
+      // top/left/z applied — sidebar lives where the parent grid puts it.
+      'md:relative md:w-[200px] md:shrink-0',
     ]"
     @contextmenu="onContextSidebar"
     @click="rowClick"
