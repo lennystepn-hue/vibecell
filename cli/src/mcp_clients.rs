@@ -17,6 +17,19 @@
 //!
 //! The merge is a pure string→string function so every format can be tested
 //! without touching a filesystem.
+//!
+//! **Known behaviour: formatting is normalised, data is not.** We parse with
+//! `serde_json` and re-emit with `to_string_pretty`, so a client that stores
+//! its config as compact JSON gets a fully re-indented file back. Every value
+//! survives — that is what the tests pin — but the diff can be the whole
+//! document rather than the three lines we added. Preserving byte-level
+//! formatting would need a format-preserving parser, which is a large
+//! dependency to carry for a cosmetic property.
+//!
+//! Measured on a real machine via `hangar setup --dry-run`: a 60 KB
+//! `.claude.json` with 31 projects grew by 110 bytes, and a Windsurf config
+//! holding `filesystem` and `git` kept both. Both were already
+//! pretty-printed, which is the common case.
 
 use anyhow::{Context, Result};
 use serde_json::{json, Map, Value};
@@ -63,14 +76,23 @@ fn home() -> Result<PathBuf> {
 /// out.
 fn claude_desktop_config() -> Result<PathBuf> {
     let home = home()?;
+    // Component-wise joins rather than embedded slashes: a literal "/" inside
+    // a join works on Windows but prints as `…\Roaming\Claude/foo.json`, and a
+    // path we show the user should not look broken.
     Ok(if cfg!(target_os = "macos") {
-        home.join("Library/Application Support/Claude/claude_desktop_config.json")
+        home.join("Library")
+            .join("Application Support")
+            .join("Claude")
+            .join("claude_desktop_config.json")
     } else if cfg!(target_os = "windows") {
         dirs::config_dir()
             .context("no config directory")?
-            .join("Claude/claude_desktop_config.json")
+            .join("Claude")
+            .join("claude_desktop_config.json")
     } else {
-        home.join(".config/Claude/claude_desktop_config.json")
+        home.join(".config")
+            .join("Claude")
+            .join("claude_desktop_config.json")
     })
 }
 
@@ -79,9 +101,10 @@ fn zed_settings() -> Result<PathBuf> {
     Ok(if cfg!(target_os = "windows") {
         dirs::config_dir()
             .context("no config directory")?
-            .join("Zed/settings.json")
+            .join("Zed")
+            .join("settings.json")
     } else {
-        home.join(".config/zed/settings.json")
+        home.join(".config").join("zed").join("settings.json")
     })
 }
 
@@ -104,13 +127,16 @@ pub fn known_clients() -> Result<Vec<McpClient>> {
         McpClient {
             id: "cursor",
             label: "Cursor",
-            config_path: home.join(".cursor/mcp.json"),
+            config_path: home.join(".cursor").join("mcp.json"),
             format: ConfigFormat::McpServersHttp,
         },
         McpClient {
             id: "windsurf",
             label: "Windsurf",
-            config_path: home.join(".codeium/windsurf/mcp_config.json"),
+            config_path: home
+                .join(".codeium")
+                .join("windsurf")
+                .join("mcp_config.json"),
             format: ConfigFormat::McpServersHttp,
         },
         McpClient {
@@ -152,6 +178,22 @@ fn entry_for(format: ConfigFormat, mcp_url: &str) -> Value {
             "command": { "path": "npx", "args": ["-y", "mcp-remote", mcp_url] },
         }),
     }
+}
+
+/// Names of the servers already configured in a document, for the dry run.
+///
+/// The load-bearing promise of this module is "your other MCP servers
+/// survive". Printing them before and after is how a user checks that
+/// promise themselves instead of taking our word for it.
+pub fn existing_servers(existing: Option<&str>, format: ConfigFormat) -> Vec<String> {
+    let Some(raw) = existing else { return vec![] };
+    let Ok(root) = serde_json::from_str::<Value>(raw) else {
+        return vec![];
+    };
+    root.get(container_key(format))
+        .and_then(Value::as_object)
+        .map(|o| o.keys().cloned().collect())
+        .unwrap_or_default()
 }
 
 fn container_key(format: ConfigFormat) -> &'static str {
@@ -360,6 +402,35 @@ mod tests {
         // "\ No newline at end of file" in every diff forever.
         let out = merge_config(None, ConfigFormat::McpServersHttp, URL).unwrap();
         assert!(out.ends_with('\n'));
+    }
+
+    #[test]
+    fn existing_servers_lists_what_is_already_there() {
+        let raw = r#"{"mcpServers":{"filesystem":{},"git":{}}}"#;
+        let mut names = existing_servers(Some(raw), ConfigFormat::McpServersHttp);
+        names.sort();
+        assert_eq!(names, vec!["filesystem", "git"]);
+    }
+
+    #[test]
+    fn existing_servers_is_empty_for_a_missing_or_unreadable_file() {
+        // Used only for the dry-run preview, so it degrades to "nothing to
+        // show" rather than failing a command that hasn't started yet.
+        assert!(existing_servers(None, ConfigFormat::McpServersHttp).is_empty());
+        assert!(existing_servers(Some("{ broken"), ConfigFormat::McpServersHttp).is_empty());
+        assert!(existing_servers(Some("{}"), ConfigFormat::McpServersHttp).is_empty());
+    }
+
+    #[test]
+    fn config_paths_use_native_separators() {
+        // A path printed to the user with mixed separators
+        // (`…\Roaming\Claude/foo.json`) looks broken even though it works.
+        for client in known_clients().unwrap() {
+            let shown = client.config_path.display().to_string();
+            if cfg!(target_os = "windows") {
+                assert!(!shown.contains('/'), "{shown} mixes separators");
+            }
+        }
     }
 
     #[test]

@@ -25,6 +25,15 @@ pub struct SetupArgs {
     /// HANGAR_SETUP_CODE, which is how the `/i/<code>` one-liner passes it.
     #[arg(long)]
     pub code: Option<String>,
+
+    /// Show which MCP clients were found and what would be written to each,
+    /// then exit without touching anything. Needs no setup code.
+    ///
+    /// Worth having for its own sake: these are files people have tuned by
+    /// hand, and "show me first" is a reasonable thing to ask of a command
+    /// that edits them.
+    #[arg(long)]
+    pub dry_run: bool,
 }
 
 /// Local hostname, so the device list in Settings says something a human can
@@ -36,7 +45,70 @@ fn device_name() -> Option<String> {
         .filter(|s| !s.trim().is_empty())
 }
 
+/// Detect and preview, writing nothing.
+fn dry_run(mcp_url: &str) -> Result<()> {
+    println!("-> dry run — nothing will be written");
+    println!("   MCP server: {mcp_url}");
+    println!();
+
+    let mut found = 0usize;
+    for client in &mcp_clients::known_clients()? {
+        if !mcp_clients::is_present(client) {
+            println!("○ {:<16} not found", client.label);
+            continue;
+        }
+        found += 1;
+        let existing = std::fs::read_to_string(&client.config_path).ok();
+        let had_file = existing.is_some();
+        let bytes_before = existing.as_ref().map(|s| s.len()).unwrap_or(0);
+
+        let before = mcp_clients::existing_servers(existing.as_deref(), client.format);
+
+        match mcp_clients::merge_config(existing.as_deref(), client.format, mcp_url) {
+            Ok(merged) => {
+                let after = mcp_clients::existing_servers(Some(&merged), client.format);
+                println!("✓ {:<16} {}", client.label, client.config_path.display());
+                println!(
+                    "   {} · {} bytes -> {} bytes",
+                    if had_file {
+                        "would update"
+                    } else {
+                        "would create"
+                    },
+                    bytes_before,
+                    merged.len()
+                );
+                let kept: Vec<&String> = before.iter().filter(|s| *s != "vibecell").collect();
+                if kept.is_empty() {
+                    println!("   servers: {}", after.join(", "));
+                } else {
+                    println!(
+                        "   keeps: {} · adds: vibecell",
+                        kept.iter()
+                            .map(|s| s.as_str())
+                            .collect::<Vec<_>>()
+                            .join(", ")
+                    );
+                }
+            }
+            Err(e) => {
+                println!("✗ {:<16} {}", client.label, client.config_path.display());
+                println!("   would skip: {e}");
+            }
+        }
+    }
+
+    println!();
+    println!("{found} client(s) present. Re-run without --dry-run to apply.");
+    Ok(())
+}
+
 pub async fn run(args: SetupArgs) -> Result<()> {
+    if args.dry_run {
+        let base_url = config::default_base_url();
+        return dry_run(&format!("{}/mcp", base_url.trim_end_matches('/')));
+    }
+
     let code = args
         .code
         .or_else(|| std::env::var("HANGAR_SETUP_CODE").ok())
