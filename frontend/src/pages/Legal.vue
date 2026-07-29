@@ -444,18 +444,18 @@ const visibleSections = computed<Section[]>(() => {
 </script>
 
 <template>
-  <div class="min-h-screen text-fg-primary" style="background: #070b10">
+  <div class="min-h-screen text-fg-primary" style="background: var(--bg-body-to)">
     <MarketingHeader />
 
     <!-- Hero — pt-[88px] floor compensates for the fixed header overlay. -->
     <section class="max-w-3xl mx-auto px-4 sm:px-6 pt-[88px] sm:pt-[104px] pb-8 sm:pb-10 text-center">
-      <p class="font-mono text-[10px] uppercase tracking-[0.18em] mb-3" style="color: #5cc8a4">
+      <p class="font-mono text-[10px] uppercase tracking-[0.18em] mb-3" style="color: var(--signal-green)">
         // legal
       </p>
-      <h1 class="font-semibold mb-3" style="font-size: clamp(1.8rem, 3.5vw, 2.6rem); letter-spacing: -0.04em; color: #ffffff">
+      <h1 class="font-semibold mb-3" style="font-size: clamp(1.8rem, 3.5vw, 2.6rem); letter-spacing: -0.04em; color: var(--fg-primary)">
         Imprint, Privacy, Terms.
       </h1>
-      <p style="color: #8ba1bd; font-size: 13px">
+      <p style="color: var(--fg-muted); font-size: 13px">
         Last updated <span class="font-mono">{{ LAST_UPDATED }}</span> · operated under Portuguese law from Costa da Caparica
       </p>
     </section>
@@ -463,14 +463,14 @@ const visibleSections = computed<Section[]>(() => {
     <!-- Tabs -->
     <div class="max-w-3xl mx-auto px-4 sm:px-6 mb-6 sm:mb-8">
       <div class="inline-flex rounded-md p-1 font-mono"
-        style="background: rgba(20,33,50,0.6); border: 1px solid rgba(138,180,255,0.1)">
+        style="background: rgb(var(--bg-surface-rgb) / 0.6); border: 1px solid rgb(var(--border-rgb) / 0.1)">
         <button
           v-for="t in (['imprint', 'privacy', 'terms'] as const)"
           :key="t"
           class="px-4 py-1.5 rounded text-[11px] uppercase tracking-wider transition-all"
           :style="{
-            background: activeTab === t ? '#5cc8a4' : 'transparent',
-            color: activeTab === t ? '#070b10' : '#8ba1bd',
+            background: activeTab === t ? 'var(--signal-green)' : 'transparent',
+            color: activeTab === t ? 'var(--bg-body-to)' : 'var(--fg-muted)',
             fontWeight: activeTab === t ? 600 : 400,
           }"
           @click="setTab(t)"
@@ -485,14 +485,14 @@ const visibleSections = computed<Section[]>(() => {
         :key="`${activeTab}-${i}`"
         class="mb-9"
       >
-        <h2 class="font-semibold mb-3" style="font-size: 18px; color: #ffffff; letter-spacing: -0.01em">
+        <h2 class="font-semibold mb-3" style="font-size: 18px; color: var(--fg-primary); letter-spacing: -0.01em">
           {{ s.heading }}
         </h2>
         <p
           v-for="(p, j) in s.body"
           :key="j"
           class="mb-3"
-          style="font-size: 14px; color: #cfd4dc; line-height: 1.7"
+          style="font-size: 14px; color: var(--fg-body); line-height: 1.7"
         >
           {{ p }}
         </p>
@@ -501,9 +501,9 @@ const visibleSections = computed<Section[]>(() => {
             v-for="(item, j) in s.list"
             :key="j"
             class="flex gap-3 items-start"
-            style="font-size: 13px; color: #8ba1bd; line-height: 1.65"
+            style="font-size: 13px; color: var(--fg-muted); line-height: 1.65"
           >
-            <span style="color:#5cc8a4; flex-shrink: 0">·</span>
+            <span style="color:var(--signal-green); flex-shrink: 0">·</span>
             <span>{{ item }}</span>
           </li>
         </ul>
@@ -514,17 +514,17 @@ const visibleSections = computed<Section[]>(() => {
           v-if="activeTab === 'privacy' && s.heading === 'Analytics opt-out'"
           type="button"
           class="mt-3 px-4 py-2 rounded-md font-mono text-small transition-colors hover:opacity-90"
-          style="background: rgba(255,107,107,0.1); color: #ff7e6c; border: 1px solid rgba(255,126,108,0.4)"
+          style="background: rgb(var(--signal-red-rgb) / 0.1); color: var(--signal-red); border: 1px solid rgb(var(--signal-red-rgb) / 0.4)"
           @click="revokeAnalytics"
         >Decline analytics</button>
       </div>
     </article>
 
     <!-- Footer -->
-    <footer class="px-6 py-8" style="border-top: 1px solid rgba(138,180,255,0.08)">
-      <div class="max-w-5xl mx-auto flex items-center justify-between" style="font-size: 11px; color: #5e7088">
+    <footer class="px-6 py-8" style="border-top: 1px solid var(--border-subtle)">
+      <div class="max-w-5xl mx-auto flex items-center justify-between" style="font-size: 11px; color: var(--fg-subtle)">
         <router-link to="/" class="font-mono hover:text-fg-muted transition-colors flex items-center gap-2">
-          <span style="color: #5cc8a4">◈</span> Vibecell
+          <span style="color: var(--signal-green)">◈</span> Vibecell
         </router-link>
         <div class="flex gap-6 font-mono">
           <router-link to="/pricing" class="hover:text-fg-muted transition-colors">pricing</router-link>

@@ -110,7 +110,7 @@ const groups: Array<{ title: string; items: Array<{ keys: string[]; label: strin
       <div
         v-if="open"
         class="fixed inset-0 z-[80] flex items-center justify-center px-4"
-        style="background: rgba(3, 6, 10, 0.65); backdrop-filter: blur(6px)"
+        style="background: rgb(var(--scrim-rgb) / 0.65); backdrop-filter: blur(6px)"
         @click.self="open = false"
       >
         <div
@@ -159,8 +159,8 @@ const groups: Array<{ title: string; items: Array<{ keys: string[]; label: strin
   line-height: 1;
   padding: 3px 6px;
   border-radius: 4px;
-  background: rgba(138,180,255,0.08);
-  border: 1px solid rgba(138,180,255,0.18);
+  background: var(--border-subtle);
+  border: 1px solid var(--border-strong);
   color: var(--fg-body);
   min-width: 22px;
   text-align: center;

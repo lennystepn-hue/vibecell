@@ -82,8 +82,8 @@ function fmtRel(iso: string | null | undefined): string {
 }
 function statusColor(s: string): string {
   if (s === "active") return "var(--signal-green)";
-  if (s === "trialing") return "var(--signal-blue, #8ab4ff)";
-  if (s === "past_due") return "var(--signal-amber, #f59e0b)";
+  if (s === "trialing") return "var(--signal-blue)";
+  if (s === "past_due") return "var(--signal-amber)";
   if (s === "canceled" || s === "unpaid") return "var(--signal-red)";
   return "var(--fg-subtle)";
 }
@@ -96,7 +96,7 @@ function activityIcon(kind: string): string {
 }
 function kpiAccentStyle(accent?: string | null): Record<string, string> {
   if (accent === "green") return { color: "var(--signal-green)" };
-  if (accent === "amber") return { color: "var(--signal-amber, #f59e0b)" };
+  if (accent === "amber") return { color: "var(--signal-amber)" };
   if (accent === "red") return { color: "var(--signal-red)" };
   return { color: "var(--fg-primary)" };
 }
@@ -153,12 +153,12 @@ function kpiAccentStyle(accent?: string | null): Record<string, string> {
         <template v-if="usage">
           <span class="mono-label opacity-60">// active</span>
           <span class="font-mono px-2 py-1 rounded-md tabular-nums"
-                :style="{ background: 'rgba(20,33,50,0.4)', border: '1px solid var(--border)', color: usage.active_now > 0 ? 'var(--signal-green)' : 'var(--fg-muted)' }">
+                :style="{ background: 'rgb(var(--bg-surface-rgb) / 0.4)', border: '1px solid var(--border)', color: usage.active_now > 0 ? 'var(--signal-green)' : 'var(--fg-muted)' }">
             now · {{ usage.active_now }}
           </span>
-          <span class="font-mono px-2 py-1 rounded-md tabular-nums" :style="{ background: 'rgba(20,33,50,0.4)', border: '1px solid var(--border)' }">dau · {{ usage.dau }}</span>
-          <span class="font-mono px-2 py-1 rounded-md tabular-nums" :style="{ background: 'rgba(20,33,50,0.4)', border: '1px solid var(--border)' }">wau · {{ usage.wau }}</span>
-          <span class="font-mono px-2 py-1 rounded-md tabular-nums" :style="{ background: 'rgba(20,33,50,0.4)', border: '1px solid var(--border)' }">mau · {{ usage.mau }}</span>
+          <span class="font-mono px-2 py-1 rounded-md tabular-nums" :style="{ background: 'rgb(var(--bg-surface-rgb) / 0.4)', border: '1px solid var(--border)' }">dau · {{ usage.dau }}</span>
+          <span class="font-mono px-2 py-1 rounded-md tabular-nums" :style="{ background: 'rgb(var(--bg-surface-rgb) / 0.4)', border: '1px solid var(--border)' }">wau · {{ usage.wau }}</span>
+          <span class="font-mono px-2 py-1 rounded-md tabular-nums" :style="{ background: 'rgb(var(--bg-surface-rgb) / 0.4)', border: '1px solid var(--border)' }">mau · {{ usage.mau }}</span>
         </template>
         <template v-if="overview">
           <span class="mono-label opacity-60 ml-2">// subs</span>
@@ -166,7 +166,7 @@ function kpiAccentStyle(accent?: string | null): Record<string, string> {
             v-for="(count, status) in overview.subs_by_status"
             :key="status"
             class="font-mono px-2 py-1 rounded-md tabular-nums"
-            :style="{ background: 'rgba(20,33,50,0.4)', border: '1px solid var(--border)', color: statusColor(String(status)) }"
+            :style="{ background: 'rgb(var(--bg-surface-rgb) / 0.4)', border: '1px solid var(--border)', color: statusColor(String(status)) }"
           >{{ status }} · {{ count }}</span>
         </template>
       </section>

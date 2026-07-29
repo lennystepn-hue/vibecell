@@ -141,9 +141,9 @@ function cellCount(projectId: string, week: string): number {
 
 function cellColor(count: number): string {
   if (count === 0) return "var(--bg-elevated)";
-  if (count <= 1) return "rgba(74, 222, 128, 0.25)";
-  if (count <= 3) return "rgba(74, 222, 128, 0.50)";
-  if (count <= 6) return "rgba(74, 222, 128, 0.75)";
+  if (count <= 1) return "rgb(var(--signal-green-rgb) / 0.25)";
+  if (count <= 3) return "rgb(var(--signal-green-rgb) / 0.50)";
+  if (count <= 6) return "rgb(var(--signal-green-rgb) / 0.75)";
   return "var(--signal-green)";
 }
 
@@ -194,7 +194,7 @@ function projectSlug(pid: string): string {
         <div
           v-else-if="loadError"
           class="glass rounded-lg p-6"
-          :style="{ background: 'var(--signal-amber-bg, rgba(245,158,11,0.08))', border: '1px solid rgba(245,158,11,0.3)' }"
+          :style="{ background: 'var(--signal-amber-bg, rgb(var(--signal-amber-rgb) / 0.08))', border: '1px solid rgb(var(--signal-amber-rgb) / 0.3)' }"
         >
           <p class="text-section text-fg-primary mb-1">Portfolio Intel — Coming in Spec 5B.1</p>
           <p class="text-small text-fg-muted">{{ loadError }}</p>
@@ -215,7 +215,7 @@ function projectSlug(pid: string): string {
               <p class="mono-label mb-1">stagnant</p>
               <p
                 class="text-title font-mono"
-                :style="{ color: snapshot.stagnant_projects.length > 0 ? 'var(--signal-amber, #f59e0b)' : 'var(--signal-green)' }"
+                :style="{ color: snapshot.stagnant_projects.length > 0 ? 'var(--signal-amber, var(--signal-amber))' : 'var(--signal-green)' }"
               >
                 {{ snapshot.stagnant_projects.length }}
               </p>
@@ -236,14 +236,14 @@ function projectSlug(pid: string): string {
                 v-for="sp in snapshot.stagnant_projects"
                 :key="sp.project_id"
                 class="flex items-center gap-4 glass rounded-lg px-4 py-3"
-                :style="{ borderLeft: '3px solid var(--signal-amber, #f59e0b)' }"
+                :style="{ borderLeft: '3px solid var(--signal-amber, var(--signal-amber))' }"
               >
                 <div class="flex-1 min-w-0">
                   <p class="text-small text-fg-primary font-medium">{{ sp.name }}</p>
                   <p class="text-small text-fg-muted font-mono">{{ sp.slug }}</p>
                 </div>
                 <div class="text-right">
-                  <p class="text-small font-mono" :style="{ color: 'var(--signal-amber, #f59e0b)' }">
+                  <p class="text-small font-mono" :style="{ color: 'var(--signal-amber, var(--signal-amber))' }">
                     {{ sp.days_since_activity === 9999 ? "never active" : `${sp.days_since_activity}d quiet` }}
                   </p>
                   <p v-if="sp.last_activity_at" class="text-small text-fg-subtle">

@@ -92,18 +92,18 @@ function statusColor(s: HealthStatus): string {
     case "up": return "var(--signal-green)";
     case "down": return "var(--signal-red)";
     case "timeout":
-    case "error": return "var(--signal-amber, #f59e0b)";
+    case "error": return "var(--signal-amber)";
     default: return "var(--fg-subtle)";
   }
 }
 
 function statusBg(s: HealthStatus): string {
   switch (s) {
-    case "up": return "rgba(92,200,164,0.12)";
-    case "down": return "rgba(229,101,101,0.12)";
+    case "up": return "var(--signal-green-bg)";
+    case "down": return "var(--signal-red-bg)";
     case "timeout":
-    case "error": return "rgba(245,158,11,0.12)";
-    default: return "rgba(138,180,255,0.06)";
+    case "error": return "var(--signal-amber-bg)";
+    default: return "var(--signal-blue-bg)";
   }
 }
 

@@ -233,7 +233,7 @@ const entityLabels: Record<string, string> = {
 
 <style>
 .snippet mark {
-  background: rgba(92, 200, 164, 0.15);
+  background: rgb(var(--signal-green-rgb) / 0.15);
   color: var(--signal-green);
   padding: 0 2px;
   border-radius: 2px;

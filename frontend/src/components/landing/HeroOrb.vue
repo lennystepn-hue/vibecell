@@ -90,9 +90,9 @@ const specularStyle = computed(() => ({
   border-radius: 50%;
   background: radial-gradient(
     circle,
-    rgba(92, 200, 164, 0.22) 0%,
-    rgba(181, 146, 255, 0.12) 30%,
-    rgba(255, 107, 157, 0.06) 55%,
+    rgb(var(--signal-green-rgb) / 0.22) 0%,
+    rgb(var(--signal-violet-rgb) / 0.12) 30%,
+    rgb(var(--aurora-4-rgb) / 0.06) 55%,
     transparent 70%
   );
   filter: blur(60px);
@@ -120,8 +120,8 @@ const specularStyle = computed(() => ({
      get clipped to a visible horizontal line by the section's
      overflow-hidden boundary. */
   box-shadow:
-    0 24px 60px rgba(92, 200, 164, 0.18),
-    0 10px 30px rgba(181, 146, 255, 0.10);
+    0 24px 60px rgb(var(--signal-green-rgb) / 0.18),
+    0 10px 30px rgb(var(--signal-violet-rgb) / 0.10);
 }
 
 /* Radial blobs — violet, mint, soft-pink, teal over a deep mint→violet base */
@@ -130,14 +130,14 @@ const specularStyle = computed(() => ({
   inset: 0;
   border-radius: 50%;
   background:
-    radial-gradient(circle at 30% 28%, #b592ff 0%, transparent 45%),
-    radial-gradient(circle at 72% 70%, #5cc8a4 0%, transparent 50%),
-    radial-gradient(circle at 50% 95%, #ff6b9d 0%, transparent 55%),
-    radial-gradient(circle at 80% 20%, #7dffd4 0%, transparent 35%),
-    linear-gradient(135deg, #3a8f75 0%, #6b4aa8 100%);
+    radial-gradient(circle at 30% 28%, var(--orb-violet) 0%, transparent 45%),
+    radial-gradient(circle at 72% 70%, var(--orb-green) 0%, transparent 50%),
+    radial-gradient(circle at 50% 95%, var(--orb-rose) 0%, transparent 55%),
+    radial-gradient(circle at 80% 20%, var(--orb-teal) 0%, transparent 35%),
+    linear-gradient(135deg, var(--orb-green-deep) 0%, var(--orb-violet-deep) 100%);
   box-shadow:
-    inset 0 -60px 120px rgba(0, 0, 0, 0.35),
-    inset 0 40px 80px rgba(255, 255, 255, 0.12);
+    inset 0 -60px 120px rgb(var(--scrim-rgb) / 0.35),
+    inset 0 40px 80px rgb(var(--specular-rgb) / 0.12);
   z-index: 1;
 }
 
@@ -149,11 +149,11 @@ const specularStyle = computed(() => ({
   border-radius: 50%;
   background: conic-gradient(
     from 0deg,
-    rgba(92, 200, 164, 0.45) 0%,
-    rgba(181, 146, 255, 0.32) 25%,
-    rgba(125, 255, 212, 0.45) 50%,
-    rgba(255, 107, 157, 0.32) 75%,
-    rgba(92, 200, 164, 0.45) 100%
+    rgb(var(--signal-green-rgb) / 0.45) 0%,
+    rgb(var(--signal-violet-rgb) / 0.32) 25%,
+    rgb(var(--orb-teal-rgb) / 0.45) 50%,
+    rgb(var(--aurora-4-rgb) / 0.32) 75%,
+    rgb(var(--signal-green-rgb) / 0.45) 100%
   );
   animation: aurora-rotate 18s linear infinite;
   mix-blend-mode: color-dodge;
@@ -172,10 +172,10 @@ const specularStyle = computed(() => ({
   background: conic-gradient(
     from 90deg,
     transparent 0%,
-    rgba(255, 255, 255, 0.25) 10%,
+    rgb(var(--specular-rgb) / 0.25) 10%,
     transparent 22%,
     transparent 50%,
-    rgba(255, 255, 255, 0.12) 62%,
+    rgb(var(--specular-rgb) / 0.12) 62%,
     transparent 75%,
     transparent 100%
   );
@@ -196,8 +196,8 @@ const specularStyle = computed(() => ({
   border-radius: 50%;
   background: radial-gradient(
     ellipse at 30% 20%,
-    rgba(255, 255, 255, 0.78) 0%,
-    rgba(255, 255, 255, 0.2) 40%,
+    rgb(var(--specular-rgb) / 0.78) 0%,
+    rgb(var(--specular-rgb) / 0.2) 40%,
     transparent 72%
   );
   filter: blur(4px);
@@ -212,8 +212,8 @@ const specularStyle = computed(() => ({
   inset: 0;
   border-radius: 50%;
   box-shadow:
-    inset 0 0 0 1px rgba(255, 255, 255, 0.15),
-    inset 0 0 60px rgba(255, 255, 255, 0.05);
+    inset 0 0 0 1px rgb(var(--specular-rgb) / 0.15),
+    inset 0 0 60px rgb(var(--specular-rgb) / 0.05);
   z-index: 5;
   pointer-events: none;
 }
@@ -228,7 +228,7 @@ const specularStyle = computed(() => ({
   font-size: 10px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: rgba(207, 212, 220, 0.4);
+  color: rgb(var(--fg-body-rgb) / 0.4);
   opacity: 0;
   transition: opacity 300ms ease;
   pointer-events: none;

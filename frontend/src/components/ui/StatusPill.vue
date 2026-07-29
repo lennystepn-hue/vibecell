@@ -73,8 +73,8 @@ const cfg = computed(() => mapping[props.status]);
 
 <style scoped>
 @keyframes live-pulse {
-  0%, 100% { box-shadow: 0 0 0 1px var(--signal-green), 0 0 8px rgba(92, 200, 164, 0.6); }
-  50%      { box-shadow: 0 0 0 1px var(--signal-green), 0 0 16px rgba(92, 200, 164, 0.9); }
+  0%, 100% { box-shadow: 0 0 0 1px var(--signal-green), 0 0 8px rgb(var(--signal-green-rgb) / 0.6); }
+  50%      { box-shadow: 0 0 0 1px var(--signal-green), 0 0 16px rgb(var(--signal-green-rgb) / 0.9); }
 }
 .live-pill {
   animation: live-pulse 2s ease-in-out infinite;

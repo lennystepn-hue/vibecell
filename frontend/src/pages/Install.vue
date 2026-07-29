@@ -70,7 +70,7 @@ async function copyPrompt() {
       <!-- Prompt block -->
       <section
         class="rounded-lg p-5 mb-5"
-        style="background: rgba(20,33,50,0.5); border: 1px solid rgba(138,180,255,0.12)"
+        style="background: rgb(var(--bg-surface-rgb) / 0.5); border: 1px solid var(--border-default)"
       >
         <header class="flex items-center justify-between mb-3 select-none">
           <MonoLabel>prompt</MonoLabel>

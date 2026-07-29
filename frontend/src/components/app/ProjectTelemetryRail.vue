@@ -167,7 +167,7 @@ const healthBadge = computed<{ glyph: string; color: string } | null>(() => {
     case "down":
       return { glyph: "○", color: "var(--signal-red)" };
     case "pending":
-      return { glyph: "◐", color: "var(--signal-amber, #f59e0b)" };
+      return { glyph: "◐", color: "var(--signal-amber)" };
     case "unconfigured":
     case "unknown":
     default:
@@ -341,7 +341,7 @@ const lastProbed = computed<string>(() => {
               class="font-mono"
               :style="issuesCount === '0'
                 ? { color: 'var(--signal-green)' }
-                : { color: 'var(--signal-amber, #f59e0b)' }"
+                : { color: 'var(--signal-amber, var(--signal-amber))' }"
             >{{ issuesCount }}</span>
           </DataRow>
         </div>

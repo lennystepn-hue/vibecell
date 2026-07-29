@@ -147,7 +147,7 @@ onMounted(() => {
     <!-- Radial green glow behind the diamond -->
     <div
       class="absolute inset-0 pointer-events-none"
-      style="background: radial-gradient(ellipse 55% 55% at 50% 50%, rgba(92,200,164,0.08) 0%, transparent 70%)"
+      style="background: radial-gradient(ellipse 55% 55% at 50% 50%, rgb(var(--signal-green-rgb) / 0.08) 0%, transparent 70%)"
     />
   </div>
 </template>

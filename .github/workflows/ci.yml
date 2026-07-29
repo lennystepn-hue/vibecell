@@ -76,6 +76,11 @@ jobs:
       - name: Typecheck
         working-directory: frontend
         run: pnpm typecheck
+      # Guards the three themes: any hardcoded colour literal under src/ is a
+      # build failure. Runs before the slower steps so it fails fast.
+      - name: Theme tokens
+        working-directory: frontend
+        run: pnpm lint:theme
       - name: Test
         working-directory: frontend
         # `--` separator passes flags through to vitest. Without it pnpm

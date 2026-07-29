@@ -38,7 +38,7 @@ function ageLabel(s: number | null): string {
     <!-- Pulsing green dot -->
     <span class="relative inline-flex" :class="dense ? 'w-1.5 h-1.5' : 'w-2 h-2'" aria-hidden="true">
       <span class="absolute inset-0 rounded-full bg-signal-green opacity-75 animate-ping" />
-      <span class="relative inline-flex w-full h-full rounded-full bg-signal-green" style="box-shadow: 0 0 8px rgba(92,200,164,0.6)" />
+      <span class="relative inline-flex w-full h-full rounded-full bg-signal-green" style="box-shadow: 0 0 8px rgb(var(--signal-green-rgb) / 0.6)" />
     </span>
     <span v-if="variant === 'pill'" class="font-mono text-[10px] uppercase tracking-[0.1em] text-signal-green whitespace-nowrap">
       claude · {{ friendlyTool(tool) }}

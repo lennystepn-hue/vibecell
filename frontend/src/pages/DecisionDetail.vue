@@ -76,7 +76,7 @@ function fmtTime(iso: string | null): string {
             <p class="text-body text-fg-body whitespace-pre-wrap leading-relaxed">{{ decision.context }}</p>
           </section>
 
-          <section class="glass rounded-lg p-5 mb-4" style="border-color: rgba(245,184,74,0.25)">
+          <section class="glass rounded-lg p-5 mb-4" style="border-color: rgb(var(--signal-amber-rgb) / 0.25)">
             <h3 class="mono-label text-signal-amber mb-2">//decision</h3>
             <p class="text-body text-fg-primary whitespace-pre-wrap leading-relaxed">{{ decision.decision }}</p>
           </section>

@@ -49,14 +49,14 @@ function decline() {
     <div
       v-if="visible"
       class="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-6 sm:bottom-6 sm:max-w-md z-50 rounded-lg p-5 shadow-2xl"
-      style="background: rgba(13,18,24,0.96); border: 1px solid rgba(138,180,255,0.2); backdrop-filter: blur(12px)"
+      style="background: rgb(var(--scrim-rgb) / 0.96); border: 1px solid rgb(var(--border-rgb) / 0.2); backdrop-filter: blur(12px)"
       role="dialog"
       aria-labelledby="consent-title"
     >
       <p
         id="consent-title"
         class="font-mono text-[11px] uppercase tracking-[0.12em] mb-2"
-        style="color: #5cc8a4"
+        style="color: var(--signal-green)"
       >// privacy</p>
       <p class="text-small text-fg-body leading-relaxed mb-4">
         Vibecell uses Google Analytics to count anonymous pageviews. IP
@@ -68,13 +68,13 @@ function decline() {
         <button
           type="button"
           class="px-4 py-2 rounded-md font-mono text-small font-semibold transition-opacity hover:opacity-90"
-          style="background: #5cc8a4; color: #070b10"
+          style="background: var(--signal-green); color: var(--on-signal)"
           @click="accept"
         >Accept analytics</button>
         <button
           type="button"
           class="px-4 py-2 rounded-md font-mono text-small transition-colors hover:text-fg-primary"
-          style="color: #cfd4dc; border: 1px solid rgba(138,180,255,0.2); background: transparent"
+          style="color: var(--fg-body); border: 1px solid rgb(var(--border-rgb) / 0.2); background: transparent"
           @click="decline"
         >Decline</button>
       </div>

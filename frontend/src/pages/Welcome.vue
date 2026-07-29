@@ -282,7 +282,7 @@ onMounted(async () => {
               class="w-7 h-7 rounded-md flex items-center justify-center font-mono text-[11px] tracking-tight transition-colors shrink-0"
               :style="
                 step === n
-                  ? { background: 'var(--signal-green)', color: 'var(--bg-body-to)', boxShadow: '0 0 0 1px var(--signal-green), 0 0 12px rgba(92,200,164,0.25)' }
+                  ? { background: 'var(--signal-green)', color: 'var(--bg-body-to)', boxShadow: '0 0 0 1px var(--signal-green), 0 0 12px rgb(var(--signal-green-rgb) / 0.25)' }
                   : step > n
                   ? { background: 'var(--signal-green-bg)', color: 'var(--signal-green)', border: '1px solid var(--signal-green)' }
                   : { background: 'transparent', color: 'var(--fg-subtle)', border: '1px solid var(--border)' }
@@ -423,7 +423,7 @@ onMounted(async () => {
             <p class="text-small text-fg-muted">{{ INSTALL_PROMPT_PITCH }}</p>
             <div
               class="rounded-md p-4 font-mono text-[12px] leading-relaxed whitespace-pre-wrap select-all"
-              style="background:rgba(20,33,50,0.5); border:1px solid rgba(138,180,255,0.12); color:var(--fg-body); max-height:280px; overflow-y:auto"
+              style="background:rgb(var(--bg-surface-rgb) / 0.5); border:1px solid var(--border-default); color:var(--fg-body); max-height:280px; overflow-y:auto"
             >{{ VIBECELL_INSTALL_PROMPT }}</div>
             <div class="flex items-center gap-3">
               <PrimaryButton
@@ -462,7 +462,7 @@ onMounted(async () => {
                 <li><span class="font-mono text-fg-subtle">2.</span> <strong>Add Remote Server</strong></li>
                 <li><span class="font-mono text-fg-subtle">3.</span> Paste the URL below + finish OAuth in your browser</li>
               </ol>
-              <div class="flex items-center gap-2 mt-3 p-3 rounded-md" style="background:rgba(20,33,50,0.5); border:1px solid rgba(138,180,255,0.1)">
+              <div class="flex items-center gap-2 mt-3 p-3 rounded-md" style="background:rgb(var(--bg-surface-rgb) / 0.5); border:1px solid rgb(var(--border-rgb) / 0.1)">
                 <code class="flex-1 text-small font-mono text-fg-body truncate">{{ BASE }}</code>
                 <button
                   type="button"
@@ -476,7 +476,7 @@ onMounted(async () => {
           <!-- Claude Code -->
           <div v-else-if="tab === 'claude-code'" class="space-y-4">
             <p class="text-small text-fg-muted">Run this in your terminal:</p>
-            <div class="flex items-center gap-2 p-3 rounded-md" style="background:rgba(20,33,50,0.5); border:1px solid rgba(138,180,255,0.12)">
+            <div class="flex items-center gap-2 p-3 rounded-md" style="background:rgb(var(--bg-surface-rgb) / 0.5); border:1px solid var(--border-default)">
               <code class="flex-1 text-small font-mono text-fg-primary break-all">{{ claudeCodeCommand }}</code>
               <PrimaryButton class="shrink-0" @click="copy(claudeCodeCommand, 'cc-cmd')">
                 {{ copiedKey === 'cc-cmd' ? "✓" : "Copy" }}
@@ -504,7 +504,7 @@ onMounted(async () => {
                 <li><span class="font-mono text-fg-subtle">1.</span> Cursor → <strong>Settings → MCP</strong> → Add remote server</li>
                 <li><span class="font-mono text-fg-subtle">2.</span> Paste URL below, finish OAuth in browser</li>
               </ol>
-              <div class="flex items-center gap-2 mt-3 p-3 rounded-md" style="background:rgba(20,33,50,0.5); border:1px solid rgba(138,180,255,0.1)">
+              <div class="flex items-center gap-2 mt-3 p-3 rounded-md" style="background:rgb(var(--bg-surface-rgb) / 0.5); border:1px solid rgb(var(--border-rgb) / 0.1)">
                 <code class="flex-1 text-small font-mono text-fg-body truncate">{{ MCP_URL }}</code>
                 <button
                   type="button"
@@ -520,7 +520,7 @@ onMounted(async () => {
             <p class="text-small text-fg-muted">
               Zed needs <code class="font-mono">mcp-remote</code> as the stdio bridge. Add to <code class="font-mono">settings.json</code>:
             </p>
-            <pre class="rounded-md p-3 text-small font-mono overflow-x-auto" style="background:rgba(20,33,50,0.5); border:1px solid rgba(138,180,255,0.1); color:#cfd4dc">{{ zedConfig }}</pre>
+            <pre class="rounded-md p-3 text-small font-mono overflow-x-auto" style="background:rgb(var(--bg-surface-rgb) / 0.5); border:1px solid rgb(var(--border-rgb) / 0.1); color:var(--fg-body)">{{ zedConfig }}</pre>
             <div class="flex justify-end">
               <button
                 type="button"
@@ -532,7 +532,7 @@ onMounted(async () => {
 
           <!-- Windsurf -->
           <div v-else class="space-y-4">
-            <div class="flex items-center gap-2 p-3 rounded-md" style="background:rgba(20,33,50,0.5); border:1px solid rgba(138,180,255,0.12)">
+            <div class="flex items-center gap-2 p-3 rounded-md" style="background:rgb(var(--bg-surface-rgb) / 0.5); border:1px solid var(--border-default)">
               <code class="flex-1 text-small font-mono text-fg-primary break-all">{{ windsurfCommand }}</code>
               <PrimaryButton class="shrink-0" @click="copy(windsurfCommand, 'ws-cmd')">
                 {{ copiedKey === 'ws-cmd' ? "✓" : "Copy" }}

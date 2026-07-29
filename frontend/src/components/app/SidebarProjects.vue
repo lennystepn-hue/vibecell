@@ -136,6 +136,10 @@ const groupModalOpen = ref(false);
 const newGroupName = ref("");
 const newGroupColor = ref("#8ab4ff");
 
+// Exempt from the theme-token guard (scripts/check-theme-tokens.mjs): the
+// user picks one of these for a group and the literal value is persisted to
+// the database. A `var(--…)` string would be stored and then resolved against
+// whatever theme happens to be active at render time on any device.
 const PRESET_COLORS = [
   "#5cc8a4",
   "#f5b84a",
@@ -196,7 +200,7 @@ function rowClick() {
   <div
     v-if="ui.mobileSidebarOpen"
     class="fixed inset-0 z-30 md:hidden transition-opacity duration-200"
-    style="background: rgba(7,11,16,0.55); backdrop-filter: blur(2px)"
+    style="background: rgb(var(--scrim-rgb) / 0.55); backdrop-filter: blur(2px)"
     @click="ui.closeSidebar()"
   />
   <aside

@@ -29,7 +29,7 @@ withDefaults(defineProps<Props>(), {
     :style="{
       background: 'var(--signal-green)',
       color: 'var(--bg-body-to)',
-      boxShadow: '0 0 0 1px var(--signal-green), 0 0 16px rgba(92, 200, 164, 0.18)',
+      boxShadow: '0 0 0 1px var(--signal-green), 0 0 16px rgb(var(--signal-green-rgb) / 0.18)',
     }"
   >
     <svg

@@ -132,8 +132,8 @@ function reset() {
             v-if="oauthError"
             class="rounded-md p-3 text-small"
             :style="{
-              background: 'var(--signal-amber-bg, rgba(245,158,11,0.08))',
-              border: '1px solid rgba(245,158,11,0.3)',
+              background: 'var(--signal-amber-bg, rgb(var(--signal-amber-rgb) / 0.08))',
+              border: '1px solid rgb(var(--signal-amber-rgb) / 0.3)',
               color: 'var(--fg-body)',
             }"
           >
