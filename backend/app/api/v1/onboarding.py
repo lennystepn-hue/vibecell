@@ -166,6 +166,44 @@ async def redeem(request: Request, body: RedeemRequest, db: _DbDep) -> RedeemRes
     return RedeemResponse(**result)
 
 
+class ReportRequest(BaseModel):
+    """One progress line from the installer running on the user's machine."""
+
+    type: str
+    client: str | None = None
+    ok: bool | None = None
+    reason: str | None = None
+
+
+# What `hangar setup` is allowed to say. Deliberately narrower than the full
+# vocabulary: the installer knows about pairing and MCP clients, and nothing
+# about repos or projects. Those come from the agent in #6, over a different
+# credential. A device token that could fake `done` could make the onboarding
+# screen declare victory over an install that never happened.
+_INSTALLER_EVENTS = frozenset({"paired", "client.configured"})
+
+
+@router.post("/report", status_code=204)
+async def report(
+    auth: Annotated[AuthContext, Depends(require_auth)],
+    body: ReportRequest,
+) -> None:
+    """Progress from the installer. Authenticated by the device bearer token.
+
+    The token was minted seconds earlier by `/redeem`, so this is the same
+    machine reporting on work the user just asked for.
+    """
+    if body.type not in _INSTALLER_EVENTS:
+        raise HangarError(
+            title="Event not reportable by an installer",
+            status=422,
+            type_="/errors/validation",
+            detail=f"{body.type!r} is not one of {sorted(_INSTALLER_EVENTS)}",
+        )
+    payload = body.model_dump(exclude_none=True, exclude={"type"})
+    await bus.publish(auth.user.id, body.type, payload or None)
+
+
 _SHIM_SH = """\
 #!/usr/bin/env sh
 # Vibecell one-line setup. Carries your pairing code to the installer.

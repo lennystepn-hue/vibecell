@@ -3,6 +3,7 @@ pub mod mcp_token;
 pub mod pair;
 pub mod run;
 pub mod secret;
+pub mod setup;
 pub mod skill;
 pub mod status;
 pub mod sync;

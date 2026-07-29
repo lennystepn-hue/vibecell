@@ -84,6 +84,38 @@ async def test_dev_publish_rejects_unknown_event_type(
 
 
 @pytest.mark.asyncio
+async def test_report_requires_auth(client: AsyncClient) -> None:
+    r = await client.post("/api/v1/onboarding/report", json={"type": "paired"})
+    assert r.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_report_accepts_what_an_installer_knows(authed_client: AsyncClient) -> None:
+    for body in (
+        {"type": "paired"},
+        {"type": "client.configured", "client": "cursor", "ok": True},
+        {"type": "client.configured", "client": "zed", "ok": False, "reason": "not found"},
+    ):
+        r = await authed_client.post("/api/v1/onboarding/report", json=body)
+        assert r.status_code == 204, body
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("event_type", ["done", "project.created", "scan.started"])
+async def test_report_refuses_events_the_installer_cannot_know(
+    authed_client: AsyncClient, event_type: str
+) -> None:
+    """The installer wires up MCP clients. It knows nothing about repos.
+
+    Those events come from the agent in #6, over a different credential. A
+    device token that could fake `done` could make the onboarding screen
+    declare victory over an install that never happened.
+    """
+    r = await authed_client.post("/api/v1/onboarding/report", json={"type": event_type})
+    assert r.status_code == 422
+
+
+@pytest.mark.asyncio
 async def test_dev_publish_requires_a_type(
     authed_client: AsyncClient, monkeypatch: pytest.MonkeyPatch
 ) -> None:
