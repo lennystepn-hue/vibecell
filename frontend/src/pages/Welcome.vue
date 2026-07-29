@@ -264,7 +264,7 @@ onMounted(async () => {
       <!-- Header brand mark -->
       <div class="flex items-center gap-2 mb-10 text-fg-subtle">
         <span class="text-signal-green font-mono text-section">◈</span>
-        <span class="font-mono text-small tracking-[0.08em] uppercase">Vibecell · welcome</span>
+        <span class="font-mono text-small tracking-label uppercase">Vibecell · welcome</span>
       </div>
 
       <!-- Step indicator: 01 / 02 / 03.
@@ -279,7 +279,7 @@ onMounted(async () => {
         >
           <div class="flex items-center gap-2.5 min-w-0">
             <span
-              class="w-7 h-7 rounded-md flex items-center justify-center font-mono text-[11px] tracking-tight transition-colors shrink-0"
+              class="w-7 h-7 rounded-md flex items-center justify-center font-mono text-micro tracking-tight transition-colors shrink-0"
               :style="
                 step === n
                   ? { background: 'var(--signal-green)', color: 'var(--bg-body-to)', boxShadow: '0 0 0 1px var(--signal-green), 0 0 12px rgb(var(--signal-green-rgb) / 0.25)' }
@@ -291,7 +291,7 @@ onMounted(async () => {
               {{ String(n).padStart(2, "0") }}
             </span>
             <span
-              class="font-mono text-small uppercase tracking-[0.06em] truncate"
+              class="font-mono text-small uppercase tracking-label truncate"
               :class="step === n ? '' : 'hidden sm:inline'"
               :style="step === n ? { color: 'var(--fg-primary)' } : { color: 'var(--fg-subtle)' }"
             >
@@ -422,7 +422,7 @@ onMounted(async () => {
           <div v-if="tab === 'ai-prompt'" class="space-y-4">
             <p class="text-small text-fg-muted">{{ INSTALL_PROMPT_PITCH }}</p>
             <div
-              class="rounded-md p-4 font-mono text-[12px] leading-relaxed whitespace-pre-wrap select-all"
+              class="rounded-md p-4 font-mono text-small leading-relaxed whitespace-pre-wrap select-all"
               style="background:rgb(var(--bg-surface-rgb) / 0.5); border:1px solid var(--border-default); color:var(--fg-body); max-height:280px; overflow-y:auto"
             >{{ VIBECELL_INSTALL_PROMPT }}</div>
             <div class="flex items-center gap-3">
@@ -433,7 +433,7 @@ onMounted(async () => {
               >
                 {{ copiedKey === 'ai-prompt' ? "✓ Copied — paste into your AI" : "Copy prompt" }}
               </PrimaryButton>
-              <span class="font-mono text-[10px] text-fg-subtle whitespace-nowrap">
+              <span class="font-mono text-nano text-fg-subtle whitespace-nowrap">
                 ~{{ Math.ceil(VIBECELL_INSTALL_PROMPT.length / 4) }} tokens
               </span>
             </div>

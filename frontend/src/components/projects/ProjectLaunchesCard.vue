@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from "vue";
 
+import Card from "@/components/ui/Card.vue";
 import MonoLabel from "@/components/ui/MonoLabel.vue";
 import PrimaryButton from "@/components/ui/PrimaryButton.vue";
 import TextField from "@/components/ui/TextField.vue";
@@ -77,16 +78,16 @@ const shipsCount = computed(() => ships.list.length);
 </script>
 
 <template>
-  <section class="glass rounded-lg p-5">
-    <header class="flex items-center justify-between mb-4 select-none">
-      <h3 class="mono-label text-fg-muted">//ships + launches <span class="opacity-60">({{ shipsCount }} ships · {{ count }} launches)</span></h3>
+  <Card title="ships + launches">
+    <template #meta>({{ shipsCount }} ships · {{ count }} launches)</template>
+    <template #actions>
       <button
         v-if="!editing"
         type="button"
         class="mono-label hover:text-fg-body transition-colors"
         @click="editing = true"
       >+ record launch</button>
-    </header>
+    </template>
 
     <div>
     <form v-if="editing" class="mb-5 p-4 rounded-md bg-bg-surface space-y-3" @submit.prevent="onSubmit">
@@ -127,7 +128,7 @@ const shipsCount = computed(() => ships.list.length);
           class="flex items-center gap-3 text-small py-1.5 border-b border-border-subtle last:border-b-0"
         >
           <span class="font-mono text-fg-primary w-20 shrink-0">{{ s.version || '—' }}</span>
-          <span class="text-fg-subtle font-mono text-[10px] w-20 shrink-0">{{ fmtDate(s.shipped_at) }}</span>
+          <span class="text-fg-subtle font-mono text-nano w-20 shrink-0">{{ fmtDate(s.shipped_at) }}</span>
           <span class="flex-1 text-fg-body truncate">{{ s.summary || '(no summary)' }}</span>
         </li>
       </ul>
@@ -145,10 +146,10 @@ const shipsCount = computed(() => ships.list.length);
           class="flex items-center gap-3 text-small py-1.5 border-b border-border-subtle last:border-b-0"
         >
           <span
-            class="font-mono text-[10px] uppercase px-2 py-0.5 rounded-sm w-28 shrink-0 text-center"
+            class="font-mono text-nano uppercase px-2 py-0.5 rounded-sm w-28 shrink-0 text-center"
             :style="{ background: 'var(--signal-blue-bg)', color: 'var(--fg-body)' }"
           >{{ platformLabels[(l.platform as Platform)] || l.platform }}</span>
-          <span class="text-fg-subtle font-mono text-[10px] w-20 shrink-0">{{ fmtDate(l.launched_at) }}</span>
+          <span class="text-fg-subtle font-mono text-nano w-20 shrink-0">{{ fmtDate(l.launched_at) }}</span>
           <a
             v-if="l.url"
             :href="l.url"
@@ -157,7 +158,7 @@ const shipsCount = computed(() => ships.list.length);
             class="link flex-1 truncate"
           >{{ l.url }}</a>
           <span v-else class="flex-1 text-fg-subtle italic">no url</span>
-          <div class="flex gap-2 shrink-0 text-[10px] text-fg-subtle font-mono">
+          <div class="flex gap-2 shrink-0 text-nano text-fg-subtle font-mono">
             <span
               v-for="[k, v] in metricsKeys(l)"
               :key="k"
@@ -167,5 +168,5 @@ const shipsCount = computed(() => ships.list.length);
       </ul>
     </div>
     </div>
-  </section>
+  </Card>
 </template>

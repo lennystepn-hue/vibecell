@@ -57,7 +57,7 @@ const cfg = computed(() => mapping[props.status]);
 
 <template>
   <span
-    class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-sm font-mono text-[10px]"
+    class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-sm font-mono text-nano"
     :class="[cfg.bold ? 'font-semibold' : '', cfg.pulse ? 'live-pill' : '']"
     :style="{
       background: bgVar[cfg.tone],

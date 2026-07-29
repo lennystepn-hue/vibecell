@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
 
+import Card from "@/components/ui/Card.vue";
 import { onProjectLiveEvent } from "@/composables/useProjectLive";
 
 const props = defineProps<{ slug: string }>();
@@ -141,13 +142,12 @@ const sparkline = computed(() => {
 </script>
 
 <template>
-  <section class="glass rounded-lg p-5">
-    <header class="flex items-center justify-between mb-3">
-      <h3 class="mono-label text-fg-muted">//health</h3>
+  <Card title="health">
+    <template #actions>
       <span v-if="lastProbedAt" class="text-small text-fg-subtle tabular-nums">
         {{ formatTime(lastProbedAt) }}
       </span>
-    </header>
+    </template>
 
     <!-- Loading -->
     <div v-if="loading" class="text-small text-fg-subtle font-mono">probing…</div>
@@ -171,7 +171,7 @@ const sparkline = computed(() => {
       </span>
       <div class="min-w-0">
         <p class="text-small text-fg-body">Waiting for first probe</p>
-        <p class="text-[11px] text-fg-subtle mt-0.5">{{ message ?? 'Runs every 5 minutes.' }}</p>
+        <p class="text-micro text-fg-subtle mt-0.5">{{ message ?? 'Runs every 5 minutes.' }}</p>
       </div>
     </div>
 
@@ -184,7 +184,7 @@ const sparkline = computed(() => {
           :style="{ background: statusColor(derivedStatus), boxShadow: `0 0 10px ${statusColor(derivedStatus)}` }"
         />
         <span
-          class="mono-label px-2 py-0.5 rounded text-[11px]"
+          class="mono-label px-2 py-0.5 rounded text-micro"
           :style="{ background: statusBg(derivedStatus), color: statusColor(derivedStatus) }"
         >{{ statusLabel(derivedStatus) }}</span>
       </div>
@@ -192,24 +192,24 @@ const sparkline = computed(() => {
       <!-- Stats grid -->
       <div class="grid grid-cols-3 gap-3">
         <div>
-          <p class="font-mono text-[10px] uppercase tracking-[0.12em] text-fg-subtle">24h uptime</p>
+          <p class="font-mono text-nano uppercase tracking-caps text-fg-subtle">24h uptime</p>
           <p class="font-mono text-title text-fg-primary tabular-nums" :style="{ color: statusColor(derivedStatus) }">
             {{ formatPct(uptime24) }}
           </p>
         </div>
         <div>
-          <p class="font-mono text-[10px] uppercase tracking-[0.12em] text-fg-subtle">7d uptime</p>
+          <p class="font-mono text-nano uppercase tracking-caps text-fg-subtle">7d uptime</p>
           <p class="font-mono text-title text-fg-body tabular-nums">{{ formatPct(uptime7d) }}</p>
         </div>
         <div>
-          <p class="font-mono text-[10px] uppercase tracking-[0.12em] text-fg-subtle">latency</p>
+          <p class="font-mono text-nano uppercase tracking-caps text-fg-subtle">latency</p>
           <p class="font-mono text-title text-fg-body tabular-nums">{{ formatLatency(latencyMs) }}</p>
         </div>
       </div>
 
       <!-- Sparkline: last 24 probes, 3px each, color-coded. -->
       <div v-if="sparkline.length > 0">
-        <p class="font-mono text-[10px] uppercase tracking-[0.12em] text-fg-subtle mb-1.5">
+        <p class="font-mono text-nano uppercase tracking-caps text-fg-subtle mb-1.5">
           last {{ sparkline.length }} probes
         </p>
         <div class="flex items-end gap-[2px] h-6">
@@ -227,5 +227,5 @@ const sparkline = computed(() => {
         </div>
       </div>
     </div>
-  </section>
+  </Card>
 </template>

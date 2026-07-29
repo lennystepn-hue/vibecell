@@ -185,7 +185,7 @@ const disableValid = computed(() => /^\d{6}$/.test(disableCode.value));
         autocomplete="one-time-code"
         maxlength="6"
         placeholder="000000"
-        class="h-10 w-32 px-3 rounded-md font-mono text-section tracking-[0.2em] text-center bg-bg-surface border border-border text-fg-primary"
+        class="h-10 w-32 px-3 rounded-md font-mono text-section tracking-wide text-center bg-bg-surface border border-border text-fg-primary"
       />
       <div class="flex items-center gap-3">
         <button
@@ -223,7 +223,7 @@ const disableValid = computed(() => /^\d{6}$/.test(disableCode.value));
                style="background: rgb(var(--bg-surface-rgb) / 0.5); border: 1px solid var(--border)">
             <code class="flex-1 break-all text-fg-body">{{ setupData.secret }}</code>
           </div>
-          <p class="text-[11px] text-fg-subtle font-mono">
+          <p class="text-micro text-fg-subtle font-mono">
             // write the secret somewhere safe — losing your authenticator means re-setup
           </p>
         </div>
@@ -238,7 +238,7 @@ const disableValid = computed(() => /^\d{6}$/.test(disableCode.value));
           autocomplete="one-time-code"
           maxlength="6"
           placeholder="000000"
-          class="h-10 w-32 px-3 rounded-md font-mono text-section tracking-[0.2em] text-center bg-bg-surface border border-border text-fg-primary"
+          class="h-10 w-32 px-3 rounded-md font-mono text-section tracking-wide text-center bg-bg-surface border border-border text-fg-primary"
           @keydown.enter="codeValid && verifyCode()"
         />
       </div>

@@ -215,7 +215,7 @@ const SUMMARIES: Record<string, string> = {
           autocomplete="one-time-code"
           maxlength="6"
           placeholder="000000"
-          class="h-10 w-32 px-3 rounded-md font-mono text-section tracking-[0.2em] text-center bg-bg-surface border border-border text-fg-primary"
+          class="h-10 w-32 px-3 rounded-md font-mono text-section tracking-wide text-center bg-bg-surface border border-border text-fg-primary"
           @keydown.enter="codeValid && run()"
         />
       </div>

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from "vue";
 
+import Card from "@/components/ui/Card.vue";
 import Modal from "@/components/ui/Modal.vue";
 import MonoLabel from "@/components/ui/MonoLabel.vue";
 import PrimaryButton from "@/components/ui/PrimaryButton.vue";
@@ -134,20 +135,15 @@ function commitsArr(s: SessionOut): unknown[] {
 </script>
 
 <template>
-  <section class="glass rounded-lg p-5">
-    <header class="flex items-center justify-between mb-4 select-none">
-      <h3 class="mono-label text-fg-muted">
-        //sessions
-        <span class="opacity-60">
-          ({{ count }}<span v-if="sessions.nextCursor">+</span>)
-        </span>
-      </h3>
+  <Card title="sessions">
+    <template #meta>({{ count }}<span v-if="sessions.nextCursor">+</span>)</template>
+    <template #actions>
       <button
         type="button"
         class="mono-label hover:text-fg-body transition-colors"
         @click="openModal"
       >+ log session</button>
-    </header>
+    </template>
 
     <div>
     <div v-if="sessions.loading && count === 0" class="text-small text-fg-muted">loading…</div>
@@ -182,7 +178,7 @@ function commitsArr(s: SessionOut): unknown[] {
               <span
                 v-for="f in filesArr(s)"
                 :key="f"
-                class="font-mono text-[11px] px-2 py-0.5 rounded-sm"
+                class="font-mono text-micro px-2 py-0.5 rounded-sm"
                 :style="{ background: 'var(--signal-blue-bg)', color: 'var(--fg-body)' }"
               >{{ f }}</span>
             </div>
@@ -256,5 +252,5 @@ function commitsArr(s: SessionOut): unknown[] {
       </form>
     </Modal>
     </div>
-  </section>
+  </Card>
 </template>

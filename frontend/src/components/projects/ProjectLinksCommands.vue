@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, nextTick } from "vue";
 
+import Card from "@/components/ui/Card.vue";
 import CopyableValue from "@/components/ui/CopyableValue.vue";
 import MonoLabel from "@/components/ui/MonoLabel.vue";
 import { api } from "@/api/client";
@@ -120,7 +121,7 @@ async function deleteCommand(cmdId: string) {
 </script>
 
 <template>
-  <section class="glass rounded-lg p-0 overflow-hidden">
+  <Card padding="none">
     <div class="flex border-b border-border-subtle">
       <button
         :class="[
@@ -276,5 +277,5 @@ async function deleteCommand(cmdId: string) {
 
       <p class="mono-label opacity-50">// execution lands in the CLI phase (spec 3)</p>
     </div>
-  </section>
+  </Card>
 </template>

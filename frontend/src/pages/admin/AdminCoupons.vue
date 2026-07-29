@@ -52,7 +52,7 @@ function openDelete(c: CouponRow) {
   <div class="max-w-[900px] mx-auto px-4 sm:px-8 py-6 sm:py-8">
     <header class="flex items-baseline justify-between mb-6 gap-4 flex-wrap">
       <div>
-        <p class="font-mono text-[11px] uppercase tracking-[0.15em] text-signal-green mb-1">// admin · coupons</p>
+        <p class="font-mono text-micro uppercase tracking-caps text-signal-green mb-1">// admin · coupons</p>
         <h1 class="text-display text-fg-primary tracking-tight">Coupons</h1>
         <p class="text-body text-fg-muted mt-1">Stripe coupons. Code = Stripe ID, must be unique account-wide.</p>
       </div>
@@ -72,11 +72,11 @@ function openDelete(c: CouponRow) {
       <table v-else class="w-full text-small font-mono">
         <thead>
           <tr class="text-left text-fg-subtle border-b border-border-subtle">
-            <th class="py-2 px-3 text-[10px] uppercase tracking-wider">id</th>
-            <th class="py-2 px-3 text-[10px] uppercase tracking-wider">discount</th>
-            <th class="py-2 px-3 text-[10px] uppercase tracking-wider">duration</th>
-            <th class="py-2 px-3 text-[10px] uppercase tracking-wider">redeemed</th>
-            <th class="py-2 px-3 text-[10px] uppercase tracking-wider">valid</th>
+            <th class="py-2 px-3 text-nano uppercase tracking-wider">id</th>
+            <th class="py-2 px-3 text-nano uppercase tracking-wider">discount</th>
+            <th class="py-2 px-3 text-nano uppercase tracking-wider">duration</th>
+            <th class="py-2 px-3 text-nano uppercase tracking-wider">redeemed</th>
+            <th class="py-2 px-3 text-nano uppercase tracking-wider">valid</th>
             <th class="py-2 px-3"></th>
           </tr>
         </thead>
@@ -96,7 +96,7 @@ function openDelete(c: CouponRow) {
             <td class="py-2 px-3 text-right">
               <button
                 type="button"
-                class="text-[11px] text-fg-subtle hover:text-signal-red transition-colors"
+                class="text-micro text-fg-subtle hover:text-signal-red transition-colors"
                 @click="openDelete(c)"
               >delete</button>
             </td>

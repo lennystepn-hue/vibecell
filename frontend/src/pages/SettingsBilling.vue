@@ -247,11 +247,11 @@ onMounted(() => {
             <div class="flex items-start justify-between mb-5 flex-wrap gap-3">
               <div>
                 <div class="flex items-center gap-3 mb-2">
-                  <span class="font-mono uppercase tracking-widest text-[11px]" style="color: var(--signal-green)">
+                  <span class="font-mono uppercase tracking-widest text-micro" style="color: var(--signal-green)">
                     Vibecell Pro
                   </span>
                   <span
-                    class="px-2 py-0.5 rounded font-mono text-[10px] uppercase tracking-wider font-semibold"
+                    class="px-2 py-0.5 rounded font-mono text-nano uppercase tracking-wider font-semibold"
                     :style="{ background: statusBadge.bg, color: statusBadge.color }"
                   >{{ statusBadge.label }}</span>
                 </div>
@@ -267,7 +267,7 @@ onMounted(() => {
               </div>
 
               <button
-                class="h-11 px-5 rounded-lg font-mono font-semibold text-[12px] transition-all hover:opacity-90"
+                class="h-11 px-5 rounded-lg font-mono font-semibold text-small transition-all hover:opacity-90"
                 style="background: var(--signal-green); color: var(--on-signal); box-shadow: 0 0 20px rgb(var(--signal-green-rgb) / 0.25); white-space: nowrap"
                 :disabled="checkingOut || openingPortal"
                 @click="ctaPrimary.action"
@@ -278,7 +278,7 @@ onMounted(() => {
 
             <!-- Trial progress bar -->
             <div v-if="sub?.status === 'trialing' && trialDaysLeft !== null" class="mt-3">
-              <div class="flex items-center justify-between mb-2 text-[11px] font-mono">
+              <div class="flex items-center justify-between mb-2 text-micro font-mono">
                 <span style="color: var(--signal-green)">
                   {{ trialDaysLeft === 0 ? "Trial ended" : `${trialDaysLeft} day${trialDaysLeft === 1 ? "" : "s"} left` }}
                 </span>
@@ -297,7 +297,7 @@ onMounted(() => {
 
             <p
               v-else-if="sub?.status === 'active' && sub.current_period_end"
-              class="font-mono text-[11px] text-fg-subtle"
+              class="font-mono text-micro text-fg-subtle"
             >
               <span v-if="showWillingCancel" style="color: var(--signal-red)">
                 ⚠ Will not renew — access ends {{ new Date(sub.current_period_end).toLocaleDateString() }}
@@ -309,14 +309,14 @@ onMounted(() => {
 
             <p
               v-else-if="sub?.status === 'past_due' || sub?.status === 'unpaid'"
-              class="font-mono text-[11px]" style="color: var(--signal-red)"
+              class="font-mono text-micro" style="color: var(--signal-red)"
             >
               Stripe couldn't process your last charge. Update your payment method to keep Pro access.
             </p>
 
             <p
               v-else-if="sub?.status === 'canceled'"
-              class="font-mono text-[11px] text-fg-subtle"
+              class="font-mono text-micro text-fg-subtle"
             >
               Subscription canceled. Re-subscribe any time — your data is preserved.
             </p>
@@ -355,7 +355,7 @@ onMounted(() => {
                 </p>
               </div>
               <button
-                class="h-10 px-4 rounded-md font-mono text-[11px] transition-opacity hover:opacity-85 self-center tracking-wider uppercase"
+                class="h-10 px-4 rounded-md font-mono text-micro transition-opacity hover:opacity-85 self-center tracking-wider uppercase"
                 :style="{
                   background: 'var(--signal-amber)',
                   color: 'var(--on-signal)',
@@ -372,7 +372,7 @@ onMounted(() => {
 
           <!-- ─────────────────── What you get ─────────────────── -->
           <div class="mb-6">
-            <h2 class="font-mono text-[11px] uppercase tracking-widest text-fg-muted mb-4">
+            <h2 class="font-mono text-micro uppercase tracking-widest text-fg-muted mb-4">
               // what's included
             </h2>
             <div class="grid sm:grid-cols-2 gap-3">
@@ -419,7 +419,7 @@ onMounted(() => {
           </div>
 
           <!-- ─────────────────── Footnote ─────────────────── -->
-          <p class="text-[11px] font-mono text-fg-subtle leading-relaxed">
+          <p class="text-micro font-mono text-fg-subtle leading-relaxed">
             // VAT applies based on your billing address (handled by Stripe Tax) ·
             cancel any time from the portal · keep access through the end of the
             current period after cancel · we never share or sell your data ·

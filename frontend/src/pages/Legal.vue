@@ -449,7 +449,7 @@ const visibleSections = computed<Section[]>(() => {
 
     <!-- Hero — pt-[88px] floor compensates for the fixed header overlay. -->
     <section class="max-w-3xl mx-auto px-4 sm:px-6 pt-[88px] sm:pt-[104px] pb-8 sm:pb-10 text-center">
-      <p class="font-mono text-[10px] uppercase tracking-[0.18em] mb-3" style="color: var(--signal-green)">
+      <p class="font-mono text-nano uppercase tracking-wide mb-3" style="color: var(--signal-green)">
         // legal
       </p>
       <h1 class="font-semibold mb-3" style="font-size: clamp(1.8rem, 3.5vw, 2.6rem); letter-spacing: -0.04em; color: var(--fg-primary)">
@@ -467,7 +467,7 @@ const visibleSections = computed<Section[]>(() => {
         <button
           v-for="t in (['imprint', 'privacy', 'terms'] as const)"
           :key="t"
-          class="px-4 py-1.5 rounded text-[11px] uppercase tracking-wider transition-all"
+          class="px-4 py-1.5 rounded text-micro uppercase tracking-wider transition-all"
           :style="{
             background: activeTab === t ? 'var(--signal-green)' : 'transparent',
             color: activeTab === t ? 'var(--bg-body-to)' : 'var(--fg-muted)',

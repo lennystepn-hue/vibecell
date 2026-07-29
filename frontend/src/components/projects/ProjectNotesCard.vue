@@ -2,6 +2,7 @@
 import { useDebounceFn } from "@vueuse/core";
 import { computed, onMounted, ref, watch } from "vue";
 
+import Card from "@/components/ui/Card.vue";
 import { useNotesStore } from "@/stores/notes";
 import type { components } from "@/api/types.gen";
 
@@ -61,11 +62,10 @@ const statusLabel = computed(() => {
 </script>
 
 <template>
-  <section class="glass rounded-lg p-5">
-    <header class="flex items-center justify-between mb-3 select-none">
-      <h3 class="mono-label text-fg-muted">//notes (markdown)</h3>
+  <Card title="notes (markdown)">
+    <template #actions>
       <span class="mono-label opacity-60">{{ statusLabel }}</span>
-    </header>
+    </template>
     <div>
       <textarea
         :value="localValue"
@@ -76,5 +76,5 @@ const statusLabel = computed(() => {
         @blur="onBlur"
       />
     </div>
-  </section>
+  </Card>
 </template>

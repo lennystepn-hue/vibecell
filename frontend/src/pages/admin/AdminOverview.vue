@@ -106,12 +106,12 @@ function kpiAccentStyle(accent?: string | null): Record<string, string> {
   <div class="max-w-[1400px] mx-auto px-4 sm:px-8 py-6 sm:py-8">
     <header class="flex items-baseline justify-between mb-6 flex-wrap gap-4">
       <div>
-        <p class="font-mono text-[11px] uppercase tracking-[0.15em] text-signal-green mb-1">// admin · overview</p>
+        <p class="font-mono text-micro uppercase tracking-caps text-signal-green mb-1">// admin · overview</p>
         <h1 class="text-display text-fg-primary tracking-tight">Cockpit</h1>
       </div>
       <p
         v-if="overview"
-        class="font-mono text-[11px] text-fg-subtle"
+        class="font-mono text-micro text-fg-subtle"
       >// auto-refresh 30s · {{ fmtRel(overview.generated_at) }}</p>
     </header>
 
@@ -134,7 +134,7 @@ function kpiAccentStyle(accent?: string | null): Record<string, string> {
           :key="k.label"
           class="glass rounded-lg p-3"
         >
-          <p class="font-mono text-[9px] uppercase tracking-[0.12em] opacity-50 mb-1">{{ k.label }}</p>
+          <p class="font-mono text-pico uppercase tracking-caps opacity-50 mb-1">{{ k.label }}</p>
           <p
             class="font-mono font-semibold tabular-nums"
             style="font-size: 22px; letter-spacing: -0.03em; line-height: 1"
@@ -142,7 +142,7 @@ function kpiAccentStyle(accent?: string | null): Record<string, string> {
           >{{ k.value }}</p>
           <p
             v-if="k.delta"
-            class="text-[10px] font-mono mt-1"
+            class="text-nano font-mono mt-1"
             :style="{ color: 'var(--signal-green)' }"
           >{{ k.delta }}</p>
         </div>
@@ -202,8 +202,8 @@ function kpiAccentStyle(accent?: string | null): Record<string, string> {
               <span class="font-mono text-fg-subtle shrink-0 w-3 text-center">{{ activityIcon(ev.kind) }}</span>
               <div class="min-w-0 flex-1">
                 <p class="text-fg-body truncate">{{ ev.title }}</p>
-                <p v-if="ev.detail" class="text-fg-muted text-[11px] truncate">{{ ev.detail }}</p>
-                <p class="text-fg-subtle text-[10px] font-mono mt-0.5">{{ fmtRel(ev.at) }}</p>
+                <p v-if="ev.detail" class="text-fg-muted text-micro truncate">{{ ev.detail }}</p>
+                <p class="text-fg-subtle text-nano font-mono mt-0.5">{{ fmtRel(ev.at) }}</p>
               </div>
             </li>
           </ul>

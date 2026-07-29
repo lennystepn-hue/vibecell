@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch, nextTick } from "vue";
 
+import Card from "@/components/ui/Card.vue";
 import MonoLabel from "@/components/ui/MonoLabel.vue";
 import { api } from "@/api/client";
 import { useProjectsStore } from "@/stores/projects";
@@ -81,14 +82,14 @@ async function detach(slug: string) {
 </script>
 
 <template>
-  <section class="glass rounded-lg p-5">
+  <Card>
     <MonoLabel>stack</MonoLabel>
 
     <div class="flex flex-wrap gap-2 mt-3">
       <span
         v-for="s in project.stack"
         :key="s.stack_item_slug"
-        class="group inline-flex items-center gap-1.5 px-2.5 h-6 rounded-sm font-mono text-[11px]"
+        class="group inline-flex items-center gap-1.5 px-2.5 h-6 rounded-sm font-mono text-micro"
         :style="{ background: 'var(--signal-blue-bg)', color: 'var(--fg-body)', border: '1px solid var(--border-subtle)' }"
       >
         {{ s.name }}
@@ -128,7 +129,7 @@ async function detach(slug: string) {
           @mouseenter="highlightedIndex = i"
         >
           <span>{{ item.name }}</span>
-          <span class="mono text-[10px] text-fg-muted">{{ item.kind ?? "—" }}</span>
+          <span class="mono text-nano text-fg-muted">{{ item.kind ?? "—" }}</span>
         </button>
       </div>
     </div>
@@ -140,5 +141,5 @@ async function detach(slug: string) {
       class="mt-3 mono-label text-fg-subtle hover:text-fg-body transition-colors"
       @click="openAdding"
     >+ add stack item</button>
-  </section>
+  </Card>
 </template>

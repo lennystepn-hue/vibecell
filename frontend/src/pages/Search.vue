@@ -2,7 +2,7 @@
 import { computed, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
-import MonoLabel from "@/components/ui/MonoLabel.vue";
+import Card from "@/components/ui/Card.vue";
 import { api } from "@/api/client";
 
 interface SearchHit {
@@ -169,9 +169,8 @@ const entityLabels: Record<string, string> = {
         </p>
       </div>
 
-      <div v-if="!query && recentSearches.length > 0" class="glass rounded-lg p-5">
-        <MonoLabel>recent searches</MonoLabel>
-        <ul class="mt-3 space-y-1">
+      <Card v-if="!query && recentSearches.length > 0" title="recent searches">
+        <ul class="space-y-1">
           <li
             v-for="r in recentSearches"
             :key="r"
@@ -182,7 +181,7 @@ const entityLabels: Record<string, string> = {
             >{{ r }}</RouterLink>
           </li>
         </ul>
-      </div>
+      </Card>
 
       <div v-if="loading" class="text-fg-muted text-small py-8 text-center">searching…</div>
 
@@ -191,15 +190,13 @@ const entityLabels: Record<string, string> = {
       </div>
 
       <div v-else-if="grouped.length > 0" class="space-y-6">
-        <section
+        <Card
           v-for="g in grouped"
           :key="g.entity"
-          class="glass rounded-lg p-5"
+          :title="entityLabels[g.entity] || g.entity"
         >
-          <MonoLabel>{{ entityLabels[g.entity] || g.entity }}
-            <span class="opacity-60 ml-2">({{ g.hits.length }})</span>
-          </MonoLabel>
-          <ul class="mt-3 space-y-2">
+          <template #meta>({{ g.hits.length }})</template>
+          <ul class="space-y-2">
             <li
               v-for="hit in g.hits"
               :key="`${hit.entity}:${hit.entity_id}`"
@@ -207,7 +204,7 @@ const entityLabels: Record<string, string> = {
             >
               <RouterLink :to="resultLink(hit)" class="block">
                 <div class="flex items-start gap-3">
-                  <span class="font-mono text-[10px] uppercase text-fg-subtle shrink-0 w-16">{{ hit.entity }}</span>
+                  <span class="font-mono text-nano uppercase text-fg-subtle shrink-0 w-16">{{ hit.entity }}</span>
                   <div class="flex-1 min-w-0">
                     <p v-if="hit.title" class="text-body text-fg-primary font-medium truncate">{{ hit.title }}</p>
                     <!-- XSS-safe highlight: we HTML-escape the whole snippet client-side,
@@ -221,12 +218,12 @@ const entityLabels: Record<string, string> = {
                       project: <span class="font-mono">{{ hit.project_slug }}</span>
                     </p>
                   </div>
-                  <span class="font-mono text-[10px] text-fg-subtle shrink-0">{{ hit.rank.toFixed(3) }}</span>
+                  <span class="font-mono text-nano text-fg-subtle shrink-0">{{ hit.rank.toFixed(3) }}</span>
                 </div>
               </RouterLink>
             </li>
           </ul>
-      </section>
+      </Card>
     </div>
   </div>
 </template>

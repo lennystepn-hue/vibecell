@@ -55,7 +55,7 @@ function decline() {
     >
       <p
         id="consent-title"
-        class="font-mono text-[11px] uppercase tracking-[0.12em] mb-2"
+        class="font-mono text-micro uppercase tracking-caps mb-2"
         style="color: var(--signal-green)"
       >// privacy</p>
       <p class="text-small text-fg-body leading-relaxed mb-4">

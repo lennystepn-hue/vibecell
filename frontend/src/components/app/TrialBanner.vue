@@ -189,7 +189,7 @@ const VARIANT_TOKENS: Record<
 <template>
   <div
     v-if="finalVisible && variant"
-    class="px-4 py-2 flex items-center gap-4 font-mono text-[11px]"
+    class="px-4 py-2 flex items-center gap-4 font-mono text-micro"
     :style="{
       background: VARIANT_TOKENS[variant].bg,
       borderBottom: `1px solid ${VARIANT_TOKENS[variant].border}`,
@@ -198,7 +198,7 @@ const VARIANT_TOKENS: Record<
   >
     <span class="flex-1 truncate">{{ text }}</span>
     <button
-      class="px-3 py-1 rounded text-[10px] font-medium uppercase tracking-wider transition-opacity hover:opacity-80 shrink-0"
+      class="px-3 py-1 rounded text-nano font-medium uppercase tracking-wider transition-opacity hover:opacity-80 shrink-0"
       :style="{
         background: variant === 'muted' ? 'transparent' : VARIANT_TOKENS[variant].fg,
         color: variant === 'muted' ? VARIANT_TOKENS[variant].ctaText : VARIANT_TOKENS[variant].ctaText,

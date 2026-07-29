@@ -257,13 +257,13 @@ const steps = [
 
           <div class="flex flex-wrap gap-3 mb-3">
             <button
-              class="px-5 py-2.5 rounded-md font-mono font-semibold text-[12px] transition-opacity hover:opacity-90 tracking-wider uppercase"
+              class="px-5 py-2.5 rounded-md font-mono font-semibold text-small transition-opacity hover:opacity-90 tracking-wider uppercase"
               style="background: var(--signal-green); color: var(--on-signal); box-shadow: 0 0 20px rgb(var(--signal-green-rgb) / 0.18)"
               @click="goSignIn">
               {{ auth.isAuthed ? 'Open dashboard →' : 'Start 7-day trial →' }}
             </button>
             <button
-              class="px-5 py-2.5 rounded-md font-mono text-[12px] transition-opacity hover:opacity-100 tracking-wider uppercase"
+              class="px-5 py-2.5 rounded-md font-mono text-small transition-opacity hover:opacity-100 tracking-wider uppercase"
               style="border: 1px solid rgb(var(--border-rgb) / 0.2); color: var(--fg-body); background: transparent; opacity: 0.85"
               @click="scrollToDemo">
               See how it works ↓
@@ -276,7 +276,7 @@ const steps = [
                Both are inline links rather than buttons — keeps the primary
                accent on the green "Start 7-day trial" button per the
                .impeccable.md "single accent per surface" rule. -->
-          <p class="mb-2 font-mono text-[11px]" style="color: var(--fg-body); letter-spacing: 0.02em">
+          <p class="mb-2 font-mono text-micro" style="color: var(--fg-body); letter-spacing: 0.02em">
             <span aria-hidden="true" style="color: var(--signal-green)">✦</span>
             Already in Claude / Cursor / Zed?
             <RouterLink
@@ -288,7 +288,7 @@ const steps = [
           <a
             v-if="!auth.isAuthed"
             href="/api/v1/auth/google/start?next=%2Fp"
-            class="mb-7 inline-flex items-center gap-2 font-mono text-[11px] hover:underline underline-offset-2"
+            class="mb-7 inline-flex items-center gap-2 font-mono text-micro hover:underline underline-offset-2"
             style="color: var(--fg-body); letter-spacing: 0.02em"
           >
             <svg width="12" height="12" viewBox="0 0 18 18" aria-hidden="true">
@@ -305,7 +305,7 @@ const steps = [
           <!-- Feature signal — surfaces the actual product surface
                (dashboard + MCP tools + cron + secrets + history) rather
                than infrastructure. Mono-label cadence, no marketing copy. -->
-          <p class="font-mono text-[11px]" style="color: var(--fg-subtle); letter-spacing: 0.04em">
+          <p class="font-mono text-micro" style="color: var(--fg-subtle); letter-spacing: 0.04em">
             dashboard · 49 MCP tools · auto-cron · session log · workspace secrets
           </p>
         </div>
@@ -330,7 +330,7 @@ const steps = [
     <!-- ─── "Works with" logo strip ────────────────────────────────────── -->
     <section class="relative px-6 py-8 -mt-8">
       <div class="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-center gap-6 sm:gap-10">
-        <p class="font-mono text-[10px] tracking-[0.18em] uppercase" style="color: var(--fg-subtle)">
+        <p class="font-mono text-nano tracking-wide uppercase" style="color: var(--fg-subtle)">
           Works with
         </p>
         <div class="flex flex-wrap items-center justify-center gap-x-8 gap-y-4 opacity-80">
@@ -344,28 +344,28 @@ const steps = [
             <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
               <path d="M17.304 3.541h-3.672l6.696 16.918H24Zm-10.608 0L0 20.459h3.744l1.37-3.553h7.005l1.37 3.553h3.744L10.536 3.541Zm-.371 10.223 2.291-5.946 2.292 5.946Z"/>
             </svg>
-            <span class="font-mono text-[13px]">Claude</span>
+            <span class="font-mono text-body">Claude</span>
           </span>
           <!-- Cursor — official cursor mark (simple-icons: cursor) -->
           <span class="flex items-center gap-2 transition-opacity hover:opacity-100" style="color: var(--fg-body); font-size: 14px">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
               <path d="M11.925 24l10.425-6V6L11.925 0 1.5 6v12l10.425 6zm10.425-6L11.925 12 1.5 18l10.425 6 10.425-6zm0-12L11.925 12V0l10.425 6zM1.5 6v12l10.425-6V0L1.5 6z"/>
             </svg>
-            <span class="font-mono text-[13px]">Cursor</span>
+            <span class="font-mono text-body">Cursor</span>
           </span>
           <!-- OpenAI — petal/knot logomark (simple-icons: openai) -->
           <span class="flex items-center gap-2 transition-opacity hover:opacity-100" style="color: var(--fg-body); font-size: 14px">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
               <path d="M22.282 9.821a5.985 5.985 0 0 0-.516-4.91 6.046 6.046 0 0 0-6.51-2.9A6.065 6.065 0 0 0 4.981 4.18a5.985 5.985 0 0 0-3.998 2.9 6.046 6.046 0 0 0 .743 7.097 5.98 5.98 0 0 0 .51 4.911 6.051 6.051 0 0 0 6.515 2.9A5.985 5.985 0 0 0 13.26 24a6.056 6.056 0 0 0 5.772-4.206 5.99 5.99 0 0 0 3.998-2.9 6.056 6.056 0 0 0-.747-7.073zM13.26 22.43a4.476 4.476 0 0 1-2.876-1.04l.142-.08 4.778-2.758a.795.795 0 0 0 .393-.681v-6.737l2.02 1.168a.07.07 0 0 1 .038.052v5.583a4.504 4.504 0 0 1-4.495 4.494zM3.6 18.304a4.47 4.47 0 0 1-.535-3.014l.142.085 4.783 2.759a.771.771 0 0 0 .781 0l5.843-3.369v2.332a.08.08 0 0 1-.033.062L9.74 19.95a4.5 4.5 0 0 1-6.14-1.646zM2.34 7.896a4.485 4.485 0 0 1 2.366-1.973V11.6a.766.766 0 0 0 .388.677l5.815 3.354-2.02 1.168a.076.076 0 0 1-.071 0l-4.83-2.786A4.504 4.504 0 0 1 2.34 7.872zm16.597 3.855L13.103 8.364 15.12 7.2a.076.076 0 0 1 .07 0l4.83 2.792a4.494 4.494 0 0 1-.676 8.104V12.42a.79.79 0 0 0-.407-.667zm2.01-3.024-.142-.085-4.774-2.782a.776.776 0 0 0-.785 0L9.409 9.23V6.897a.066.066 0 0 1 .028-.062l4.83-2.787a4.5 4.5 0 0 1 6.681 4.66zM8.307 12.863l-2.02-1.164a.08.08 0 0 1-.038-.057V6.074a4.5 4.5 0 0 1 7.376-3.454l-.142.081L8.704 5.46a.795.795 0 0 0-.393.681zm1.098-2.366 2.602-1.5 2.607 1.5v3l-2.598 1.5-2.607-1.5Z"/>
             </svg>
-            <span class="font-mono text-[13px]">OpenAI</span>
+            <span class="font-mono text-body">OpenAI</span>
           </span>
           <!-- Zed — angular Z arrow (simple-icons: zedindustries) -->
           <span class="flex items-center gap-2 transition-opacity hover:opacity-100" style="color: var(--fg-body); font-size: 14px">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
               <path d="M11.999 0a11.999 11.999 0 1 0 0 23.998A11.999 11.999 0 0 0 12 0Zm5.997 5.987-7.992 7.991h7.992v3.998H5.962v-3.998l7.991-7.991H5.962V1.989h12.034Z"/>
             </svg>
-            <span class="font-mono text-[13px]">Zed</span>
+            <span class="font-mono text-body">Zed</span>
           </span>
           <!-- Continue.dev — chevron continuation mark. Their actual logo
                is a stylised "carrot/play" pair; this is a faithful inline
@@ -375,7 +375,7 @@ const steps = [
               <path d="M3 5.5v13a1 1 0 0 0 1.546.838l8.5-5.5a1 1 0 0 0 0-1.676l-8.5-5.5A1 1 0 0 0 3 5.5Z" opacity=".5"/>
               <path d="M11 5.5v13a1 1 0 0 0 1.546.838l8.5-5.5a1 1 0 0 0 0-1.676l-8.5-5.5A1 1 0 0 0 11 5.5Z"/>
             </svg>
-            <span class="font-mono text-[13px]">Continue</span>
+            <span class="font-mono text-body">Continue</span>
           </span>
         </div>
       </div>
@@ -389,7 +389,7 @@ const steps = [
       <div class="relative max-w-[1280px] mx-auto">
         <DashboardPreview />
         <!-- Caption under the mockup -->
-        <p class="text-center mt-6 font-mono text-[11px] tracking-[0.1em] uppercase"
+        <p class="text-center mt-6 font-mono text-micro tracking-caps uppercase"
           style="color: var(--fg-subtle)">
           Your actual dashboard — live, realtime, Claude-driven
         </p>
@@ -403,7 +403,7 @@ const steps = [
           <p class="font-mono font-bold mb-1" style="font-size: 2rem; color: var(--signal-green); letter-spacing: -0.04em">
             {{ c.value }}{{ c.suffix }}
           </p>
-          <p class="font-mono text-[11px] uppercase tracking-[0.1em]" style="color: var(--fg-subtle)">
+          <p class="font-mono text-micro uppercase tracking-caps" style="color: var(--fg-subtle)">
             {{ c.label }}
           </p>
         </div>
@@ -421,7 +421,7 @@ const steps = [
       <div class="relative z-10 max-w-6xl mx-auto">
         <!-- Heading block -->
         <div class="text-center mb-4">
-          <p class="font-mono text-[11px] uppercase tracking-[0.15em] mb-3" style="color: var(--signal-green)">
+          <p class="font-mono text-micro uppercase tracking-caps mb-3" style="color: var(--signal-green)">
             <span class="w-1.5 h-1.5 rounded-full bg-signal-green inline-block mr-2 align-middle animate-pulse" />
             MCP-native, not MCP-compatible
           </p>
@@ -483,7 +483,7 @@ const steps = [
                  same first row as the tag block; on desktop the grid puts
                  it at the far right anyway. -->
             <span
-              class="font-mono text-[11px] px-2.5 py-1 rounded-md whitespace-nowrap tabular-nums shrink-0"
+              class="font-mono text-micro px-2.5 py-1 rounded-md whitespace-nowrap tabular-nums shrink-0"
               :style="g.accent
                 ? 'background: rgb(var(--signal-green-rgb) / 0.08); color: var(--signal-green); border: 1px solid rgb(var(--signal-green-rgb) / 0.18)'
                 : 'background: rgb(var(--scrim-rgb) / 0.5); color: var(--fg-muted); border: 1px solid rgb(var(--border-rgb) / 0.1)'"
@@ -494,7 +494,7 @@ const steps = [
         </div>
 
         <!-- Footnote strip -->
-        <div class="mt-12 flex flex-wrap items-center justify-center gap-4 sm:gap-8 font-mono text-[11px]"
+        <div class="mt-12 flex flex-wrap items-center justify-center gap-4 sm:gap-8 font-mono text-micro"
           style="color: var(--fg-subtle)">
           <span class="flex items-center gap-2">
             <span class="w-1 h-1 rounded-full bg-signal-green" />
@@ -527,7 +527,7 @@ const steps = [
       <div class="relative z-10 max-w-6xl mx-auto">
         <!-- Heading -->
         <div class="text-center mb-16">
-          <p class="font-mono text-[11px] uppercase tracking-[0.15em] mb-3" style="color: var(--signal-green)">
+          <p class="font-mono text-micro uppercase tracking-caps mb-3" style="color: var(--signal-green)">
             Eight things that just happen
           </p>
           <h2 class="font-semibold leading-tight mb-4"
@@ -549,7 +549,7 @@ const steps = [
             class="flex flex-col items-center gap-3 text-center transition-transform duration-300 hover:-translate-y-1"
           >
             <ProjectOrb :seed="o.seed" :size="72" />
-            <span class="font-mono text-[11px] tracking-wide mt-1"
+            <span class="font-mono text-micro tracking-wide mt-1"
               style="color: var(--fg-body); letter-spacing: 0.03em">
               {{ o.label }}
             </span>
@@ -562,7 +562,7 @@ const steps = [
 
         <!-- Spawn paths — three sub-sections -->
         <div class="text-center mb-10">
-          <p class="font-mono text-[11px] uppercase tracking-[0.15em] mb-3" style="color: var(--signal-green)">
+          <p class="font-mono text-micro uppercase tracking-caps mb-3" style="color: var(--signal-green)">
             Three ways to spawn a project
           </p>
           <h3 class="font-semibold"
@@ -603,7 +603,7 @@ const steps = [
             </div>
 
             <!-- Tag -->
-            <p class="font-mono text-[10px] uppercase tracking-[0.12em] mb-2"
+            <p class="font-mono text-nano uppercase tracking-caps mb-2"
               :style="i === 0 ? 'color: var(--signal-green)' : 'color: var(--fg-subtle)'"
             >
               {{ s.tag }}
@@ -636,7 +636,7 @@ const steps = [
     <section class="relative py-16 md:py-28 px-6 overflow-hidden">
       <div class="max-w-5xl mx-auto relative z-10">
         <div class="text-center mb-12">
-          <p class="font-mono text-[11px] uppercase tracking-[0.15em] mb-3" style="color: var(--signal-green)">
+          <p class="font-mono text-micro uppercase tracking-caps mb-3" style="color: var(--signal-green)">
             A session, in the real
           </p>
           <h2 class="font-semibold leading-tight"
@@ -658,10 +658,10 @@ const steps = [
               <span class="w-2.5 h-2.5 rounded-full" style="background: var(--signal-amber)"></span>
               <span class="w-2.5 h-2.5 rounded-full" style="background: var(--signal-green)"></span>
             </div>
-            <span class="font-mono text-[10px] tracking-widest" style="color: var(--fg-subtle)">
+            <span class="font-mono text-nano tracking-widest" style="color: var(--fg-subtle)">
               claude code · vibecell mcp
             </span>
-            <span class="font-mono text-[10px]" style="color: var(--fg-subtle)">⌥⌘K</span>
+            <span class="font-mono text-nano" style="color: var(--fg-subtle)">⌥⌘K</span>
           </div>
 
           <!-- Body -->
@@ -723,7 +723,7 @@ const steps = [
             <div class="flex items-center gap-2 pt-2" style="color: var(--fg-subtle)">
               <span>&gt; _</span>
               <span class="inline-block w-1.5 h-3.5 animate-pulse" style="background: var(--signal-green)"></span>
-              <span class="ml-3 text-[11px]">live &middot; 0 manual clicks</span>
+              <span class="ml-3 text-micro">live &middot; 0 manual clicks</span>
             </div>
           </div>
         </div>
@@ -742,7 +742,7 @@ const steps = [
       style="background: rgb(var(--bg-surface-rgb) / 0.25); border-top: 1px solid rgb(var(--border-rgb) / 0.07); border-bottom: 1px solid rgb(var(--border-rgb) / 0.07)">
       <div class="max-w-5xl mx-auto">
         <div class="text-center mb-16">
-          <p class="font-mono text-[11px] uppercase tracking-[0.15em] mb-3" style="color: var(--signal-green)">
+          <p class="font-mono text-micro uppercase tracking-caps mb-3" style="color: var(--signal-green)">
             Setup in 3 steps
           </p>
           <h2 class="font-semibold" style="font-size: clamp(1.6rem, 3vw, 2.4rem); letter-spacing: -0.03em; color: var(--fg-primary)">
@@ -779,7 +779,7 @@ const steps = [
     <section class="py-16 md:py-28 px-6">
       <div class="max-w-2xl mx-auto">
         <div class="text-center mb-10">
-          <p class="font-mono text-[10px] uppercase tracking-[0.18em] mb-3" style="color: var(--signal-green)">
+          <p class="font-mono text-nano uppercase tracking-wide mb-3" style="color: var(--signal-green)">
             // pricing
           </p>
           <h2 class="font-semibold mb-3" style="font-size: clamp(1.6rem, 3vw, 2.4rem); letter-spacing: -0.03em; color: var(--fg-primary)">
@@ -809,7 +809,7 @@ const steps = [
           <!-- Monthly -->
           <div class="rounded-lg p-7 flex flex-col"
             style="background: var(--bg-surface); border: 1px solid rgb(var(--border-rgb) / 0.1)">
-            <p class="font-mono text-[10px] uppercase tracking-[0.14em] mb-4" style="color: var(--fg-subtle)">// pro · monthly</p>
+            <p class="font-mono text-nano uppercase tracking-caps mb-4" style="color: var(--fg-subtle)">// pro · monthly</p>
             <div class="flex items-baseline gap-1.5 mb-1">
               <p class="font-bold" style="font-size: 2.6rem; color: var(--fg-primary); letter-spacing: -0.04em; line-height: 1">€8.99</p>
               <p style="color: var(--fg-muted); font-size: 12px">/ month</p>
@@ -822,7 +822,7 @@ const steps = [
               <li class="flex gap-2 items-start"><span style="color:var(--signal-green)">·</span> Auto-cron + workspace secrets</li>
             </ul>
             <button
-              class="w-full py-2.5 rounded-md font-mono text-[11px] tracking-wider uppercase transition-opacity hover:opacity-100"
+              class="w-full py-2.5 rounded-md font-mono text-micro tracking-wider uppercase transition-opacity hover:opacity-100"
               style="border: 1px solid var(--border-strong); color: var(--fg-body); opacity: 0.85"
               @click="goSignIn">
               Start trial →
@@ -835,7 +835,7 @@ const steps = [
               background: launch.active ? 'rgb(var(--signal-amber-rgb) / 0.04)' : 'rgb(var(--signal-green-rgb) / 0.04)',
               border: '1px solid ' + (launch.active ? 'rgb(var(--signal-amber-rgb) / 0.28)' : 'rgb(var(--signal-green-rgb) / 0.28)'),
             }">
-            <p class="font-mono text-[10px] uppercase tracking-[0.14em] mb-4"
+            <p class="font-mono text-nano uppercase tracking-caps mb-4"
               :style="{ color: launch.active ? 'var(--signal-amber)' : 'var(--signal-green)' }">
               // pro · annual
             </p>
@@ -865,7 +865,7 @@ const steps = [
               <li class="flex gap-2 items-start"><span style="color:var(--signal-green)">·</span> 14-day Widerruf, then committed</li>
             </ul>
             <button
-              class="w-full py-2.5 rounded-md font-mono font-semibold text-[11px] tracking-wider uppercase transition-opacity hover:opacity-90"
+              class="w-full py-2.5 rounded-md font-mono font-semibold text-micro tracking-wider uppercase transition-opacity hover:opacity-90"
               :style="{
                 background: launch.active ? 'var(--signal-amber)' : 'var(--signal-green)',
                 color: 'var(--on-signal)',
@@ -894,7 +894,7 @@ const steps = [
         style="background: radial-gradient(ellipse 60% 60% at 50% 50%, rgb(var(--signal-green-rgb) / 0.05) 0%, transparent 70%)" />
 
       <div class="relative z-10 max-w-2xl mx-auto">
-        <p class="font-mono text-[11px] uppercase tracking-[0.15em] mb-4" style="color: var(--signal-green)">
+        <p class="font-mono text-micro uppercase tracking-caps mb-4" style="color: var(--signal-green)">
           Ready to ship smarter?
         </p>
         <h2 class="font-semibold mb-5" style="font-size: clamp(1.8rem, 4vw, 3rem); letter-spacing: -0.04em; color: var(--fg-primary); line-height: 1.1">
@@ -906,7 +906,7 @@ const steps = [
           7-day trial. No card to start. €8.99/mo after.
         </p>
         <button
-          class="px-10 py-4 rounded-xl font-mono font-semibold text-[14px] transition-all hover:opacity-90 hover:scale-[1.02] active:scale-[0.99]"
+          class="px-10 py-4 rounded-xl font-mono font-semibold text-section transition-all hover:opacity-90 hover:scale-[1.02] active:scale-[0.99]"
           style="background: var(--signal-green); color: var(--on-signal); box-shadow: 0 0 40px rgb(var(--signal-green-rgb) / 0.3), 0 4px 20px rgb(var(--scrim-rgb) / 0.3)"
           @click="goSignIn">
           {{ auth.isAuthed ? 'Open dashboard →' : 'Start 7-day trial →' }}
@@ -923,7 +923,7 @@ const steps = [
         <!-- Logo -->
         <div class="flex items-center gap-2.5">
           <span class="font-mono" style="font-size: 20px; color: var(--signal-green)">◈</span>
-          <span class="font-mono text-[11px] tracking-[0.15em] uppercase" style="color: var(--fg-subtle)">Vibecell</span>
+          <span class="font-mono text-micro tracking-caps uppercase" style="color: var(--fg-subtle)">Vibecell</span>
         </div>
         <!-- Links -->
         <nav class="flex flex-wrap justify-center gap-6" style="font-size: 12px; color: var(--fg-subtle)">

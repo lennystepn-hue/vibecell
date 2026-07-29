@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, watch } from "vue";
 
+import Card from "@/components/ui/Card.vue";
 import MonoLabel from "@/components/ui/MonoLabel.vue";
 import PrimaryButton from "@/components/ui/PrimaryButton.vue";
 import TextArea from "@/components/ui/TextArea.vue";
@@ -64,7 +65,7 @@ async function save() {
 </script>
 
 <template>
-  <section class="glass rounded-lg p-5 space-y-5">
+  <Card class="space-y-5">
     <div>
       <MonoLabel>editing context</MonoLabel>
     </div>
@@ -132,5 +133,5 @@ async function save() {
       >Cancel</button>
       <PrimaryButton :disabled="saving" :loading="saving" @click="save">Save</PrimaryButton>
     </div>
-  </section>
+  </Card>
 </template>

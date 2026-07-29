@@ -16,6 +16,7 @@
  */
 import { computed, ref } from "vue";
 
+import Card from "@/components/ui/Card.vue";
 import MonoLabel from "@/components/ui/MonoLabel.vue";
 import type { components } from "@/api/types.gen";
 
@@ -69,12 +70,9 @@ async function copyBootstrapPrompt() {
 </script>
 
 <template>
-  <section class="glass rounded-lg p-5 flex flex-col h-full min-h-0">
-    <header class="flex items-center justify-between mb-3 select-none">
-      <h3 class="mono-label text-fg-muted">
-        //primer
-        <span v-if="hasPrimer" class="opacity-60">({{ primer.length.toLocaleString() }} chars)</span>
-      </h3>
+  <Card title="primer" class="flex flex-col h-full min-h-0">
+    <template v-if="hasPrimer" #meta>({{ primer.length.toLocaleString() }} chars)</template>
+    <template #actions>
       <div class="flex items-center gap-3">
         <span class="mono-label opacity-60">authored by AI</span>
         <button
@@ -84,7 +82,7 @@ async function copyBootstrapPrompt() {
           @click="copyPrimer"
         >{{ justCopied ? "✓ copied" : "copy" }}</button>
       </div>
-    </header>
+    </template>
 
     <!-- ── VIEW MODE ────────────────────────────────────────────────── -->
     <div v-if="hasPrimer" class="flex-1 min-h-0 overflow-y-auto">
@@ -114,7 +112,7 @@ async function copyBootstrapPrompt() {
       </p>
 
       <div
-        class="rounded-md p-3 w-full font-mono text-[12px] leading-relaxed whitespace-pre-wrap select-all"
+        class="rounded-md p-3 w-full font-mono text-small leading-relaxed whitespace-pre-wrap select-all"
         style="background:rgb(var(--bg-surface-rgb) / 0.5); border:1px solid var(--border-default); color:var(--fg-body); max-height:180px; overflow-y:auto"
       >{{ BOOTSTRAP_PROMPT }}</div>
 
@@ -132,5 +130,5 @@ async function copyBootstrapPrompt() {
         <span>{{ justCopied ? "✓ copied — paste at your AI" : "Copy bootstrap prompt" }}</span>
       </button>
     </div>
-  </section>
+  </Card>
 </template>

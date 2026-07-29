@@ -11,7 +11,7 @@
 <template>
   <div class="max-w-[900px] mx-auto px-4 sm:px-8 py-6 sm:py-8">
     <header class="mb-6">
-      <p class="font-mono text-[11px] uppercase tracking-[0.15em] text-signal-green mb-1">// admin · settings</p>
+      <p class="font-mono text-micro uppercase tracking-caps text-signal-green mb-1">// admin · settings</p>
       <h1 class="text-display text-fg-primary tracking-tight">Settings</h1>
       <p class="text-body text-fg-muted mt-1">
         Platform-wide configuration. Read-only here on purpose — edit
@@ -20,8 +20,7 @@
       </p>
     </header>
 
-    <section class="glass rounded-lg p-5 mb-6">
-      <h3 class="mono-label text-fg-muted mb-3">// admin gate</h3>
+    <Card title="admin gate" class="mb-6">
       <p class="text-small text-fg-muted leading-relaxed mb-3">
         Two layers must agree before <code class="font-mono">/api/v1/admin/*</code> is reachable.
       </p>
@@ -39,10 +38,9 @@
           <span>Write actions additionally require a fresh <strong>TOTP</strong> code (X-Vibecell-2FA header). Set up on /settings.</span>
         </li>
       </ul>
-    </section>
+    </Card>
 
-    <section class="glass rounded-lg p-5 mb-6">
-      <h3 class="mono-label text-fg-muted mb-3">// trial defaults</h3>
+    <Card title="trial defaults" class="mb-6">
       <ul class="space-y-1.5 text-small font-mono">
         <li class="flex justify-between">
           <span class="text-fg-subtle">trial period</span>
@@ -61,10 +59,9 @@
           <span class="text-fg-body">trialing → past_due (status auto-flip on T-0)</span>
         </li>
       </ul>
-    </section>
+    </Card>
 
-    <section class="glass rounded-lg p-5">
-      <h3 class="mono-label text-fg-muted mb-3">// pricing</h3>
+    <Card title="pricing">
       <ul class="space-y-1.5 text-small font-mono">
         <li class="flex justify-between">
           <span class="text-fg-subtle">monthly</span>
@@ -79,10 +76,10 @@
           <span class="text-fg-body">LAUNCH69 · €69.99/yr · first 100 only</span>
         </li>
       </ul>
-      <p class="text-[11px] text-fg-subtle font-mono mt-4 pt-4 border-t border-border-subtle">
+      <p class="text-micro text-fg-subtle font-mono mt-4 pt-4 border-t border-border-subtle">
         Stripe price IDs live in HANGAR_STRIPE_PRO_PRICE_ID + HANGAR_STRIPE_PRO_ANNUAL_PRICE_ID.
         Coupons live in Stripe directly — manage them on /admin/coupons.
       </p>
-    </section>
+    </Card>
   </div>
 </template>

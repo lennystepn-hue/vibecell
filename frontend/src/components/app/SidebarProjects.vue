@@ -327,14 +327,14 @@ function rowClick() {
           </RouterLink>
           <p
             v-if="(grouped.get(g.id) ?? []).length === 0"
-            class="mono-label opacity-40 px-2 py-1 italic text-[10px]"
+            class="mono-label opacity-40 px-2 py-1 italic text-nano"
           >drop a project here</p>
         </div>
       </section>
 
       <p
         v-if="groups.list.length === 0 && projects.list.length > 0"
-        class="mono-label opacity-50 px-3 pt-2 text-[10px] leading-relaxed"
+        class="mono-label opacity-50 px-3 pt-2 text-nano leading-relaxed"
       >// right-click to create groups</p>
     </div>
     <footer class="border-t border-border-subtle px-3 py-2 mono-label">
@@ -484,7 +484,7 @@ function rowClick() {
           <rect x="3" y="14" width="7" height="7" rx="1" />
           <rect x="14" y="14" width="7" height="7" rx="1" />
         </svg>
-        <span class="font-mono text-[11px] tracking-wide uppercase">Portfolio</span>
+        <span class="font-mono text-micro tracking-wide uppercase">Portfolio</span>
       </RouterLink>
     </div>
   </aside>

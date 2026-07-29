@@ -81,7 +81,7 @@ const isAdmin = computed<boolean>(() => {
     <template v-else>
       <div class="flex items-center gap-2 min-w-0">
         <span class="text-signal-green font-mono tracking-wider" aria-hidden="true">◈</span>
-        <span class="font-mono text-fg-primary tracking-[0.08em] text-small uppercase">
+        <span class="font-mono text-fg-primary tracking-label text-small uppercase">
           Vibecell
         </span>
       </div>

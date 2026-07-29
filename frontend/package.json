@@ -12,6 +12,8 @@
     "typecheck": "vue-tsc --noEmit",
     "lint": "eslint . --ext .ts,.vue --max-warnings 0",
     "lint:theme": "node scripts/check-theme-tokens.mjs",
+    "lint:type": "node scripts/check-type-scale.mjs",
+    "lint:design": "pnpm lint:theme && pnpm lint:type",
     "gen:api": "openapi-typescript http://89.167.111.89:8000/api/v1/openapi.json -o src/api/types.gen.ts",
     "e2e": "playwright test",
     "e2e:install": "playwright install chromium",

@@ -40,12 +40,12 @@ function shortDate(iso: string | null | undefined): string {
         <span class="font-mono text-body text-fg-primary truncate">{{ repo.full_name }}</span>
         <span
           v-if="repo.private"
-          class="font-mono text-[10px] px-1.5 py-0.5 rounded-sm"
+          class="font-mono text-nano px-1.5 py-0.5 rounded-sm"
           :style="{ background: 'var(--signal-amber-bg)', color: 'var(--signal-amber)' }"
         >private</span>
         <span
           v-if="alreadyImported"
-          class="font-mono text-[10px] px-1.5 py-0.5 rounded-sm"
+          class="font-mono text-nano px-1.5 py-0.5 rounded-sm"
           :style="{ background: 'var(--signal-blue-bg)', color: 'var(--signal-blue)' }"
         >already imported</span>
       </div>

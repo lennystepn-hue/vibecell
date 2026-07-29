@@ -6,6 +6,7 @@
  */
 import { ref, watch } from "vue";
 
+import Card from "@/components/ui/Card.vue";
 import { onProjectLiveEvent } from "@/composables/useProjectLive";
 
 const props = defineProps<{ slug: string }>();
@@ -70,11 +71,11 @@ function parseBriefBody(raw: string): { main: string; action: string | null } {
 </script>
 
 <template>
-  <section class="glass rounded-lg p-5">
+  <Card>
     <header class="flex items-start justify-between gap-3 mb-3">
       <div>
         <h3 class="mono-label text-signal-green">// where the fuck was i</h3>
-        <p class="text-[11px] text-fg-subtle font-mono mt-0.5">
+        <p class="text-micro text-fg-subtle font-mono mt-0.5">
           AI-generated brief, powered by your own key.
         </p>
       </div>
@@ -90,7 +91,7 @@ function parseBriefBody(raw: string): { main: string; action: string | null } {
 
     <div v-if="err" class="rounded-md p-3 text-small" style="background: rgb(var(--signal-red-rgb) / 0.08); border: 1px solid rgb(var(--signal-red-rgb) / 0.25); color: var(--signal-red)">
       {{ err }}
-      <p v-if="err.includes('ANTHROPIC_API_KEY')" class="text-[11px] text-fg-subtle mt-1.5">
+      <p v-if="err.includes('ANTHROPIC_API_KEY')" class="text-micro text-fg-subtle mt-1.5">
         Quick fix: ask Claude
         <code class="font-mono text-fg-body">vibecell.secret_set ANTHROPIC_API_KEY sk-ant-…</code>
       </p>
@@ -113,11 +114,11 @@ function parseBriefBody(raw: string): { main: string; action: string | null } {
       >→ {{ parseBriefBody(brief).action }}</p>
     </div>
 
-    <footer v-if="meta && brief" class="mt-3 pt-2 border-t border-border text-[10px] font-mono text-fg-subtle flex items-center gap-3 flex-wrap">
+    <footer v-if="meta && brief" class="mt-3 pt-2 border-t border-border text-nano font-mono text-fg-subtle flex items-center gap-3 flex-wrap">
       <span>{{ meta.model }}</span>
       <span v-if="meta.key_source === 'project-secret'" class="text-signal-green">your key ✓</span>
       <span v-else class="text-fg-muted">platform key</span>
       <span v-if="meta.input_tokens != null">{{ meta.input_tokens }}→{{ meta.output_tokens }} tokens</span>
     </footer>
-  </section>
+  </Card>
 </template>

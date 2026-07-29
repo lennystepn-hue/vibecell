@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from "vue";
 
+import Card from "@/components/ui/Card.vue";
 import CopyableValue from "@/components/ui/CopyableValue.vue";
 import MonoLabel from "@/components/ui/MonoLabel.vue";
 import { api } from "@/api/client";
@@ -59,7 +60,7 @@ async function removeEnv(envId: string) {
 </script>
 
 <template>
-  <section class="glass rounded-lg p-5">
+  <Card>
     <MonoLabel>environments</MonoLabel>
 
     <div v-if="project.environments && project.environments.length > 0" class="mt-3 space-y-2">
@@ -71,8 +72,8 @@ async function removeEnv(envId: string) {
         <span class="mono-label shrink-0 w-24 truncate pt-0.5">{{ env.kind }}</span>
         <div class="flex-1 min-w-0 space-y-0.5">
           <CopyableValue v-if="env.url" :value="env.url" mono small class="text-fg-body" />
-          <span v-if="env.db_alias" class="block font-mono text-[11px] text-fg-subtle">db: {{ env.db_alias }}</span>
-          <span v-if="env.env_template_path" class="block font-mono text-[11px] text-fg-subtle">{{ env.env_template_path }}</span>
+          <span v-if="env.db_alias" class="block font-mono text-micro text-fg-subtle">db: {{ env.db_alias }}</span>
+          <span v-if="env.env_template_path" class="block font-mono text-micro text-fg-subtle">{{ env.env_template_path }}</span>
         </div>
         <button
           type="button"
@@ -120,5 +121,5 @@ async function removeEnv(envId: string) {
       class="mt-3 mono-label text-fg-subtle hover:text-fg-body transition-colors"
       @click="showForm = true"
     >+ add environment</button>
-  </section>
+  </Card>
 </template>

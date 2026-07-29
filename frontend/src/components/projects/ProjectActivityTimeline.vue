@@ -3,6 +3,7 @@ import { computed, onUnmounted, ref, watch } from "vue";
 import { RouterLink } from "vue-router";
 void RouterLink;  // tell the template compiler RouterLink is in scope for dynamic :is usage
 
+import Card from "@/components/ui/Card.vue";
 import { onProjectLiveEvent } from "@/composables/useProjectLive";
 
 interface ActivityEvent {
@@ -118,11 +119,10 @@ onProjectLiveEvent("*", () => void load());
 </script>
 
 <template>
-  <section class="glass rounded-lg p-5">
-    <header class="flex items-center justify-between mb-3 select-none">
-      <h3 class="mono-label text-fg-muted">//activity</h3>
+  <Card title="activity">
+    <template #actions>
       <span class="text-small text-fg-subtle">{{ events.length }} events · live</span>
-    </header>
+    </template>
 
     <div>
     <div v-if="loading && events.length === 0" class="text-fg-subtle mono-label text-small">
@@ -145,7 +145,7 @@ onProjectLiveEvent("*", () => void load());
         :class="linkFor(e) ? 'cursor-pointer hover:bg-white/[0.03]' : ''"
       >
         <span
-          class="absolute -left-1 top-3 w-2.5 h-2.5 rounded-full bg-bg-surface border border-border flex items-center justify-center font-mono text-[9px]"
+          class="absolute -left-1 top-3 w-2.5 h-2.5 rounded-full bg-bg-surface border border-border flex items-center justify-center font-mono text-pico"
           :class="colorFor(e.type)"
         >{{ iconFor(e.type) }}</span>
         <div class="flex-1 min-w-0">
@@ -165,5 +165,5 @@ onProjectLiveEvent("*", () => void load());
       </component>
     </ol>
     </div>
-  </section>
+  </Card>
 </template>

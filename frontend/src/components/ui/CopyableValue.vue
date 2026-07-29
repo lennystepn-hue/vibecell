@@ -29,7 +29,7 @@ async function copy() {
     <span class="truncate">{{ display ?? value }}</span>
     <span
       v-if="copied"
-      class="shrink-0 text-signal-green text-[10px] font-mono tracking-wider"
+      class="shrink-0 text-signal-green text-nano font-mono tracking-wider"
     >✓ COPIED</span>
     <svg
       v-else
