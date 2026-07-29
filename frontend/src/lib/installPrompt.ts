@@ -8,30 +8,21 @@
  * status read on its own." This file is the prompt itself.
  *
  * Constraints honoured by the wording below:
- *   1. Editor-agnostic — covers Claude Code, Claude Desktop, Cursor, Zed,
- *      Windsurf in one block. The AI picks whichever fits its host.
+ *   1. Editor-agnostic — the AI picks whichever connection method fits its
+ *      host, rather than us listing five and hoping it picks right.
  *   2. Self-contained — fresh AI context can run it cold. No "see above".
- *   3. Idempotent — running it again on an already-paired editor is a
- *      no-op (the tool re-add fails harmlessly + the SKILL re-read is fine).
- *   4. Ends on a status report so the user gets concrete confirmation that
- *      something happened, not just "MCP added".
+ *   3. Idempotent — running it again on an already-paired editor is a no-op.
+ *
+ * It used to be five numbered steps carrying the whole setup routine. That
+ * text was frozen the moment a user copied it: anyone who pasted it in
+ * January was still running January's instructions in June. The routine now
+ * lives behind the `vibecell_onboard` MCP tool, server-side and editable,
+ * and this shrank to the two lines needed to reach it.
  */
 
-export const VIBECELL_INSTALL_PROMPT = `Help me wire up Vibecell — my MCP-native project console.
+export const VIBECELL_INSTALL_PROMPT = `Connect to the Vibecell MCP server at https://vibecell.dev/mcp — pick whichever method your editor supports (remote HTTP if it has it, otherwise an mcp-remote bridge). The first tool call opens an OAuth consent in my browser; wait for me to approve it.
 
-1. Install the Vibecell MCP server. Pick the right command for the editor you're in:
-   • Claude Code:  claude mcp add vibecell https://vibecell.dev/mcp --transport http --scope user
-   • Claude Desktop:  open claude://add-connector?url=https%3A%2F%2Fvibecell.dev (or paste https://vibecell.dev under Settings → Connectors → Add Remote Server)
-   • Cursor:  Settings → MCP → Add Remote Server → URL https://vibecell.dev/mcp
-   • Zed / Windsurf:  add an mcp-remote context_servers entry pointing at https://vibecell.dev/mcp
-
-2. The first tool call will open an OAuth consent in my browser — wait for me to approve there before continuing.
-
-3. Once paired, call \`vibecell_ping\` then \`vibecell_active\` to load my active project context.
-
-4. Fetch and read https://vibecell.dev/skill/SKILL.md — that's the operating manual. Follow its rules from now on (auto-log sessions, set_focus on topic shifts, tick todos from commit subjects, honour _audit_hint blocks).
-
-5. Tell me: which project am I on, what's the current_focus, what open todos exist, and what's the obvious next move.`;
+Then call \`vibecell_onboard\` with no arguments and follow what it tells you.`;
 
 /** UI label used everywhere the prompt is offered as a tab/section. */
 export const INSTALL_PROMPT_TAB_LABEL = "Paste into AI";
