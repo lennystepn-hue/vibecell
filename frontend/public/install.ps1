@@ -39,4 +39,14 @@ if ($paths -notcontains $InstallDir) {
 }
 
 Write-Host ""
+
+# One-line setup path — see the matching comment in install.sh.
+if ($env:HANGAR_SETUP_CODE) {
+    Write-Host "==> pairing this device and configuring your MCP clients"
+    & "$InstallDir\hangar.exe" setup --code $env:HANGAR_SETUP_CODE
+    if ($LASTEXITCODE -eq 0) { exit 0 }
+    Write-Host ""
+    Write-Warning "automatic setup unavailable in this build - falling back"
+}
+
 Write-Host "next: run ``hangar pair`` to connect this device."
