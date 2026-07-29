@@ -6,6 +6,7 @@ mod cmd;
 mod config;
 mod daemon;
 mod keychain;
+mod mcp_clients;
 mod resolver;
 
 #[derive(Parser)]
@@ -19,6 +20,9 @@ struct Cli {
 enum Command {
     /// Pair this device with a Vibecell workspace via the device-code flow.
     Pair,
+    /// One-shot install: redeem a setup code, configure every MCP client on
+    /// this machine, install the skill. This is what the one-liner runs.
+    Setup(cmd::setup::SetupArgs),
     /// Show current pairing status.
     Status,
     /// Revoke the current pairing (removes keychain entry + server-side device).
@@ -66,6 +70,7 @@ async fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
     match cli.command {
         Some(Command::Pair) => cmd::pair::run().await,
+        Some(Command::Setup(args)) => cmd::setup::run(args).await,
         Some(Command::Status) => cmd::status::run().await,
         Some(Command::Unpair) => cmd::unpair::run().await,
         Some(Command::Sync) => cmd::sync::run().await,
@@ -76,7 +81,7 @@ async fn main() -> anyhow::Result<()> {
         Some(Command::Run { label, project }) => cmd::run::run(label, project).await,
         None => {
             println!(
-                "hangar {} — subcommands: pair | status | unpair | sync | daemon | mcp-token | skill | secret | run",
+                "hangar {} — subcommands: setup | pair | status | unpair | sync | daemon | mcp-token | skill | secret | run",
                 env!("CARGO_PKG_VERSION")
             );
             println!("run `hangar pair` to connect this device.");

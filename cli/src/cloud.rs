@@ -94,6 +94,62 @@ pub async fn pair_complete(base_url: &str, device_code: &str) -> Result<Option<P
     Ok(Some(r.json().await?))
 }
 
+/// Spend a one-time onboarding code for a device token.
+///
+/// Unlike `pair_start`/`pair_complete` there is no polling and no browser
+/// round trip: the user already approved this in the browser when they asked
+/// for the one-liner.
+pub async fn redeem_code(
+    base_url: &str,
+    code: &str,
+    device_name: Option<&str>,
+) -> Result<PairCompleteRes> {
+    let c = client()?;
+    let r = c
+        .post(format!("{base_url}/api/v1/onboarding/redeem"))
+        .json(&serde_json::json!({ "code": code, "device_name": device_name }))
+        .send()
+        .await?;
+    if r.status() == reqwest::StatusCode::NOT_FOUND {
+        bail!("this setup code has expired or was already used — copy a fresh line from the dashboard");
+    }
+    if !r.status().is_success() {
+        bail!("redeeming setup code failed: {}", r.status());
+    }
+    Ok(r.json().await?)
+}
+
+/// Report one progress line to the onboarding stream the browser is watching.
+///
+/// Best-effort by design: the user is standing in front of a terminal that is
+/// doing the real work. A dropped progress line should never fail an install
+/// that otherwise succeeded.
+pub async fn report_onboarding(
+    base_url: &str,
+    token: &str,
+    event_type: &str,
+    client_id: Option<&str>,
+    ok: Option<bool>,
+    reason: Option<&str>,
+) {
+    let Ok(c) = client() else { return };
+    let body = serde_json::json!({
+        "type": event_type,
+        "client": client_id,
+        "ok": ok,
+        "reason": reason,
+    });
+    if let Err(e) = c
+        .post(format!("{base_url}/api/v1/onboarding/report"))
+        .bearer_auth(token)
+        .json(&body)
+        .send()
+        .await
+    {
+        tracing::debug!(?e, "onboarding progress report failed (ignored)");
+    }
+}
+
 pub async fn me(base_url: &str, token: &str) -> Result<MeRes> {
     let c = client()?;
     let r = c
