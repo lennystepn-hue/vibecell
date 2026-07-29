@@ -1,12 +1,19 @@
-"""MCP tool registry — 22 tools (vibecell.run excluded)."""
+"""MCP tool registry (vibecell.run excluded).
+
+The count is asserted as a range in tests/test_mcp_tools_list.py rather than
+written here — a number in a docstring goes stale the first time someone adds
+a tool and forgets, and then quietly misinforms every reader after that.
+"""
 from __future__ import annotations
 
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
+from typing import Literal
 
 from pydantic import BaseModel, Field
 
 from app.mcp.auth import MCPContext
+from app.mcp.handlers import onboard as o
 from app.mcp.handlers import read as r
 from app.mcp.handlers import write as w
 
@@ -271,6 +278,27 @@ class AddCommandArgs(BaseModel):
     run_in: str = Field(default="terminal", description="terminal | browser")
     confirm_required: bool = False
     slug: str | None = None
+
+
+class OnboardArgs(BaseModel):
+    """Two modes: no `event` fetches the routine, an `event` reports a step.
+
+    The Literal must stay in sync with `OnboardingEvent` in
+    services/onboarding_events.py, minus the two the agent has no business
+    emitting — `stream.open` belongs to the endpoint and `paired` to the
+    installer.
+    """
+
+    event: Literal["scan.started", "project.created", "project.enriched", "done"] | None = Field(
+        default=None,
+        description="Omit to fetch the routine. Set to report one step of it.",
+    )
+    repo_count: int | None = Field(default=None, description="scan.started")
+    slug: str | None = Field(default=None, description="project.created / project.enriched")
+    name: str | None = Field(default=None, description="project.created")
+    pitch: str | None = Field(default=None, description="project.enriched")
+    stack: list[str] | None = Field(default=None, description="project.enriched")
+    project_count: int | None = Field(default=None, description="done")
 
 
 class CreateProjectArgs(BaseModel):
@@ -571,6 +599,18 @@ TOOLS: list[Tool] = [
         "GitHub URL, and sets the new project as active by default. Returns the slug + a URL the "
         "user can open immediately.",
         CreateProjectArgs, w.handle_create_project,
+    ),
+    Tool(
+        "vibecell_onboard",
+        "Set up a brand-new user's whole portfolio, and report progress while you do it. "
+        "Call with NO arguments to get the routine — it tells you where to look for repos, "
+        "what to infer for each one, and what to report. Then call it again with `event` "
+        "after each step so the user's browser can narrate what you're doing: "
+        "scan.started (with repo_count), project.created (slug, name), "
+        "project.enriched (slug, pitch), done (project_count). "
+        "Use this ONLY during first-time setup — a returning user wants vibecell_active, "
+        "not a fresh scan of their disk.",
+        OnboardArgs, o.handle_onboard,
     ),
 ]
 
