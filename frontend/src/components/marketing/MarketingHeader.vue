@@ -45,7 +45,7 @@ function go() {
 <template>
   <header
     class="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4 sm:px-6 py-3"
-    style="background: rgba(7,11,16,0.75); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(138,180,255,0.08)"
+    style="background: rgb(var(--scrim-rgb) / 0.75); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border-subtle)"
   >
     <router-link to="/" class="flex items-center gap-2.5">
       <span class="text-signal-green font-mono text-[18px] leading-none select-none">◈</span>
@@ -75,13 +75,13 @@ function go() {
       <button
         v-if="auth.isAuthed"
         class="hidden sm:inline-flex px-4 py-1.5 rounded text-small font-mono bg-signal-green hover:opacity-90 transition-opacity"
-        style="color: #070b10"
+        style="color: var(--on-signal)"
         @click="go"
       >Open dashboard →</button>
       <button
         v-else
         class="px-4 py-1.5 rounded text-small font-mono bg-signal-green hover:opacity-90 transition-opacity"
-        style="color: #070b10"
+        style="color: var(--on-signal)"
         @click="go"
       >{{ props.cta }}</button>
     </div>

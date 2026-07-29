@@ -48,7 +48,7 @@ const SUMMARIES: Record<string, string> = {
   <div
     v-if="state.kind"
     class="fixed inset-0 z-50 flex items-center justify-center px-4"
-    style="background: rgba(7,11,16,0.7); backdrop-filter: blur(4px)"
+    style="background: rgb(var(--scrim-rgb) / 0.7); backdrop-filter: blur(4px)"
     @click.self="close()"
   >
     <div

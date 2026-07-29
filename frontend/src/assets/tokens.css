@@ -45,8 +45,77 @@
   --border-default: rgba(138, 180, 255, 0.12);
   --border-strong: rgba(138, 180, 255, 0.18);
 
+  /* ─── channel tokens ───────────────────────────────────────────────────
+     Space-separated RGB channels for the cases where a fixed token can't
+     work: one-off alpha values. Use as `rgb(var(--signal-green-rgb) / 0.25)`.
+
+     Why these exist: before this, 267 hardcoded colour literals lived in
+     `style="…"` attributes across 29 files, and roughly half of them were
+     alpha variants of a token colour — `rgba(92,200,164,0.04)` through
+     `rgba(92,200,164,0.6)`. Minting a token per alpha step would have meant
+     ~30 near-duplicate names. Channels give the same theme-awareness with
+     one token per colour. Prefer the plain token when the alpha you need is
+     already one of the `-bg` variants above. */
+  --signal-green-rgb: 92 200 164;
+  --signal-amber-rgb: 245 184 74;
+  --signal-red-rgb: 255 91 91;
+  --signal-blue-rgb: 138 180 255;
+  --signal-violet-rgb: 181 146 255;
+  --signal-teal-rgb: 79 200 214;
+  --fg-body-rgb: 207 212 220;
+  /* Base of the border scale — same hue as signal-blue in dark themes,
+     near-black ink on paper. Alpha-varied often enough to need channels. */
+  --border-rgb: 138 180 255;
+  /* Panel channel, for translucent surfaces. */
+  --bg-surface-rgb: 20 33 50;
+  /* Scrim channel — the darkening layer under modals, dropdowns and hero
+     imagery. Stays dark in every theme on purpose: a scrim that flips light
+     on paper stops being a scrim. */
+  --scrim-rgb: 7 11 16;
+
+  /* ─── syntax ───────────────────────────────────────────────────────────
+     Used by the fake code/terminal blocks on the landing page. Not a full
+     highlighting theme — only the two roles those blocks actually render. */
+  --code-string: #ffc56b;
+  --code-ident: var(--signal-green);
+
+  /* ─── aurora ───────────────────────────────────────────────────────────
+     The four stops of the hero headline gradient, mirrored by HeroOrb's
+     conic gradient so headline and orb read as one organism. Tokenised so
+     the light theme can damp them — at full saturation they vibrate on
+     paper. */
+  --aurora-1: #5cc8a4;
+  --aurora-2: #b592ff;
+  --aurora-3: #7dffd4;
+  --aurora-4: #ff6b9d;
+  --aurora-4-rgb: 255 107 157;
+
+  /* ─── brand art ────────────────────────────────────────────────────────
+     HeroOrb's own palette. The orb is a lit 3D object, not UI chrome — it
+     needs shade pairs (a lit face and a turned-away face) that no semantic
+     token provides. Kept here rather than inline so the light theme can
+     deepen them; at dark-theme saturation the orb blooms into mush on
+     paper. */
+  --orb-green: #5cc8a4;
+  --orb-green-deep: #3a8f75;
+  --orb-violet: #b592ff;
+  --orb-violet-deep: #6b4aa8;
+  --orb-teal: #7dffd4;
+  --orb-teal-rgb: 125 255 212;
+  --orb-rose: #ff6b9d;
+  /* Specular highlight. Stays white in every theme — it is reflected light
+     on a dark sphere, not a surface colour. */
+  --specular-rgb: 255 255 255;
+
   /* depth */
   --glow-signal: 0 0 6px currentColor;
+  /* Named glows for Tailwind arbitrary values. Inlining
+     `shadow-[0_0_8px_rgb(var(--x)_/_0.4)]` is a trap: Tailwind reads the
+     slash as its opacity modifier. Referencing a whole token sidesteps it
+     and keeps the glow theme-aware. */
+  --glow-sm: 0 0 8px rgb(var(--signal-green-rgb) / 0.4);
+  --glow-md: 0 0 16px rgb(var(--signal-green-rgb) / 0.18);
+  --glow-lg: 0 0 18px rgb(var(--signal-green-rgb) / 0.15);
 
   /* motion */
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
@@ -89,6 +158,28 @@
   --border-subtle: rgba(125, 255, 180, 0.08);
   --border-default: rgba(125, 255, 180, 0.14);
   --border-strong: rgba(125, 255, 180, 0.22);
+  --signal-green-rgb: 125 255 180;
+  --signal-blue-rgb: 141 217 174;
+  --signal-violet-rgb: 197 176 255;
+  --signal-teal-rgb: 125 255 212;
+  --fg-body-rgb: 141 217 174;
+  --border-rgb: 125 255 180;
+  --bg-surface-rgb: 10 40 25;
+  --scrim-rgb: 2 7 5;
+  /* Full-phosphor: strings go green-yellow rather than amber. */
+  --code-string: #d4ff9e;
+  --aurora-1: #7dffb4;
+  --aurora-2: #7dffd4;
+  --aurora-3: #c5f2d8;
+  --aurora-4: #7dffb4;
+  --aurora-4-rgb: 125 255 180;
+  --orb-green: #7dffb4;
+  --orb-green-deep: #2f7a52;
+  --orb-violet: #7dffd4;
+  --orb-violet-deep: #2f7a68;
+  --orb-teal: #c5f2d8;
+  --orb-teal-rgb: 197 242 216;
+  --orb-rose: #7dffb4;
 }
 
 /* Paper: light mode. Good for daytime demos and screenshots. */
@@ -122,4 +213,30 @@
   --border-subtle: rgba(20, 30, 40, 0.08);
   --border-default: rgba(20, 30, 40, 0.14);
   --border-strong: rgba(20, 30, 40, 0.22);
+  --signal-green-rgb: 30 155 107;
+  --signal-amber-rgb: 201 132 22;
+  --signal-red-rgb: 196 54 47;
+  --signal-blue-rgb: 57 104 196;
+  --signal-violet-rgb: 112 70 209;
+  --signal-teal-rgb: 14 138 155;
+  --fg-body-rgb: 43 52 64;
+  --border-rgb: 20 30 40;
+  --bg-surface-rgb: 255 252 245;
+  /* Scrim stays ink, not paper — see the base definition. */
+  --scrim-rgb: 20 30 40;
+  /* Amber-on-ivory is illegible; strings take the warm brown instead. */
+  --code-string: #a4610a;
+  /* Damped: the dark-theme stops vibrate against paper. */
+  --aurora-1: #1e9b6b;
+  --aurora-2: #7046d1;
+  --aurora-3: #0e8a9b;
+  --aurora-4: #c02d63;
+  --aurora-4-rgb: 192 45 99;
+  --orb-green: #1e9b6b;
+  --orb-green-deep: #0f5c3f;
+  --orb-violet: #7046d1;
+  --orb-violet-deep: #452a80;
+  --orb-teal: #0e8a9b;
+  --orb-teal-rgb: 14 138 155;
+  --orb-rose: #c02d63;
 }

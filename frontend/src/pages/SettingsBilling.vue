@@ -127,20 +127,20 @@ const formattedPrice = computed(() => {
 const statusBadge = computed(() => {
   const s = sub.value?.status;
   if (fellBack.value || !s) {
-    return { label: "Pro plan", color: "#5cc8a4", bg: "rgba(92,200,164,0.1)" };
+    return { label: "Pro plan", color: "var(--signal-green)", bg: "var(--signal-green-bg)" };
   }
   switch (s) {
     case "trialing":
-      return { label: "Trialing", color: "#5cc8a4", bg: "rgba(92,200,164,0.1)" };
+      return { label: "Trialing", color: "var(--signal-green)", bg: "var(--signal-green-bg)" };
     case "active":
-      return { label: "Active", color: "#5cc8a4", bg: "rgba(92,200,164,0.1)" };
+      return { label: "Active", color: "var(--signal-green)", bg: "var(--signal-green-bg)" };
     case "past_due":
     case "unpaid":
-      return { label: "Payment failed", color: "#ff7e6c", bg: "rgba(255,126,108,0.1)" };
+      return { label: "Payment failed", color: "var(--signal-red)", bg: "var(--signal-red-bg)" };
     case "canceled":
-      return { label: "Canceled", color: "#8ba1bd", bg: "rgba(138,180,255,0.08)" };
+      return { label: "Canceled", color: "var(--fg-muted)", bg: "var(--border-subtle)" };
     default:
-      return { label: s, color: "#8ba1bd", bg: "rgba(138,180,255,0.08)" };
+      return { label: s, color: "var(--fg-muted)", bg: "var(--border-subtle)" };
   }
 });
 
@@ -239,15 +239,15 @@ onMounted(() => {
           <div
             class="rounded-xl p-7 mb-6 relative overflow-hidden"
             style="
-              background: linear-gradient(135deg, rgba(92,200,164,0.06) 0%, rgba(138,180,255,0.04) 100%);
-              border: 1px solid rgba(92,200,164,0.18);
-              box-shadow: 0 0 48px rgba(92,200,164,0.06), inset 0 1px 0 rgba(92,200,164,0.1);
+              background: linear-gradient(135deg, rgb(var(--signal-green-rgb) / 0.06) 0%, rgb(var(--border-rgb) / 0.04) 100%);
+              border: 1px solid rgb(var(--signal-green-rgb) / 0.18);
+              box-shadow: 0 0 48px rgb(var(--signal-green-rgb) / 0.06), inset 0 1px 0 rgb(var(--signal-green-rgb) / 0.1);
             "
           >
             <div class="flex items-start justify-between mb-5 flex-wrap gap-3">
               <div>
                 <div class="flex items-center gap-3 mb-2">
-                  <span class="font-mono uppercase tracking-widest text-[11px]" style="color: #5cc8a4">
+                  <span class="font-mono uppercase tracking-widest text-[11px]" style="color: var(--signal-green)">
                     Vibecell Pro
                   </span>
                   <span
@@ -268,7 +268,7 @@ onMounted(() => {
 
               <button
                 class="h-11 px-5 rounded-lg font-mono font-semibold text-[12px] transition-all hover:opacity-90"
-                style="background: #5cc8a4; color: #070b10; box-shadow: 0 0 20px rgba(92,200,164,0.25); white-space: nowrap"
+                style="background: var(--signal-green); color: var(--on-signal); box-shadow: 0 0 20px rgb(var(--signal-green-rgb) / 0.25); white-space: nowrap"
                 :disabled="checkingOut || openingPortal"
                 @click="ctaPrimary.action"
               >
@@ -279,17 +279,17 @@ onMounted(() => {
             <!-- Trial progress bar -->
             <div v-if="sub?.status === 'trialing' && trialDaysLeft !== null" class="mt-3">
               <div class="flex items-center justify-between mb-2 text-[11px] font-mono">
-                <span style="color: #5cc8a4">
+                <span style="color: var(--signal-green)">
                   {{ trialDaysLeft === 0 ? "Trial ended" : `${trialDaysLeft} day${trialDaysLeft === 1 ? "" : "s"} left` }}
                 </span>
                 <span class="text-fg-subtle">7-day trial</span>
               </div>
-              <div class="h-1.5 rounded-full overflow-hidden" style="background: rgba(138,180,255,0.1)">
+              <div class="h-1.5 rounded-full overflow-hidden" style="background: rgb(var(--border-rgb) / 0.1)">
                 <div
                   class="h-full rounded-full transition-all"
                   :style="{
                     width: `${Math.round(trialProgress * 100)}%`,
-                    background: trialDaysLeft <= 3 ? '#ffd66b' : '#5cc8a4',
+                    background: trialDaysLeft <= 3 ? 'var(--signal-amber)' : 'var(--signal-green)',
                   }"
                 />
               </div>
@@ -299,7 +299,7 @@ onMounted(() => {
               v-else-if="sub?.status === 'active' && sub.current_period_end"
               class="font-mono text-[11px] text-fg-subtle"
             >
-              <span v-if="showWillingCancel" style="color: #ff7e6c">
+              <span v-if="showWillingCancel" style="color: var(--signal-red)">
                 ⚠ Will not renew — access ends {{ new Date(sub.current_period_end).toLocaleDateString() }}
               </span>
               <span v-else>
@@ -309,7 +309,7 @@ onMounted(() => {
 
             <p
               v-else-if="sub?.status === 'past_due' || sub?.status === 'unpaid'"
-              class="font-mono text-[11px]" style="color: #ff7e6c"
+              class="font-mono text-[11px]" style="color: var(--signal-red)"
             >
               Stripe couldn't process your last charge. Update your payment method to keep Pro access.
             </p>
@@ -385,7 +385,7 @@ onMounted(() => {
                 <div class="flex items-start gap-3">
                   <span
                     class="font-mono text-[18px] leading-none mt-0.5 select-none"
-                    style="color: #5cc8a4; flex-shrink: 0; width: 22px"
+                    style="color: var(--signal-green); flex-shrink: 0; width: 22px"
                   >{{ f.icon }}</span>
                   <div>
                     <div class="font-semibold text-body text-fg-body mb-1">{{ f.title }}</div>

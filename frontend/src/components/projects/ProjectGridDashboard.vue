@@ -292,7 +292,7 @@ function autoSizeAgain(id: string): void {
       v-if="!isMobile"
       class="sticky top-[44px] z-20 flex items-center gap-3 mb-4 px-3 h-10 rounded-md transition-colors"
       :style="store.editMode
-        ? 'background: rgba(92,200,164,0.06); border: 1px solid rgba(92,200,164,0.25); backdrop-filter: blur(8px)'
+        ? 'background: rgb(var(--signal-green-rgb) / 0.06); border: 1px solid rgb(var(--signal-green-rgb) / 0.25); backdrop-filter: blur(8px)'
         : 'background: var(--bg-chrome); border: 1px solid var(--border-subtle); backdrop-filter: blur(8px)'"
     >
       <span class="mono-label text-fg-muted">// dashboard</span>
@@ -357,7 +357,7 @@ function autoSizeAgain(id: string): void {
         :class="store.editMode
           ? 'bg-signal-green hover:opacity-90'
           : 'text-fg-muted hover:text-fg-body border border-border hover:border-border-strong'"
-        :style="store.editMode ? 'color:#070b10' : ''"
+        :style="store.editMode ? 'color:var(--bg-body-to)' : ''"
         :title="store.editMode ? 'Exit edit mode' : 'Rearrange cards'"
         @click="store.toggleEdit()"
       >
@@ -480,7 +480,7 @@ function autoSizeAgain(id: string): void {
       <div class="mono-label px-3 py-1 opacity-60">// {{ widgetById(contextMenu.widgetId)?.title }}</div>
       <button class="w-full text-left px-3 py-1.5 text-small text-signal-green hover:bg-white/5 transition-colors"
         @click="autoSizeAgain(contextMenu.widgetId)">auto-size to content</button>
-      <div class="border-t my-1" style="border-color: rgba(138,180,255,0.08)" />
+      <div class="border-t my-1" style="border-color: var(--border-subtle)" />
       <button class="w-full text-left px-3 py-1.5 text-small text-fg-body hover:bg-white/5 transition-colors"
         @click="setFullWidth(contextMenu.widgetId)">full width</button>
       <button class="w-full text-left px-3 py-1.5 text-small text-fg-body hover:bg-white/5 transition-colors"
@@ -489,7 +489,7 @@ function autoSizeAgain(id: string): void {
         @click="resize(contextMenu.widgetId, 6, 5)">half (6w × 5h)</button>
       <button class="w-full text-left px-3 py-1.5 text-small text-fg-body hover:bg-white/5 transition-colors"
         @click="resize(contextMenu.widgetId, 4, 4)">compact (4w × 4h)</button>
-      <div class="border-t my-1" style="border-color: rgba(138,180,255,0.08)" />
+      <div class="border-t my-1" style="border-color: var(--border-subtle)" />
       <button class="w-full text-left px-3 py-1.5 text-small text-signal-red hover:bg-signal-red/10 transition-colors"
         @click="removeWidget(contextMenu.widgetId)">remove</button>
     </div>
@@ -513,8 +513,8 @@ function autoSizeAgain(id: string): void {
    tone leaked through. Override with signal-green so the drop-zone
    preview matches the rest of the edit-mode UI. */
 .vue-grid-placeholder {
-  background: rgba(92, 200, 164, 0.16) !important;
-  border: 2px dashed rgba(92, 200, 164, 0.5) !important;
+  background: rgb(var(--signal-green-rgb) / 0.16) !important;
+  border: 2px dashed rgb(var(--signal-green-rgb) / 0.5) !important;
   opacity: 1 !important;
   transition-duration: 80ms;
   border-radius: 8px;
@@ -540,16 +540,16 @@ function autoSizeAgain(id: string): void {
     135deg,
     transparent 0%,
     transparent 45%,
-    var(--signal-green, #5cc8a4) 45%,
-    var(--signal-green, #5cc8a4) 55%,
+    var(--signal-green, var(--signal-green)) 45%,
+    var(--signal-green, var(--signal-green)) 55%,
     transparent 55%,
     transparent 65%,
-    var(--signal-green, #5cc8a4) 65%,
-    var(--signal-green, #5cc8a4) 75%,
+    var(--signal-green, var(--signal-green)) 65%,
+    var(--signal-green, var(--signal-green)) 75%,
     transparent 75%,
     transparent 85%,
-    var(--signal-green, #5cc8a4) 85%,
-    var(--signal-green, #5cc8a4) 95%,
+    var(--signal-green, var(--signal-green)) 85%,
+    var(--signal-green, var(--signal-green)) 95%,
     transparent 95%
   );
   opacity: 0;
@@ -597,11 +597,11 @@ function autoSizeAgain(id: string): void {
 .grid-is-editing .vue-grid-item:hover > .vue-resizable-handle-s,
 .grid-is-editing .vue-grid-item:hover > .vue-resizable-handle-e {
   /* Subtle signal-green tint so you can see the grab zone lights up. */
-  background: linear-gradient(to bottom, transparent, rgba(92, 200, 164, 0.25));
+  background: linear-gradient(to bottom, transparent, rgb(var(--signal-green-rgb) / 0.25));
   opacity: 0.9;
 }
 .grid-is-editing .vue-grid-item:hover > .vue-resizable-handle-e {
-  background: linear-gradient(to right, transparent, rgba(92, 200, 164, 0.25));
+  background: linear-gradient(to right, transparent, rgb(var(--signal-green-rgb) / 0.25));
 }
 
 /* ─── Widget-internal scrolling ─────────────────────────────────────────

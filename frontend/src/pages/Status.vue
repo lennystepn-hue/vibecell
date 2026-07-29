@@ -74,13 +74,13 @@ onBeforeUnmount(() => {
 
 function statusColor(s: ComponentStatus): string {
   if (s === "ok") return "var(--signal-green)";
-  if (s === "degraded") return "var(--signal-amber, #f59e0b)";
+  if (s === "degraded") return "var(--signal-amber)";
   return "var(--signal-red)";
 }
 
 function statusBg(s: ComponentStatus): string {
   if (s === "ok") return "var(--signal-green-bg)";
-  if (s === "degraded") return "var(--signal-amber-bg, rgba(245,158,11,0.08))";
+  if (s === "degraded") return "var(--signal-amber-bg)";
   return "var(--signal-red-bg)";
 }
 

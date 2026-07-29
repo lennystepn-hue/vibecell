@@ -167,7 +167,7 @@ onMounted(() => loadIntegrations());
       <a
         href="/api/v1/integrations/github/oauth-start"
         class="inline-flex h-11 items-center gap-2 rounded-md px-5 font-semibold text-section"
-        :style="{ background: 'var(--signal-green)', color: 'var(--bg-body-to)', boxShadow: '0 0 0 1px var(--signal-green), 0 0 16px rgba(92, 200, 164, 0.18)' }"
+        :style="{ background: 'var(--signal-green)', color: 'var(--bg-body-to)', boxShadow: '0 0 0 1px var(--signal-green), 0 0 16px rgb(var(--signal-green-rgb) / 0.18)' }"
       >Connect GitHub</a>
     </div>
 

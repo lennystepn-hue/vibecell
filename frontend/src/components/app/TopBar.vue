@@ -138,7 +138,7 @@ const isAdmin = computed<boolean>(() => {
       <RouterLink
         to="/login"
         class="h-7 px-3 inline-flex items-center rounded-md text-small font-mono bg-signal-green/90 hover:bg-signal-green text-bg-body transition-colors"
-        style="color:#070b10"
+        style="color:var(--bg-body-to)"
       >sign in →</RouterLink>
     </div>
   </header>

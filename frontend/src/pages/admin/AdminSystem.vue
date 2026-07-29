@@ -50,7 +50,7 @@ function fmtRel(iso: string | null | undefined): string {
 }
 function accentStyle(s?: string | null): Record<string, string> {
   if (s === "green" || s === "ok") return { color: "var(--signal-green)" };
-  if (s === "amber" || s === "degraded") return { color: "var(--signal-amber, #f59e0b)" };
+  if (s === "amber" || s === "degraded") return { color: "var(--signal-amber)" };
   if (s === "red" || s === "down") return { color: "var(--signal-red)" };
   return { color: "var(--fg-primary)" };
 }

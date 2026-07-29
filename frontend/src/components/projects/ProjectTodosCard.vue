@@ -238,13 +238,13 @@ onProjectLiveEvent(
         />
         <button
           class="h-8 px-3 text-small font-mono bg-signal-green hover:opacity-90 transition-opacity rounded disabled:opacity-50"
-          style="color: #070b10"
+          style="color: var(--on-signal)"
           :disabled="!newTitle.trim() || planning"
           @click="add"
         >add</button>
         <button
           class="h-8 px-3 text-small font-mono rounded border transition-colors disabled:opacity-50 uppercase tracking-wider"
-          style="border-color: rgba(92,200,164,0.4); color: #5cc8a4; background: rgba(92,200,164,0.06); letter-spacing: 0.08em; font-size: 10px"
+          style="border-color: rgb(var(--signal-green-rgb) / 0.4); color: var(--signal-green); background: rgb(var(--signal-green-rgb) / 0.06); letter-spacing: 0.08em; font-size: 10px"
           :disabled="!newTitle.trim() || planning"
           :title="'AI: break this into a batch of todos'"
           @click="aiPlan"
@@ -259,7 +259,7 @@ onProjectLiveEvent(
       <div
         v-else-if="todos.length === 0"
         class="rounded-md py-6 px-4 text-center"
-        style="background: rgba(92,200,164,0.04); border: 1px dashed rgba(92,200,164,0.25)"
+        style="background: rgb(var(--signal-green-rgb) / 0.04); border: 1px dashed rgb(var(--signal-green-rgb) / 0.25)"
       >
         <p class="text-small text-fg-body">Nothing on the list yet.</p>
         <p class="text-[11px] text-fg-subtle mt-1">
@@ -303,7 +303,7 @@ onProjectLiveEvent(
               <button
                 class="mt-0.5 w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-all duration-fast"
                 :class="t.status === 'done'
-                  ? 'bg-signal-green border-signal-green scale-100 shadow-[0_0_8px_rgba(92,200,164,0.4)]'
+                  ? 'bg-signal-green border-signal-green scale-100 shadow-[var(--glow-sm)]'
                   : 'border-border hover:border-signal-green hover:scale-110'"
                 :aria-label="t.status === 'done' ? 'reopen' : 'complete'"
                 @click="toggleCompletion(t)"
@@ -314,7 +314,7 @@ onProjectLiveEvent(
                   enter-to-class="scale-100 rotate-0"
                 >
                   <svg v-if="t.status === 'done'" width="10" height="10" viewBox="0 0 10 10" fill="none" class="origin-center">
-                    <path d="M2 5L4 7L8 3" stroke="#070b10" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M2 5L4 7L8 3" stroke="var(--bg-body-to)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
                   </svg>
                 </transition>
               </button>

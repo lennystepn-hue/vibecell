@@ -74,7 +74,7 @@ function fmtRel(iso: string): string {
           class="px-4 py-3 font-mono text-small"
         >
           <div class="flex items-center gap-3 flex-wrap">
-            <span :style="{ color: 'var(--signal-amber, #f59e0b)' }">{{ row.action }}</span>
+            <span :style="{ color: 'var(--signal-amber, var(--signal-amber))' }">{{ row.action }}</span>
             <span v-if="row.target_type" class="text-fg-subtle text-[11px]">{{ row.target_type }}</span>
             <span v-if="row.target_id" class="text-fg-body text-[11px] truncate max-w-[300px]">{{ row.target_id }}</span>
             <span class="ml-auto text-fg-subtle text-[10px]">{{ fmtRel(row.at) }}</span>

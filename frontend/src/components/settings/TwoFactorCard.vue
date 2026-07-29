@@ -220,7 +220,7 @@ const disableValid = computed(() => /^\d{6}$/.test(disableCode.value));
             below into the app manually.
           </p>
           <div class="flex items-center gap-2 p-2 rounded-md font-mono text-small select-all"
-               style="background: rgba(20,33,50,0.5); border: 1px solid var(--border)">
+               style="background: rgb(var(--bg-surface-rgb) / 0.5); border: 1px solid var(--border)">
             <code class="flex-1 break-all text-fg-body">{{ setupData.secret }}</code>
           </div>
           <p class="text-[11px] text-fg-subtle font-mono">

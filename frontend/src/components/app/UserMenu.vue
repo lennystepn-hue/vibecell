@@ -94,7 +94,7 @@ function onKey(e: KeyboardEvent) {
       :class="variant === 'light'
         ? 'pl-1 pr-3 py-1 hover:bg-white/5 border border-white/10'
         : 'h-8 px-1 hover:bg-bg-surface-hi'"
-      :style="variant === 'light' ? 'color:#cfd4dc' : ''"
+      :style="variant === 'light' ? 'color:var(--fg-body)' : ''"
       @click.stop="toggle"
       :aria-expanded="open"
       aria-haspopup="menu"
@@ -123,19 +123,19 @@ function onKey(e: KeyboardEvent) {
         v-if="open"
         role="menu"
         class="absolute right-0 mt-2 w-60 rounded-lg overflow-hidden z-50 border shadow-xl"
-        style="background: rgba(10, 16, 24, 0.96); border-color: rgba(138,180,255,0.12); backdrop-filter: blur(12px)"
+        style="background: rgb(var(--bg-surface-rgb) / 0.96); border-color: var(--border-default); backdrop-filter: blur(12px)"
       >
-        <div class="px-3 py-3 border-b" style="border-color: rgba(138,180,255,0.08)">
-          <p class="font-mono text-[10px] uppercase tracking-[0.12em]" style="color:#5e7088">Signed in as</p>
-          <p class="text-small truncate mt-0.5" style="color:#cfd4dc">{{ auth.user.email }}</p>
-          <p v-if="auth.activeWorkspace" class="font-mono text-[10px] mt-1.5" style="color:#5cc8a4">
+        <div class="px-3 py-3 border-b" style="border-color: var(--border-subtle)">
+          <p class="font-mono text-[10px] uppercase tracking-[0.12em]" style="color:var(--fg-subtle)">Signed in as</p>
+          <p class="text-small truncate mt-0.5" style="color:var(--fg-body)">{{ auth.user.email }}</p>
+          <p v-if="auth.activeWorkspace" class="font-mono text-[10px] mt-1.5" style="color:var(--signal-green)">
             ◈ {{ auth.activeWorkspace.slug }}
           </p>
         </div>
         <div class="py-1">
           <button
             class="w-full text-left px-3 py-2 text-small hover:bg-white/5 flex items-center gap-2.5 transition-colors"
-            style="color:#cfd4dc"
+            style="color:var(--fg-body)"
             role="menuitem"
             @click="goDashboard"
           >
@@ -144,17 +144,17 @@ function onKey(e: KeyboardEvent) {
           </button>
           <button
             class="w-full text-left px-3 py-2 text-small hover:bg-white/5 flex items-center gap-2.5 transition-colors"
-            style="color:#cfd4dc"
+            style="color:var(--fg-body)"
             role="menuitem"
             @click="goSettings"
           >
-            <span class="font-mono" style="color:#8ba1bd">⚙</span>
+            <span class="font-mono" style="color:var(--fg-muted)">⚙</span>
             Settings
           </button>
         </div>
         <!-- Theme switcher. Clicks keep the menu open so you can try presets. -->
-        <div class="py-2 border-t" style="border-color: rgba(138,180,255,0.08)">
-          <p class="font-mono text-[10px] uppercase tracking-[0.12em] px-3 mb-1.5" style="color:#5e7088">Theme</p>
+        <div class="py-2 border-t" style="border-color: var(--border-subtle)">
+          <p class="font-mono text-[10px] uppercase tracking-[0.12em] px-3 mb-1.5" style="color:var(--fg-subtle)">Theme</p>
           <div class="grid grid-cols-3 gap-1 px-2" @click.stop>
             <button
               v-for="[name, meta] in theme.options"
@@ -168,10 +168,10 @@ function onKey(e: KeyboardEvent) {
             >{{ meta.label.split(' ')[0] }}</button>
           </div>
         </div>
-        <div class="py-1 border-t" style="border-color: rgba(138,180,255,0.08)">
+        <div class="py-1 border-t" style="border-color: var(--border-subtle)">
           <button
             class="w-full text-left px-3 py-2 text-small hover:bg-white/5 flex items-center gap-2.5 transition-colors"
-            style="color:#e3a5a5"
+            style="color:var(--signal-red)"
             role="menuitem"
             @click="signOut"
           >

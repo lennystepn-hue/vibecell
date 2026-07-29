@@ -80,7 +80,7 @@ function parseBriefBody(raw: string): { main: string; action: string | null } {
       </div>
       <button
         class="px-3 h-8 rounded-md text-small font-mono bg-signal-green hover:opacity-90 transition-opacity disabled:opacity-50"
-        style="color: #070b10"
+        style="color: var(--on-signal)"
         :disabled="loading"
         @click="generate"
       >
@@ -88,7 +88,7 @@ function parseBriefBody(raw: string): { main: string; action: string | null } {
       </button>
     </header>
 
-    <div v-if="err" class="rounded-md p-3 text-small" style="background: rgba(229,101,101,0.08); border: 1px solid rgba(229,101,101,0.25); color: #e5a5a5">
+    <div v-if="err" class="rounded-md p-3 text-small" style="background: rgb(var(--signal-red-rgb) / 0.08); border: 1px solid rgb(var(--signal-red-rgb) / 0.25); color: var(--signal-red)">
       {{ err }}
       <p v-if="err.includes('ANTHROPIC_API_KEY')" class="text-[11px] text-fg-subtle mt-1.5">
         Quick fix: ask Claude
@@ -109,7 +109,7 @@ function parseBriefBody(raw: string): { main: string; action: string | null } {
       <p
         v-if="parseBriefBody(brief).action"
         class="text-body italic"
-        style="color: #5cc8a4; border-left: 2px solid #5cc8a4; padding-left: 10px"
+        style="color: var(--signal-green); border-left: 2px solid var(--signal-green); padding-left: 10px"
       >→ {{ parseBriefBody(brief).action }}</p>
     </div>
 

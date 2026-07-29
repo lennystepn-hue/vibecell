@@ -20,9 +20,9 @@ const imgFailed = ref(false);
     <!-- Browser chrome — macOS-ish -->
     <div class="browser-chrome">
       <div class="traffic">
-        <span style="background: #ff6b6b" />
-        <span style="background: #f5b84a" />
-        <span style="background: #5cc8a4" />
+        <span style="background: var(--signal-red)" />
+        <span style="background: var(--signal-amber)" />
+        <span style="background: var(--signal-green)" />
       </div>
       <div class="url">
         <span class="url-proto">vibecell.dev</span><span class="url-path">/p/vibecell</span>
@@ -59,12 +59,12 @@ const imgFailed = ref(false);
   margin: 0 auto;
   border-radius: 16px;
   overflow: hidden;
-  background: rgba(7, 11, 16, 0.92);
-  border: 1px solid rgba(138, 180, 255, 0.14);
+  background: rgb(var(--scrim-rgb) / 0.92);
+  border: 1px solid rgb(var(--border-rgb) / 0.14);
   box-shadow:
-    0 60px 120px rgba(0, 0, 0, 0.55),
-    0 0 80px rgba(92, 200, 164, 0.04),
-    0 0 0 1px rgba(138, 180, 255, 0.06);
+    0 60px 120px rgb(var(--scrim-rgb) / 0.55),
+    0 0 80px rgb(var(--signal-green-rgb) / 0.04),
+    0 0 0 1px rgb(var(--border-rgb) / 0.06);
   transform: perspective(1800px) rotateX(2deg);
   transform-origin: center top;
   transition: transform 600ms cubic-bezier(0.22, 1, 0.36, 1);
@@ -79,8 +79,8 @@ const imgFailed = ref(false);
   align-items: center;
   gap: 14px;
   padding: 12px 16px;
-  background: rgba(20, 33, 50, 0.55);
-  border-bottom: 1px solid rgba(138, 180, 255, 0.08);
+  background: rgb(var(--bg-surface-rgb) / 0.55);
+  border-bottom: 1px solid var(--border-subtle);
 }
 .traffic {
   display: flex;
@@ -97,19 +97,19 @@ const imgFailed = ref(false);
   text-align: center;
   font-family: ui-monospace, "Geist Mono", monospace;
   font-size: 12px;
-  color: #8ba1bd;
-  background: rgba(7, 11, 16, 0.65);
+  color: var(--fg-muted);
+  background: rgb(var(--scrim-rgb) / 0.65);
   padding: 6px 14px;
   border-radius: 6px;
-  border: 1px solid rgba(138, 180, 255, 0.08);
+  border: 1px solid var(--border-subtle);
   max-width: 440px;
   margin: 0 auto;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.url-proto { color: #5cc8a4; }
-.url-path { color: #cfd4dc; }
+.url-proto { color: var(--signal-green); }
+.url-path { color: var(--fg-body); }
 .url-meta {
   min-width: 50px;
   display: flex;
@@ -118,9 +118,9 @@ const imgFailed = ref(false);
 .kbd {
   font-family: ui-monospace, "Geist Mono", monospace;
   font-size: 10px;
-  color: #5e7088;
-  background: rgba(7, 11, 16, 0.5);
-  border: 1px solid rgba(138, 180, 255, 0.1);
+  color: var(--fg-subtle);
+  background: rgb(var(--scrim-rgb) / 0.5);
+  border: 1px solid rgb(var(--border-rgb) / 0.1);
   padding: 3px 7px;
   border-radius: 4px;
 }
@@ -128,7 +128,7 @@ const imgFailed = ref(false);
 /* ─── Screen ───────────────────────────────────────────────────────── */
 .screen {
   position: relative;
-  background: #070b10;
+  background: var(--bg-body-to);
   min-height: 300px;
 }
 .screen img {
@@ -146,12 +146,12 @@ const imgFailed = ref(false);
   font-size: 12px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: #5cc8a4;
+  color: var(--signal-green);
   margin: 0 0 14px;
 }
 .placeholder-body {
   font-size: 13px;
-  color: #8ba1bd;
+  color: var(--fg-muted);
   max-width: 480px;
   margin: 0 auto;
   line-height: 1.6;
@@ -159,10 +159,10 @@ const imgFailed = ref(false);
 .placeholder code {
   font-family: ui-monospace, "Geist Mono", monospace;
   font-size: 12px;
-  color: #cfd4dc;
-  background: rgba(138, 180, 255, 0.08);
+  color: var(--fg-body);
+  background: var(--border-subtle);
   padding: 2px 6px;
   border-radius: 4px;
-  border: 1px solid rgba(138, 180, 255, 0.1);
+  border: 1px solid rgb(var(--border-rgb) / 0.1);
 }
 </style>

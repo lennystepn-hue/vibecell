@@ -27,11 +27,11 @@ let cleanupTimer: ReturnType<typeof setTimeout> | null = null;
 
 const PALETTE = [
   "var(--signal-green)",
-  "#5cc8a4",
-  "#8ab4ff",
-  "#c084fc",
-  "#f5b84a",
-  "#ffffff",
+  "var(--signal-teal)",
+  "var(--signal-blue)",
+  "var(--signal-violet)",
+  "var(--signal-amber)",
+  "var(--fg-primary)",
 ];
 
 function launch(count = 60) {

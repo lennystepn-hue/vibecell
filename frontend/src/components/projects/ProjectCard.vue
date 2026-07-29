@@ -13,7 +13,7 @@ type Project = components["schemas"]["ProjectListItem"];
 const props = defineProps<{ project: Project }>();
 const presence = usePresenceStore();
 const liveClass = () => (presence.isLive(props.project.slug)
-  ? "ring-1 ring-signal-green/40 shadow-[0_0_18px_rgba(92,200,164,0.15)]"
+  ? "ring-1 ring-signal-green/40 shadow-[var(--glow-lg)]"
   : "");
 </script>
 
@@ -38,7 +38,7 @@ const liveClass = () => (presence.isLive(props.project.slug)
          through more on that side. -->
     <div
       class="absolute inset-0 -z-10 pointer-events-none"
-      style="background: linear-gradient(to right, var(--bg-surface) 0%, var(--bg-surface) 30%, rgba(0,0,0,0) 100%)"
+      style="background: linear-gradient(to right, var(--bg-surface) 0%, var(--bg-surface) 30%, transparent 100%)"
       aria-hidden="true"
     />
 

@@ -70,7 +70,7 @@ onProjectLiveEvent(["screenshot.captured", "ship.created"], () => void load(prop
 
 const miniClass = computed(() =>
   "block w-[180px] h-[112px] rounded-md overflow-hidden border border-border transition-all " +
-  "hover:border-signal-green/50 hover:shadow-[0_0_16px_rgba(92,200,164,0.18)] " +
+  "hover:border-signal-green/50 hover:shadow-[var(--glow-md)] " +
   "bg-bg-surface",
 );
 </script>

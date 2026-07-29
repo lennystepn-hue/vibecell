@@ -45,6 +45,12 @@ function hash(s: string): number {
 
 // 30 vivid pastels, tuned for both Paper (light) and Midnight (dark) bgs.
 // Ordering doesn't matter — picks are independent.
+//
+// Exempt from the theme-token guard (scripts/check-theme-tokens.mjs), on
+// purpose: this is identity data, not chrome. A project's orb colour is
+// derived from its slug hash and has to stay the same colour when the user
+// switches theme — that stability is the whole point of the orb. Tokenising
+// these would make every project change colour with the theme.
 const POOL = [
   "#ff6b9d", "#ff8f6b", "#ffc56b", "#c5ff6b", "#6bffb4",
   "#6bd4ff", "#6b9dff", "#b592ff", "#ff6bd4", "#ff7e7e",
@@ -131,8 +137,8 @@ const style = computed(() => {
   border-radius: 50%;
   background: radial-gradient(
     ellipse at 30% 20%,
-    rgba(255, 255, 255, 0.7) 0%,
-    rgba(255, 255, 255, 0.15) 40%,
+    rgb(var(--specular-rgb) / 0.7) 0%,
+    rgb(var(--specular-rgb) / 0.15) 40%,
     transparent 70%
   );
   filter: blur(2px);

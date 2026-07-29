@@ -162,8 +162,8 @@ function fmtDate(iso: string | null | undefined): string {
 function statusColor(s: string | null): string {
   if (!s) return "var(--fg-subtle)";
   if (s === "active") return "var(--signal-green)";
-  if (s === "trialing") return "var(--signal-blue, #8ab4ff)";
-  if (s === "past_due" || s === "expired_trial") return "var(--signal-amber, #f59e0b)";
+  if (s === "trialing") return "var(--signal-blue)";
+  if (s === "past_due" || s === "expired_trial") return "var(--signal-amber)";
   if (s === "canceled" || s === "unpaid") return "var(--signal-red)";
   return "var(--fg-subtle)";
 }
@@ -217,7 +217,7 @@ function statusColor(s: string | null): string {
                 <span
                   v-if="u.has_stripe_subscription"
                   class="ml-1 text-[9px] px-1 py-0.5 rounded-sm tabular-nums"
-                  :style="{ background: 'rgba(99,91,255,0.12)', color: 'rgba(180,170,255,0.85)' }"
+                  :style="{ background: 'rgb(var(--signal-violet-rgb) / 0.12)', color: 'var(--signal-violet)' }"
                   title="Has Stripe subscription"
                 >S</span>
               </td>
@@ -254,7 +254,7 @@ function statusColor(s: string | null): string {
       <div
         v-if="detailOpen"
         class="fixed inset-0 z-40 flex justify-end"
-        style="background: rgba(7,11,16,0.55); backdrop-filter: blur(2px)"
+        style="background: rgb(var(--scrim-rgb) / 0.55); backdrop-filter: blur(2px)"
         @click.self="closeDetail"
       >
         <aside
@@ -353,7 +353,7 @@ function statusColor(s: string | null): string {
                   <button
                     type="button"
                     class="h-9 px-3 rounded-md text-small font-mono border border-border bg-bg-surface hover:bg-bg-surface-hi transition-colors col-span-2"
-                    :style="{ color: 'var(--signal-amber, #f59e0b)' }"
+                    :style="{ color: 'var(--signal-amber, var(--signal-amber))' }"
                     @click="openCancelSub(detail.user)"
                   >cancel subscription</button>
                   <button

@@ -165,7 +165,7 @@ function close() {
           <div
             v-if="newConnection"
             class="mb-4 rounded-lg p-4 flex items-center gap-3"
-            style="background: rgba(92,200,164,0.09); border: 1px solid rgba(92,200,164,0.3)"
+            style="background: rgb(var(--signal-green-rgb) / 0.09); border: 1px solid rgb(var(--signal-green-rgb) / 0.3)"
           >
             <span class="w-2 h-2 rounded-full bg-signal-green animate-pulse shrink-0" />
             <div class="flex-1 min-w-0">
@@ -178,7 +178,7 @@ function close() {
             </div>
             <button
               class="shrink-0 text-small px-3 py-1.5 rounded bg-signal-green hover:opacity-90 transition-opacity"
-              style="color:#070b10"
+              style="color:var(--bg-body-to)"
               @click="close"
             >Done</button>
           </div>
@@ -213,7 +213,7 @@ function close() {
           <p class="text-small text-fg-muted">{{ INSTALL_PROMPT_PITCH }}</p>
           <div
             class="rounded-md p-4 font-mono text-[12px] leading-relaxed whitespace-pre-wrap select-all"
-            style="background:rgba(20,33,50,0.5); border:1px solid rgba(138,180,255,0.12); color:var(--fg-body); max-height:280px; overflow-y:auto"
+            style="background:rgb(var(--bg-surface-rgb) / 0.5); border:1px solid var(--border-default); color:var(--fg-body); max-height:280px; overflow-y:auto"
           >{{ VIBECELL_INSTALL_PROMPT }}</div>
           <PrimaryButton class="w-full" @click="copy(VIBECELL_INSTALL_PROMPT, 'ai-prompt')">
             {{ copiedKey === 'ai-prompt' ? "✓ Copied — paste into your AI" : "Copy prompt" }}
@@ -247,7 +247,7 @@ function close() {
               <li><span class="font-mono text-fg-subtle">3.</span> Paste the URL below</li>
               <li><span class="font-mono text-fg-subtle">4.</span> Follow the sign-in prompt in your browser</li>
             </ol>
-            <div class="flex items-center gap-2 mt-3 p-3 rounded-md" style="background:rgba(20,33,50,0.5); border:1px solid rgba(138,180,255,0.1)">
+            <div class="flex items-center gap-2 mt-3 p-3 rounded-md" style="background:rgb(var(--bg-surface-rgb) / 0.5); border:1px solid rgb(var(--border-rgb) / 0.1)">
               <code class="flex-1 text-small font-mono text-fg-body truncate">{{ BASE }}</code>
               <button
                 class="shrink-0 text-small text-fg-muted hover:text-fg-body px-3 py-1 rounded border border-border transition-colors"
@@ -261,7 +261,7 @@ function close() {
         <div v-else-if="tab === 'claude-code'" class="space-y-4">
           <div>
             <p class="text-small text-fg-muted mb-2">Run this in your terminal — easiest path:</p>
-            <div class="flex items-center gap-2 p-3 rounded-md" style="background:rgba(20,33,50,0.5); border:1px solid rgba(138,180,255,0.12)">
+            <div class="flex items-center gap-2 p-3 rounded-md" style="background:rgb(var(--bg-surface-rgb) / 0.5); border:1px solid var(--border-default)">
               <code class="flex-1 text-small font-mono text-fg-primary break-all">{{ claudeCodeCommand }}</code>
               <PrimaryButton class="shrink-0" @click="copy(claudeCodeCommand, 'cc-cmd')">
                 {{ copiedKey === 'cc-cmd' ? "✓" : "Copy" }}
@@ -276,7 +276,7 @@ function close() {
               <span class="group-open:hidden">Alt: add to <code class="font-mono">.mcp.json</code></span>
               <span class="hidden group-open:inline">.mcp.json ▾</span>
             </summary>
-            <pre class="mt-3 rounded-md p-3 text-small font-mono overflow-x-auto" style="background:rgba(20,33,50,0.5); border:1px solid rgba(138,180,255,0.1); color:#cfd4dc">{{ claudeCodeConfig }}</pre>
+            <pre class="mt-3 rounded-md p-3 text-small font-mono overflow-x-auto" style="background:rgb(var(--bg-surface-rgb) / 0.5); border:1px solid rgb(var(--border-rgb) / 0.1); color:var(--fg-body)">{{ claudeCodeConfig }}</pre>
             <div class="flex justify-end mt-2">
               <button
                 class="text-small text-fg-muted hover:text-fg-body px-3 py-1 rounded border border-border transition-colors"
@@ -304,7 +304,7 @@ function close() {
               <li><span class="font-mono text-fg-subtle">2.</span> <strong>Add remote server</strong> → paste URL below</li>
               <li><span class="font-mono text-fg-subtle">3.</span> Cursor opens the OAuth consent in your browser</li>
             </ol>
-            <div class="flex items-center gap-2 mt-3 p-3 rounded-md" style="background:rgba(20,33,50,0.5); border:1px solid rgba(138,180,255,0.1)">
+            <div class="flex items-center gap-2 mt-3 p-3 rounded-md" style="background:rgb(var(--bg-surface-rgb) / 0.5); border:1px solid rgb(var(--border-rgb) / 0.1)">
               <code class="flex-1 text-small font-mono text-fg-body truncate">{{ MCP_URL }}</code>
               <button
                 class="shrink-0 text-small text-fg-muted hover:text-fg-body px-3 py-1 rounded border border-border transition-colors"
@@ -320,7 +320,7 @@ function close() {
             Zed uses <code class="font-mono">mcp-remote</code> as a bridge since it speaks stdio.
             Add this block to <code class="font-mono">settings.json</code>:
           </p>
-          <pre class="rounded-md p-3 text-small font-mono overflow-x-auto" style="background:rgba(20,33,50,0.5); border:1px solid rgba(138,180,255,0.1); color:#cfd4dc">{{ zedConfig }}</pre>
+          <pre class="rounded-md p-3 text-small font-mono overflow-x-auto" style="background:rgb(var(--bg-surface-rgb) / 0.5); border:1px solid rgb(var(--border-rgb) / 0.1); color:var(--fg-body)">{{ zedConfig }}</pre>
           <div class="flex justify-end">
             <button
               class="text-small text-fg-muted hover:text-fg-body px-3 py-1 rounded border border-border transition-colors"
@@ -331,7 +331,7 @@ function close() {
 
         <!-- ─── Windsurf ────────────────────────────────────────────── -->
         <div v-else class="space-y-4">
-          <div class="flex items-center gap-2 p-3 rounded-md" style="background:rgba(20,33,50,0.5); border:1px solid rgba(138,180,255,0.12)">
+          <div class="flex items-center gap-2 p-3 rounded-md" style="background:rgb(var(--bg-surface-rgb) / 0.5); border:1px solid var(--border-default)">
             <code class="flex-1 text-small font-mono text-fg-primary break-all">{{ windsurfCommand }}</code>
             <PrimaryButton class="shrink-0" @click="copy(windsurfCommand, 'ws-cmd')">
               {{ copiedKey === 'ws-cmd' ? "✓" : "Copy" }}
