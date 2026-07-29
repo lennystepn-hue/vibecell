@@ -1,233 +1,187 @@
 <script setup lang="ts">
 /**
- * Onboarding wizard — 3 cockpit-styled steps that turn a freshly-signed-up
- * user into a wired-up Vibecell user in under a minute.
+ * Onboarding — one screen.
  *
- *   01 · spin up your first project   (inline create OR import from GitHub)
- *   02 · pair your editor             (Claude Desktop one-click / Code paste)
- *   03 · console live                 (open project, ship)
+ * What this replaces: a three-step wizard that created an *empty* project in
+ * step 1, offered *six* editor tabs in step 2, and landed in an *empty*
+ * console in step 3. Every aha-moment Vibecell has happened after it ended,
+ * where no new user was still watching. Step 2 also asked for a decision —
+ * "which editor tab applies to me?" — that a new user is not yet equipped to
+ * make.
  *
- * Routing contract:
- *   • Reachable at /welcome for anyone authed.
- *   • ProjectsIndex auto-redirects here on first empty-dashboard hit
- *     (gated by localStorage flag so it doesn't keep re-firing).
- *   • Calling `finish()` writes the flag and navigates to the freshly-created
- *     project (or /p if user skipped step 1 entirely).
+ * Now: one action, then the user watches their portfolio build itself.
  *
- * Auto-advance:
- *   • Step 1 → 2 fires the moment the projects list becomes non-empty.
- *   • Step 2 → 3 fires when a new OAuth connection (Claude Desktop, Cursor,
- *     Claude Code) shows up via the connections-store poll.
+ * Why the one-liner is the primary path and the deep link is secondary: the
+ * line runs `hangar setup`, which wires up *every* MCP client on the machine.
+ * The deep link configures Claude Desktop and nothing else. Ranking them by
+ * which is easier to click would have put the weaker one first.
+ *
+ * Routing contract, unchanged from the old wizard:
+ *   • reachable at /welcome for anyone authed
+ *   • ProjectsIndex redirects here on first empty-dashboard hit, gated by a
+ *     localStorage flag so it doesn't keep re-firing
  */
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 
+import Card from "@/components/ui/Card.vue";
 import MonoLabel from "@/components/ui/MonoLabel.vue";
 import PrimaryButton from "@/components/ui/PrimaryButton.vue";
-import TextField from "@/components/ui/TextField.vue";
 
-import { api } from "@/api/client";
-import { INSTALL_PROMPT_PITCH, VIBECELL_INSTALL_PROMPT } from "@/lib/installPrompt";
 import { useAuthStore } from "@/stores/auth";
-import { useConnectionsStore } from "@/stores/connections";
-import { useProjectsStore } from "@/stores/projects";
-import { useToastStore } from "@/stores/toast";
+import { useOnboardingStore } from "@/stores/onboarding";
 
 const auth = useAuthStore();
-const projects = useProjectsStore();
-const connections = useConnectionsStore();
-const toast = useToastStore();
+const onboarding = useOnboardingStore();
 const router = useRouter();
 
 const ONBOARDING_FLAG = "vibecell_onboarding_done";
-
-// ----- Step state ----------------------------------------------------------
-
-type Step = 1 | 2 | 3;
-const step = ref<Step>(1);
-
-// ----- Step 1: create first project ---------------------------------------
-
-const projectName = ref("");
-const projectSlug = ref("");
-const projectEmoji = ref("📦");
-const creating = ref(false);
-const createError = ref<string | null>(null);
-const createdSlug = ref<string | null>(null);
-
-function autoSlug(from: string): string {
-  return from
-    .toLowerCase()
-    .replace(/[^a-z0-9-]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 50);
-}
-
-watch(projectName, (v) => {
-  if (!projectSlug.value || projectSlug.value === autoSlug(projectName.value.slice(0, -1))) {
-    projectSlug.value = autoSlug(v);
-  }
-});
-
-const canCreate = computed(
-  () => projectName.value.trim().length > 0 && projectSlug.value.trim().length > 0 && !creating.value,
-);
-
-async function createProject() {
-  createError.value = null;
-  creating.value = true;
-  const { data, error: apiError, response } = await api.POST("/api/v1/projects", {
-    body: {
-      name: projectName.value.trim(),
-      slug: projectSlug.value.trim(),
-      emoji: projectEmoji.value.trim() || null,
-      pitch: null,
-      status: "building",
-    },
-  });
-  creating.value = false;
-
-  if (apiError || !data) {
-    const detail = (apiError as { detail?: string } | undefined)?.detail;
-    createError.value = detail ?? `Couldn't create project (${response?.status ?? "unknown"})`;
-    return;
-  }
-  toast.push(`Created ${data.name}`, "success");
-  createdSlug.value = data.slug;
-  await projects.fetchList();
-  step.value = 2;
-}
-
-// ----- Step 2: pair editor -------------------------------------------------
-
-type EditorTab =
-  | "ai-prompt"
-  | "claude-desktop"
-  | "claude-code"
-  | "cursor"
-  | "zed"
-  | "windsurf";
-
-// Default to "ai-prompt" — that's the slickest path now. The AI itself
-// runs the install + OAuth + SKILL fetch + first status read. Users who
-// want to do it by hand can still pick a per-editor tab.
-const tab = ref<EditorTab>("ai-prompt");
-const oneClickAttempted = ref(false);
-const copiedKey = ref<string | null>(null);
-const connectionCountAtStart = ref(0);
-const pollHandle = ref<ReturnType<typeof setInterval> | null>(null);
-
 const BASE = "https://vibecell.dev";
-const MCP_URL = `${BASE}/mcp`;
 
-// Manual fallback if the user picks a per-editor tab — used to suggest
-// which one's most likely to match their machine. The default lands on
-// "ai-prompt" via the ref initialiser above; this is just a hint helper.
-function detectBestEditorTab(): EditorTab {
-  if (typeof navigator === "undefined") return "claude-desktop";
+// ----- Platform ------------------------------------------------------------
+
+type Os = "windows" | "macos" | "linux";
+
+/**
+ * A browser cannot see which applications are installed — only which OS it is
+ * running on. That is the honest ceiling: pick the *likely* path, and make
+ * the fallback free rather than pretending to know what is on the disk.
+ */
+function detectOs(): Os {
+  if (typeof navigator === "undefined") return "macos";
   const ua = navigator.userAgent.toLowerCase();
-  const platform = (navigator.platform ?? "").toLowerCase();
-  if (platform.includes("mac") || ua.includes("mac os")) return "claude-desktop";
-  if (platform.includes("win")) return "claude-desktop";
-  return "claude-code";
+  if (ua.includes("win")) return "windows";
+  if (ua.includes("mac")) return "macos";
+  return "linux";
 }
-// Reference once so the linter doesn't warn about the unused export — and
-// so future instrumentation (e.g. analytics on which tab the user picked)
-// has a place to land.
-void detectBestEditorTab;
 
-const claudeCodeCommand = computed(
-  () => `claude mcp add vibecell ${MCP_URL} --transport http --scope user`,
+const os = ref<Os>(detectOs());
+const osLabel = computed(() =>
+  os.value === "windows" ? "PowerShell" : os.value === "macos" ? "Terminal" : "your shell",
 );
-const cursorDeepLink = computed(() => {
-  const config = { name: "vibecell", url: MCP_URL, type: "http" };
-  const b64 = btoa(JSON.stringify(config));
-  return `cursor://anysphere.cursor-deeplink/mcp/install?name=vibecell&config=${b64}`;
+
+const oneLiner = computed(() => {
+  const p = onboarding.pairing;
+  if (!p) return null;
+  return os.value === "windows" ? p.install_ps1 : p.install_sh;
 });
-const zedConfig = JSON.stringify(
-  { context_servers: { vibecell: { command: { path: "npx", args: ["-y", "mcp-remote", MCP_URL] } } } },
-  null,
-  2,
-);
-const windsurfCommand = computed(
-  () => `windsurf mcp add vibecell ${MCP_URL} --transport http`,
-);
 
-async function copy(text: string, key: string) {
+// ----- Copy ----------------------------------------------------------------
+
+const copied = ref(false);
+let copyResetHandle: ReturnType<typeof setTimeout> | null = null;
+
+async function copyLine() {
+  if (!oneLiner.value) return;
   try {
-    await navigator.clipboard.writeText(text);
-    copiedKey.value = key;
-    setTimeout(() => {
-      if (copiedKey.value === key) copiedKey.value = null;
-    }, 1800);
+    await navigator.clipboard.writeText(oneLiner.value);
+    copied.value = true;
+    if (copyResetHandle) clearTimeout(copyResetHandle);
+    copyResetHandle = setTimeout(() => (copied.value = false), 2000);
   } catch {
-    /* ignore */
+    /* clipboard blocked — the line is select-all on screen either way */
   }
 }
 
-function tryClaudeDesktopOneClick() {
-  oneClickAttempted.value = true;
-  void copy(BASE, "desktop-one-click");
-  window.location.href = `claude://add-connector?url=${encodeURIComponent(BASE)}`;
-}
+// ----- Deep link, with failure detection ------------------------------------
 
-function tryCursorOneClick() {
-  oneClickAttempted.value = true;
-  void copy(MCP_URL, "cursor-one-click");
-  window.location.href = cursorDeepLink.value;
-}
+type DeepLinkState = "idle" | "trying" | "failed";
+const deepLink = ref<DeepLinkState>("idle");
+let deepLinkTimer: ReturnType<typeof setTimeout> | null = null;
 
-function startConnectionPoll() {
-  connectionCountAtStart.value = connections.list.length;
-  if (!pollHandle.value) {
-    pollHandle.value = setInterval(() => connections.refresh(), 3000);
+function clearDeepLinkTimer() {
+  if (deepLinkTimer) {
+    clearTimeout(deepLinkTimer);
+    deepLinkTimer = null;
   }
 }
 
-function stopConnectionPoll() {
-  if (pollHandle.value) {
-    clearInterval(pollHandle.value);
-    pollHandle.value = null;
+function onVisibilityChange() {
+  // The tab losing focus means the OS handed the URL to an application, so a
+  // protocol handler exists. If that never happens, nothing is registered.
+  if (document.visibilityState === "hidden" && deepLink.value === "trying") {
+    deepLink.value = "idle";
+    clearDeepLinkTimer();
   }
 }
 
-// Auto-advance to step 3 the moment a brand-new connection appears.
-watch(
-  () => connections.list.length,
-  (next) => {
-    if (step.value === 2 && next > connectionCountAtStart.value) {
-      step.value = 3;
-      stopConnectionPoll();
-    }
-  },
-);
+/**
+ * Fire a deep link and find out whether anything caught it.
+ *
+ * There is no API that answers "is Claude Desktop installed?". Watching for
+ * the tab to lose focus is the only signal available: fire, wait ~1.5s, and
+ * if focus never moved, say so plainly instead of leaving the user to work
+ * out why nothing happened.
+ */
+function tryDeepLink(url: string) {
+  deepLink.value = "trying";
+  clearDeepLinkTimer();
+  deepLinkTimer = setTimeout(() => {
+    if (deepLink.value === "trying") deepLink.value = "failed";
+  }, 1500);
+  window.location.href = url;
+}
 
-watch(step, (s) => {
-  if (s === 2) startConnectionPoll();
-  else stopConnectionPoll();
+const claudeDesktopLink = `claude://add-connector?url=${encodeURIComponent(BASE)}`;
+
+// ----- Manual fallback -----------------------------------------------------
+
+/** The six tabs became one quiet link. Nobody should have to pick from six. */
+const showManual = ref(false);
+const mcpUrl = `${BASE}/mcp`;
+
+// ----- Progress ------------------------------------------------------------
+
+const log = computed(() => {
+  const rows: Array<{ key: string; mark: "ok" | "run" | "skip"; text: string }> = [];
+
+  if (onboarding.paired) {
+    rows.push({ key: "paired", mark: "ok", text: "device paired" });
+  }
+  for (const c of onboarding.clients) {
+    rows.push({
+      key: `client:${c.client}`,
+      mark: c.ok ? "ok" : "skip",
+      text: c.ok ? `${c.client} configured` : `${c.client} — ${c.reason ?? "not found"}`,
+    });
+  }
+  if (onboarding.repoCount !== null) {
+    rows.push({
+      key: "scan",
+      mark: "ok",
+      text: `${onboarding.repoCount} repositor${onboarding.repoCount === 1 ? "y" : "ies"} found`,
+    });
+  }
+  for (const p of onboarding.projects) {
+    rows.push({
+      key: `project:${p.slug}`,
+      mark: p.enriched ? "ok" : "run",
+      text: p.enriched ? `${p.name} — ${p.pitch ?? "ready"}` : `reading ${p.name}…`,
+    });
+  }
+  return rows;
 });
 
-onBeforeUnmount(stopConnectionPoll);
+const started = computed(() => log.value.length > 0);
 
-// ----- Step 3 / finish -----------------------------------------------------
+// ----- Finish --------------------------------------------------------------
 
 function markDone() {
   try {
     localStorage.setItem(ONBOARDING_FLAG, "1");
   } catch {
-    /* ignore — private mode etc. */
+    /* private mode */
   }
 }
 
 function finish() {
   markDone();
-  if (createdSlug.value) {
-    router.replace(`/p/${createdSlug.value}`);
-  } else if (projects.list.length > 0) {
-    router.replace(`/p/${projects.list[0]!.slug}`);
-  } else {
-    router.replace("/p");
-  }
+  // Straight into the first project we just built, or the portfolio if
+  // something went sideways. Deliberately no projects-store fetch here: this
+  // screen renders nothing from that list, and a network call whose only
+  // purpose is a fallback route is a call not worth making.
+  const first = onboarding.projects[0]?.slug;
+  router.replace(first ? `/p/${first}` : "/p");
 }
 
 function skipAll() {
@@ -235,374 +189,159 @@ function skipAll() {
   router.replace("/p");
 }
 
+// The completion screen with triage is #8. Until it lands, `done` surfaces
+// inline rather than auto-navigating — dropping the user somewhere the moment
+// the last event arrives would rob them of the payoff they just watched.
+watch(
+  () => onboarding.done,
+  (isDone) => {
+    if (isDone) markDone();
+  },
+);
+
 // ----- Lifecycle -----------------------------------------------------------
 
-onMounted(async () => {
+onMounted(() => {
   if (!auth.isAuthed) {
     router.replace({ path: "/login", query: { next: "/welcome" } });
     return;
   }
-  await Promise.all([projects.fetchList(), connections.refresh()]);
+  document.addEventListener("visibilitychange", onVisibilityChange);
+  onboarding.open();
+  void onboarding.mintCode();
+});
 
-  // Resume in the right step if user reloads mid-flow.
-  if (projects.list.length > 0 && step.value === 1) {
-    createdSlug.value = projects.list[0]!.slug;
-    step.value = 2;
-  }
-  if (
-    step.value === 2 &&
-    connections.list.some((c) => c.type === "oauth")
-  ) {
-    step.value = 3;
-  }
+onBeforeUnmount(() => {
+  document.removeEventListener("visibilitychange", onVisibilityChange);
+  clearDeepLinkTimer();
+  if (copyResetHandle) clearTimeout(copyResetHandle);
+  onboarding.close();
 });
 </script>
 
 <template>
   <div class="min-h-[calc(100vh-44px)] px-6 py-12">
-    <div class="w-full max-w-[640px] mx-auto">
-      <!-- Header brand mark -->
+    <div class="w-full max-w-[620px] mx-auto">
       <div class="flex items-center gap-2 mb-10 text-fg-subtle">
         <span class="text-signal-green font-mono text-section">◈</span>
-        <span class="font-mono text-small tracking-label uppercase">Vibecell · welcome</span>
+        <span class="font-mono text-micro tracking-label uppercase">Vibecell · setup</span>
       </div>
 
-      <!-- Step indicator: 01 / 02 / 03.
-           Mobile shows ONLY the active step's label so 3 labels don't fight
-           320px of available width and truncate to garbage. Desktop shows
-           every label. -->
-      <ol class="flex items-center gap-3 mb-10 select-none">
-        <li
-          v-for="(n, i) in [1, 2, 3] as const"
-          :key="n"
-          class="flex items-center gap-3 flex-1 min-w-0"
-        >
-          <div class="flex items-center gap-2.5 min-w-0">
-            <span
-              class="w-7 h-7 rounded-md flex items-center justify-center font-mono text-micro tracking-tight transition-colors shrink-0"
-              :style="
-                step === n
-                  ? { background: 'var(--signal-green)', color: 'var(--bg-body-to)', boxShadow: '0 0 0 1px var(--signal-green), 0 0 12px rgb(var(--signal-green-rgb) / 0.25)' }
-                  : step > n
-                  ? { background: 'var(--signal-green-bg)', color: 'var(--signal-green)', border: '1px solid var(--signal-green)' }
-                  : { background: 'transparent', color: 'var(--fg-subtle)', border: '1px solid var(--border)' }
-              "
-            >
-              {{ String(n).padStart(2, "0") }}
-            </span>
-            <span
-              class="font-mono text-small uppercase tracking-label truncate"
-              :class="step === n ? '' : 'hidden sm:inline'"
-              :style="step === n ? { color: 'var(--fg-primary)' } : { color: 'var(--fg-subtle)' }"
-            >
-              {{ n === 1 ? "first project" : n === 2 ? "pair editor" : "console live" }}
-            </span>
-          </div>
-          <span
-            v-if="i < 2"
-            class="flex-1 h-px"
-            :style="{
-              background:
-                step > n ? 'var(--signal-green)' : 'var(--border)',
-            }"
-          />
-        </li>
-      </ol>
+      <!-- ─── The one action ──────────────────────────────────────────── -->
+      <Card>
+        <h1 class="text-display text-fg-primary tracking-tight">Let Claude set this up.</h1>
+        <p class="text-body text-fg-muted mt-2">
+          One line in {{ osLabel }}. It pairs this machine, wires up every AI editor it
+          finds, and then Claude reads your repos and fills in your projects — while you
+          watch below.
+        </p>
 
-      <!-- ─── STEP 1 · spin up first project ─────────────────────────────── -->
-      <transition
-        enter-from-class="opacity-0 translate-y-1"
-        enter-active-class="transition-all duration-med ease-out"
-        enter-to-class="opacity-100 translate-y-0"
-        mode="out-in"
-      >
-        <section v-if="step === 1" key="step-1" class="glass rounded-lg p-7">
-          <header class="mb-6">
-            <MonoLabel>step 01</MonoLabel>
-            <h1 class="text-display text-fg-primary tracking-tight mt-2">
-              Spin up your first project.
-            </h1>
-            <p class="text-body text-fg-muted mt-2">
-              Vibecell tracks one project at a time. Name it, ship it, log it.
-              You can rename, archive, or import more anytime.
-            </p>
-          </header>
+        <div
+          class="mt-6 rounded-md p-3 font-mono text-small text-fg-primary break-all select-all"
+          style="background: rgb(var(--bg-surface-rgb) / 0.5); border: 1px solid var(--border-default)"
+        >{{ oneLiner ?? "…" }}</div>
 
-          <form class="flex flex-col gap-4" @submit.prevent="createProject">
-            <!-- Mobile: stack name + emoji so name has full width.
-                 Desktop: side-by-side with emoji as a 120px column. -->
-            <div class="grid grid-cols-1 sm:grid-cols-[1fr_120px] gap-3">
-              <TextField
-                v-model="projectName"
-                label="name"
-                placeholder="Butlr"
-                :autofocus="true"
-              />
-              <TextField v-model="projectEmoji" label="emoji" placeholder="📦" />
-            </div>
-            <TextField
-              v-model="projectSlug"
-              label="slug"
-              placeholder="butlr"
-              :error="createError"
-            />
+        <PrimaryButton size="lg" class="w-full mt-3" :disabled="!oneLiner" @click="copyLine">
+          {{ copied ? "✓ Copied — paste it into your terminal" : "Copy the line" }}
+        </PrimaryButton>
 
-            <div class="flex items-center justify-between mt-2">
-              <RouterLink
-                to="/import/github"
-                class="font-mono text-small text-fg-subtle hover:text-fg-body transition-colors inline-flex items-center gap-1.5"
-              >
-                <span aria-hidden="true">↗</span>
-                <span>or import from GitHub</span>
-              </RouterLink>
-              <PrimaryButton
-                type="submit"
-                size="lg"
-                :disabled="!canCreate"
-                :loading="creating"
-              >
-                <span>Create &amp; continue</span>
-                <span v-if="!creating" class="font-mono text-small opacity-70" aria-hidden="true">⏎</span>
-              </PrimaryButton>
-            </div>
-          </form>
+        <p class="text-micro text-fg-subtle mt-3">
+          The code in that line works once and expires in 10 minutes. We refresh it for you
+          while this page is open.
+        </p>
 
-          <footer class="mt-7 pt-5 border-t border-border flex items-center justify-between">
-            <span class="font-mono text-small text-fg-subtle">// 1 of 3 · ~30s remaining</span>
-            <button
-              type="button"
-              class="text-small text-fg-subtle hover:text-fg-body transition-colors"
-              @click="skipAll"
-            >
-              Skip onboarding →
-            </button>
-          </footer>
-        </section>
+        <!-- Secondary: no terminal. Configures Claude Desktop only, which is
+             why it sits below rather than above. -->
+        <footer class="mt-6 pt-5 border-t border-border-subtle">
+          <button
+            v-if="deepLink !== 'failed'"
+            type="button"
+            class="text-small text-fg-muted hover:text-fg-body transition-colors"
+            @click="tryDeepLink(claudeDesktopLink)"
+          >
+            Rather not use a terminal? Set up Claude Desktop only →
+          </button>
+          <p v-else class="text-small text-fg-muted">
+            Claude Desktop didn't respond — it may not be installed. The line above works
+            everywhere, and sets up more.
+          </p>
 
-        <!-- ─── STEP 2 · pair editor ───────────────────────────────────── -->
-        <section v-else-if="step === 2" key="step-2" class="glass rounded-lg p-7">
-          <header class="mb-6">
-            <MonoLabel>step 02</MonoLabel>
-            <h1 class="text-display text-fg-primary tracking-tight mt-2">
-              Pair your editor.
-            </h1>
-            <p class="text-body text-fg-muted mt-2">
-              The Vibecell MCP plugs straight into Claude Desktop, Claude Code, Cursor &amp; co.
-              Sign-in once, no env vars, no API keys. We'll auto-advance the moment we see your first call.
-            </p>
-          </header>
+          <button
+            type="button"
+            class="block mt-3 text-small text-fg-subtle hover:text-fg-body transition-colors"
+            @click="showManual = !showManual"
+          >
+            {{ showManual ? "Hide manual setup" : "Different editor · set it up by hand" }}
+          </button>
 
-          <!-- Tabs — "Paste into AI" first because it's the slickest path -->
-          <nav class="flex gap-1 mb-5 border-b border-border flex-wrap">
-            <button
-              v-for="t in (['ai-prompt', 'claude-desktop', 'claude-code', 'cursor', 'zed', 'windsurf'] as const)"
-              :key="t"
-              type="button"
-              class="px-3 py-2 text-small transition-colors"
-              :class="tab === t
-                ? 'text-fg-primary border-b-2 border-signal-green -mb-px'
-                : 'text-fg-muted hover:text-fg-body'"
-              @click="tab = t"
-            >
-              <template v-if="t === 'ai-prompt'">
-                <span aria-hidden="true" class="text-signal-green mr-1">✦</span>Paste into AI
-              </template>
-              <template v-else>
-                {{
-                  t === "claude-desktop" ? "Claude Desktop" :
-                  t === "claude-code" ? "Claude Code" :
-                  t === "cursor" ? "Cursor" :
-                  t === "zed" ? "Zed" : "Windsurf"
-                }}
-              </template>
-            </button>
-          </nav>
-
-          <!-- ─── AI prompt ─────────────────────────────────────────── -->
-          <div v-if="tab === 'ai-prompt'" class="space-y-4">
-            <p class="text-small text-fg-muted">{{ INSTALL_PROMPT_PITCH }}</p>
-            <div
-              class="rounded-md p-4 font-mono text-small leading-relaxed whitespace-pre-wrap select-all"
-              style="background:rgb(var(--bg-surface-rgb) / 0.5); border:1px solid var(--border-default); color:var(--fg-body); max-height:280px; overflow-y:auto"
-            >{{ VIBECELL_INSTALL_PROMPT }}</div>
-            <div class="flex items-center gap-3">
-              <PrimaryButton
-                size="lg"
-                class="flex-1"
-                @click="copy(VIBECELL_INSTALL_PROMPT, 'ai-prompt')"
-              >
-                {{ copiedKey === 'ai-prompt' ? "✓ Copied — paste into your AI" : "Copy prompt" }}
-              </PrimaryButton>
-              <span class="font-mono text-nano text-fg-subtle whitespace-nowrap">
-                ~{{ Math.ceil(VIBECELL_INSTALL_PROMPT.length / 4) }} tokens
-              </span>
-            </div>
-            <p class="text-small text-fg-subtle">
-              Then paste it into Claude Code, Claude Desktop, Cursor, Zed, or any other AI in your editor.
-              First tool call pops OAuth in your browser — confirm there and you're paired.
-            </p>
-          </div>
-
-          <!-- Claude Desktop -->
-          <div v-if="tab === 'claude-desktop'" class="space-y-4">
-            <PrimaryButton class="w-full" @click="tryClaudeDesktopOneClick">
-              {{ oneClickAttempted ? "Retry — open Claude Desktop" : "One-click · Add to Claude Desktop →" }}
-            </PrimaryButton>
-            <p v-if="oneClickAttempted" class="text-small text-fg-muted text-center">
-              Nothing happened? The URL is on your clipboard. Paste it into
-              <strong>Settings → Connectors → Add Remote Server</strong>.
-            </p>
-            <details class="group" :open="oneClickAttempted">
-              <summary class="cursor-pointer text-small text-fg-muted hover:text-fg-body select-none transition-colors">
-                <span class="group-open:hidden">Manual setup</span>
-                <span class="hidden group-open:inline">Manual ▾</span>
-              </summary>
-              <ol class="text-body text-fg-body space-y-2 mt-3 list-none pl-0">
-                <li><span class="font-mono text-fg-subtle">1.</span> Claude Desktop → <strong>Settings → Connectors</strong></li>
-                <li><span class="font-mono text-fg-subtle">2.</span> <strong>Add Remote Server</strong></li>
-                <li><span class="font-mono text-fg-subtle">3.</span> Paste the URL below + finish OAuth in your browser</li>
-              </ol>
-              <div class="flex items-center gap-2 mt-3 p-3 rounded-md" style="background:rgb(var(--bg-surface-rgb) / 0.5); border:1px solid rgb(var(--border-rgb) / 0.1)">
-                <code class="flex-1 text-small font-mono text-fg-body truncate">{{ BASE }}</code>
-                <button
-                  type="button"
-                  class="shrink-0 text-small text-fg-muted hover:text-fg-body px-3 py-1 rounded border border-border transition-colors"
-                  @click="copy(BASE, 'desktop-url')"
-                >{{ copiedKey === 'desktop-url' ? "✓ Copied" : "Copy" }}</button>
-              </div>
-            </details>
-          </div>
-
-          <!-- Claude Code -->
-          <div v-else-if="tab === 'claude-code'" class="space-y-4">
-            <p class="text-small text-fg-muted">Run this in your terminal:</p>
-            <div class="flex items-center gap-2 p-3 rounded-md" style="background:rgb(var(--bg-surface-rgb) / 0.5); border:1px solid var(--border-default)">
-              <code class="flex-1 text-small font-mono text-fg-primary break-all">{{ claudeCodeCommand }}</code>
-              <PrimaryButton class="shrink-0" @click="copy(claudeCodeCommand, 'cc-cmd')">
-                {{ copiedKey === 'cc-cmd' ? "✓" : "Copy" }}
-              </PrimaryButton>
-            </div>
-            <p class="text-small text-fg-subtle">
-              OAuth opens in your browser on the first tool call. No env vars, no restart.
-            </p>
-          </div>
-
-          <!-- Cursor -->
-          <div v-else-if="tab === 'cursor'" class="space-y-4">
-            <PrimaryButton class="w-full" @click="tryCursorOneClick">
-              One-click · Add to Cursor →
-            </PrimaryButton>
-            <p class="text-small text-fg-subtle text-center">
-              Pre-fills the MCP server config in Cursor. Confirm in-app to install.
-            </p>
-            <details class="group">
-              <summary class="cursor-pointer text-small text-fg-muted hover:text-fg-body select-none">
-                <span class="group-open:hidden">Manual setup</span>
-                <span class="hidden group-open:inline">Manual ▾</span>
-              </summary>
-              <ol class="text-body text-fg-body space-y-2 mt-3 list-none pl-0">
-                <li><span class="font-mono text-fg-subtle">1.</span> Cursor → <strong>Settings → MCP</strong> → Add remote server</li>
-                <li><span class="font-mono text-fg-subtle">2.</span> Paste URL below, finish OAuth in browser</li>
-              </ol>
-              <div class="flex items-center gap-2 mt-3 p-3 rounded-md" style="background:rgb(var(--bg-surface-rgb) / 0.5); border:1px solid rgb(var(--border-rgb) / 0.1)">
-                <code class="flex-1 text-small font-mono text-fg-body truncate">{{ MCP_URL }}</code>
-                <button
-                  type="button"
-                  class="shrink-0 text-small text-fg-muted hover:text-fg-body px-3 py-1 rounded border border-border transition-colors"
-                  @click="copy(MCP_URL, 'cursor-url')"
-                >{{ copiedKey === 'cursor-url' ? "✓ Copied" : "Copy" }}</button>
-              </div>
-            </details>
-          </div>
-
-          <!-- Zed -->
-          <div v-else-if="tab === 'zed'" class="space-y-4">
+          <div v-if="showManual" class="mt-3 space-y-2">
             <p class="text-small text-fg-muted">
-              Zed needs <code class="font-mono">mcp-remote</code> as the stdio bridge. Add to <code class="font-mono">settings.json</code>:
+              Add a remote MCP server pointing at this URL. Every editor calls that screen
+              something different — MCP, Connectors, Context Servers.
             </p>
-            <pre class="rounded-md p-3 text-small font-mono overflow-x-auto" style="background:rgb(var(--bg-surface-rgb) / 0.5); border:1px solid rgb(var(--border-rgb) / 0.1); color:var(--fg-body)">{{ zedConfig }}</pre>
-            <div class="flex justify-end">
-              <button
-                type="button"
-                class="text-small text-fg-muted hover:text-fg-body px-3 py-1 rounded border border-border transition-colors"
-                @click="copy(zedConfig, 'zed-json')"
-              >{{ copiedKey === 'zed-json' ? "✓ Copied" : "Copy JSON" }}</button>
-            </div>
+            <code
+              class="block rounded p-2 font-mono text-small text-fg-body break-all select-all"
+              style="background: rgb(var(--bg-surface-rgb) / 0.5)"
+            >{{ mcpUrl }}</code>
           </div>
+        </footer>
+      </Card>
 
-          <!-- Windsurf -->
-          <div v-else class="space-y-4">
-            <div class="flex items-center gap-2 p-3 rounded-md" style="background:rgb(var(--bg-surface-rgb) / 0.5); border:1px solid var(--border-default)">
-              <code class="flex-1 text-small font-mono text-fg-primary break-all">{{ windsurfCommand }}</code>
-              <PrimaryButton class="shrink-0" @click="copy(windsurfCommand, 'ws-cmd')">
-                {{ copiedKey === 'ws-cmd' ? "✓" : "Copy" }}
-              </PrimaryButton>
-            </div>
-            <p class="text-small text-fg-subtle">
-              Or: Windsurf → Cascade → MCP Servers → Add Remote Server, paste <code class="font-mono">{{ MCP_URL }}</code>.
-            </p>
-          </div>
+      <!-- ─── Live progress ──────────────────────────────────────────── -->
+      <Card class="mt-5" title="progress">
+        <template #meta>
+          <span v-if="onboarding.connected">· live</span>
+        </template>
 
-          <footer class="mt-7 pt-5 border-t border-border flex items-center justify-between">
-            <span class="font-mono text-small text-fg-subtle inline-flex items-center gap-2">
-              <span class="w-1.5 h-1.5 rounded-full bg-fg-subtle animate-pulse" />
-              waiting for first tool call…
+        <p v-if="!started" class="text-small text-fg-subtle">
+          Waiting for the line to run. Nothing happens here until you paste it.
+        </p>
+
+        <ul v-else class="space-y-1.5">
+          <li
+            v-for="row in log"
+            :key="row.key"
+            class="flex items-start gap-2.5 font-mono text-small"
+          >
+            <span
+              class="shrink-0"
+              :class="{
+                'text-signal-green': row.mark === 'ok',
+                'text-signal-blue': row.mark === 'run',
+                'text-fg-subtle': row.mark === 'skip',
+              }"
+              aria-hidden="true"
+            >{{ row.mark === "ok" ? "✓" : row.mark === "run" ? "◐" : "○" }}</span>
+            <span :class="row.mark === 'skip' ? 'text-fg-subtle' : 'text-fg-body'">
+              {{ row.text }}
             </span>
-            <button
-              type="button"
-              class="text-small text-fg-subtle hover:text-fg-body transition-colors"
-              @click="step = 3"
-            >
-              I'll do this later →
-            </button>
-          </footer>
-        </section>
+          </li>
+        </ul>
 
-        <!-- ─── STEP 3 · console live ──────────────────────────────────── -->
-        <section v-else key="step-3" class="glass rounded-lg p-7">
-          <header class="mb-6">
-            <MonoLabel>step 03</MonoLabel>
-            <h1 class="text-display text-fg-primary tracking-tight mt-2">
-              Console live.
-            </h1>
-            <p class="text-body text-fg-muted mt-2">
-              Vibecell now logs sessions, tracks todos, records ships, and stitches it all into
-              a project console you can resurrect on any device.
+        <footer
+          v-if="onboarding.done"
+          class="mt-6 pt-5 border-t border-border-subtle flex items-center justify-between gap-4"
+        >
+          <div class="min-w-0">
+            <MonoLabel>done</MonoLabel>
+            <p class="text-body text-fg-primary mt-1">
+              {{ onboarding.finalProjectCount ?? onboarding.projects.length }} projects are in.
+              You typed nothing.
             </p>
-          </header>
+          </div>
+          <PrimaryButton size="lg" @click="finish">Open →</PrimaryButton>
+        </footer>
+      </Card>
 
-          <ul class="space-y-3">
-            <li class="flex items-start gap-3 p-4 rounded-md" style="background: var(--bg-elevated); border: 1px solid var(--border)">
-              <span class="font-mono text-section text-signal-green leading-none">◢</span>
-              <div class="min-w-0">
-                <p class="text-body text-fg-primary font-medium">Open your project console</p>
-                <p class="text-small text-fg-muted mt-0.5">All-in-one cockpit: focus, todos, decisions, ships, telemetry.</p>
-              </div>
-            </li>
-            <li class="flex items-start gap-3 p-4 rounded-md" style="background: var(--bg-elevated); border: 1px solid var(--border)">
-              <span class="font-mono text-section text-signal-green leading-none">◇</span>
-              <div class="min-w-0">
-                <p class="text-body text-fg-primary font-medium">Tell Claude what you want</p>
-                <p class="text-small text-fg-muted mt-0.5">Vibecell auto-logs commits and silent drift. The SKILL takes over from here.</p>
-              </div>
-            </li>
-            <li class="flex items-start gap-3 p-4 rounded-md" style="background: var(--bg-elevated); border: 1px solid var(--border)">
-              <span class="font-mono text-section text-signal-green leading-none">↑</span>
-              <div class="min-w-0">
-                <p class="text-body text-fg-primary font-medium">Ship.</p>
-                <p class="text-small text-fg-muted mt-0.5">When it's live, hit Ship and we changelog it for you.</p>
-              </div>
-            </li>
-          </ul>
-
-          <footer class="mt-7 pt-5 border-t border-border flex items-center justify-between">
-            <span class="font-mono text-small text-fg-subtle">// 7-day trial active · cancel anytime</span>
-            <PrimaryButton size="lg" @click="finish">
-              <span>Open project →</span>
-            </PrimaryButton>
-          </footer>
-        </section>
-      </transition>
+      <div class="flex justify-end mt-4">
+        <button
+          type="button"
+          class="text-small text-fg-subtle hover:text-fg-body transition-colors"
+          @click="skipAll"
+        >
+          Skip setup →
+        </button>
+      </div>
     </div>
   </div>
 </template>
