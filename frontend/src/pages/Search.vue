@@ -204,7 +204,7 @@ const entityLabels: Record<string, string> = {
             >
               <RouterLink :to="resultLink(hit)" class="block">
                 <div class="flex items-start gap-3">
-                  <span class="font-mono text-[10px] uppercase text-fg-subtle shrink-0 w-16">{{ hit.entity }}</span>
+                  <span class="font-mono text-nano uppercase text-fg-subtle shrink-0 w-16">{{ hit.entity }}</span>
                   <div class="flex-1 min-w-0">
                     <p v-if="hit.title" class="text-body text-fg-primary font-medium truncate">{{ hit.title }}</p>
                     <!-- XSS-safe highlight: we HTML-escape the whole snippet client-side,
@@ -218,7 +218,7 @@ const entityLabels: Record<string, string> = {
                       project: <span class="font-mono">{{ hit.project_slug }}</span>
                     </p>
                   </div>
-                  <span class="font-mono text-[10px] text-fg-subtle shrink-0">{{ hit.rank.toFixed(3) }}</span>
+                  <span class="font-mono text-nano text-fg-subtle shrink-0">{{ hit.rank.toFixed(3) }}</span>
                 </div>
               </RouterLink>
             </li>

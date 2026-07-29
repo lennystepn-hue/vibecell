@@ -116,7 +116,7 @@ onMounted(loadDevices);
     <div class="w-full max-w-[560px] mx-auto space-y-6">
       <div class="flex items-center gap-2 text-fg-subtle">
         <span class="text-signal-green font-mono text-section">◈</span>
-        <span class="font-mono text-small tracking-[0.08em] uppercase">Vibecell · CLI</span>
+        <span class="font-mono text-small tracking-label uppercase">Vibecell · CLI</span>
       </div>
 
       <section class="glass rounded-lg p-6">
@@ -157,7 +157,7 @@ onMounted(loadDevices);
                 :disabled="submitting"
                 autofocus
                 :class="[
-                  'h-12 px-3 rounded-md text-section font-mono tracking-[0.18em]',
+                  'h-12 px-3 rounded-md text-section font-mono tracking-wide',
                   'bg-bg-surface border text-center uppercase',
                   error ? 'border-signal-red' : 'border-border',
                   'text-fg-primary placeholder:text-fg-subtle',

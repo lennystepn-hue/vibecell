@@ -159,10 +159,10 @@ function projectNameFor(id: string | null | undefined): string | null {
         >
           <p class="text-body text-fg-body whitespace-pre-wrap">{{ idea.body }}</p>
           <div class="mt-2 flex items-center gap-3 text-small text-fg-subtle">
-            <span class="font-mono text-[10px]">{{ formatDate(idea.captured_at) }}</span>
+            <span class="font-mono text-nano">{{ formatDate(idea.captured_at) }}</span>
             <span
               v-if="idea.source"
-              class="font-mono text-[9px] uppercase px-1.5 py-0.5 rounded-sm"
+              class="font-mono text-pico uppercase px-1.5 py-0.5 rounded-sm"
               :style="{ background: 'var(--signal-blue-bg)', color: 'var(--fg-body)' }"
             >{{ idea.source }}</span>
             <span v-if="projectNameFor(idea.project_id)" class="text-fg-body">
@@ -205,7 +205,7 @@ function projectNameFor(id: string | null | undefined): string | null {
             >
               <ProjectOrb :seed="p.slug" :size="18" />
               <span class="truncate">{{ p.name }}</span>
-              <span class="font-mono text-[10px] text-fg-subtle ml-auto">{{ p.slug }}</span>
+              <span class="font-mono text-nano text-fg-subtle ml-auto">{{ p.slug }}</span>
             </button>
             <p v-if="projects.list.length === 0" class="px-3 py-2 text-fg-muted italic text-small">No projects</p>
           </div>
@@ -221,7 +221,7 @@ function projectNameFor(id: string | null | undefined): string | null {
           class="w-full px-3 py-1.5 text-left hover:bg-bg-surface-hi text-signal-red"
           @click="removeIdea"
         >delete</button>
-        <p class="px-3 pt-1 pb-0.5 text-fg-subtle text-[10px] font-mono">
+        <p class="px-3 pt-1 pb-0.5 text-fg-subtle text-nano font-mono">
           {{ currentIdea?.body.slice(0, 40) || '' }}
         </p>
       </div>

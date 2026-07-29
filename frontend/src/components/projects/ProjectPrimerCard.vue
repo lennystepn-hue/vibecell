@@ -112,7 +112,7 @@ async function copyBootstrapPrompt() {
       </p>
 
       <div
-        class="rounded-md p-3 w-full font-mono text-[12px] leading-relaxed whitespace-pre-wrap select-all"
+        class="rounded-md p-3 w-full font-mono text-small leading-relaxed whitespace-pre-wrap select-all"
         style="background:rgb(var(--bg-surface-rgb) / 0.5); border:1px solid var(--border-default); color:var(--fg-body); max-height:180px; overflow-y:auto"
       >{{ BOOTSTRAP_PROMPT }}</div>
 

@@ -171,7 +171,7 @@ const sparkline = computed(() => {
       </span>
       <div class="min-w-0">
         <p class="text-small text-fg-body">Waiting for first probe</p>
-        <p class="text-[11px] text-fg-subtle mt-0.5">{{ message ?? 'Runs every 5 minutes.' }}</p>
+        <p class="text-micro text-fg-subtle mt-0.5">{{ message ?? 'Runs every 5 minutes.' }}</p>
       </div>
     </div>
 
@@ -184,7 +184,7 @@ const sparkline = computed(() => {
           :style="{ background: statusColor(derivedStatus), boxShadow: `0 0 10px ${statusColor(derivedStatus)}` }"
         />
         <span
-          class="mono-label px-2 py-0.5 rounded text-[11px]"
+          class="mono-label px-2 py-0.5 rounded text-micro"
           :style="{ background: statusBg(derivedStatus), color: statusColor(derivedStatus) }"
         >{{ statusLabel(derivedStatus) }}</span>
       </div>
@@ -192,24 +192,24 @@ const sparkline = computed(() => {
       <!-- Stats grid -->
       <div class="grid grid-cols-3 gap-3">
         <div>
-          <p class="font-mono text-[10px] uppercase tracking-[0.12em] text-fg-subtle">24h uptime</p>
+          <p class="font-mono text-nano uppercase tracking-caps text-fg-subtle">24h uptime</p>
           <p class="font-mono text-title text-fg-primary tabular-nums" :style="{ color: statusColor(derivedStatus) }">
             {{ formatPct(uptime24) }}
           </p>
         </div>
         <div>
-          <p class="font-mono text-[10px] uppercase tracking-[0.12em] text-fg-subtle">7d uptime</p>
+          <p class="font-mono text-nano uppercase tracking-caps text-fg-subtle">7d uptime</p>
           <p class="font-mono text-title text-fg-body tabular-nums">{{ formatPct(uptime7d) }}</p>
         </div>
         <div>
-          <p class="font-mono text-[10px] uppercase tracking-[0.12em] text-fg-subtle">latency</p>
+          <p class="font-mono text-nano uppercase tracking-caps text-fg-subtle">latency</p>
           <p class="font-mono text-title text-fg-body tabular-nums">{{ formatLatency(latencyMs) }}</p>
         </div>
       </div>
 
       <!-- Sparkline: last 24 probes, 3px each, color-coded. -->
       <div v-if="sparkline.length > 0">
-        <p class="font-mono text-[10px] uppercase tracking-[0.12em] text-fg-subtle mb-1.5">
+        <p class="font-mono text-nano uppercase tracking-caps text-fg-subtle mb-1.5">
           last {{ sparkline.length }} probes
         </p>
         <div class="flex items-end gap-[2px] h-6">

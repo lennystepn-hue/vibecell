@@ -173,7 +173,7 @@ function statusColor(s: string | null): string {
   <div class="max-w-[1400px] mx-auto px-4 sm:px-8 py-6 sm:py-8">
     <header class="flex items-baseline justify-between mb-6 flex-wrap gap-4">
       <div>
-        <p class="font-mono text-[11px] uppercase tracking-[0.15em] text-signal-green mb-1">// admin · users</p>
+        <p class="font-mono text-micro uppercase tracking-caps text-signal-green mb-1">// admin · users</p>
         <h1 class="text-display text-fg-primary tracking-tight">Users</h1>
       </div>
       <input
@@ -192,12 +192,12 @@ function statusColor(s: string | null): string {
         <table class="w-full text-small font-mono">
           <thead>
             <tr class="text-left text-fg-subtle border-b border-border-subtle">
-              <th class="py-2 px-3 text-[10px] uppercase tracking-wider">email</th>
-              <th class="py-2 px-3 text-[10px] uppercase tracking-wider">status</th>
-              <th class="py-2 px-3 text-[10px] uppercase tracking-wider">trial</th>
-              <th class="py-2 px-3 text-[10px] uppercase tracking-wider">verified</th>
-              <th class="py-2 px-3 text-[10px] uppercase tracking-wider">2fa</th>
-              <th class="py-2 px-3 text-[10px] uppercase tracking-wider">since</th>
+              <th class="py-2 px-3 text-nano uppercase tracking-wider">email</th>
+              <th class="py-2 px-3 text-nano uppercase tracking-wider">status</th>
+              <th class="py-2 px-3 text-nano uppercase tracking-wider">trial</th>
+              <th class="py-2 px-3 text-nano uppercase tracking-wider">verified</th>
+              <th class="py-2 px-3 text-nano uppercase tracking-wider">2fa</th>
+              <th class="py-2 px-3 text-nano uppercase tracking-wider">since</th>
             </tr>
           </thead>
           <tbody>
@@ -211,12 +211,12 @@ function statusColor(s: string | null): string {
                 <span :title="u.email">{{ u.email }}</span>
                 <span
                   v-if="u.is_admin"
-                  class="ml-1.5 text-[9px] px-1 py-0.5 rounded-sm tabular-nums"
+                  class="ml-1.5 text-pico px-1 py-0.5 rounded-sm tabular-nums"
                   :style="{ background: 'var(--signal-green-bg)', color: 'var(--signal-green)' }"
                 >ADMIN</span>
                 <span
                   v-if="u.has_stripe_subscription"
-                  class="ml-1 text-[9px] px-1 py-0.5 rounded-sm tabular-nums"
+                  class="ml-1 text-pico px-1 py-0.5 rounded-sm tabular-nums"
                   :style="{ background: 'rgb(var(--signal-violet-rgb) / 0.12)', color: 'var(--signal-violet)' }"
                   title="Has Stripe subscription"
                 >S</span>
@@ -224,7 +224,7 @@ function statusColor(s: string | null): string {
               <td class="py-2 px-3">
                 <span :style="{ color: statusColor(u.effective_status) }">{{ u.effective_status ?? "—" }}</span>
               </td>
-              <td class="py-2 px-3 text-fg-subtle text-[11px]">{{ u.sub_trial_ends_at ? fmtDate(u.sub_trial_ends_at) : "—" }}</td>
+              <td class="py-2 px-3 text-fg-subtle text-micro">{{ u.sub_trial_ends_at ? fmtDate(u.sub_trial_ends_at) : "—" }}</td>
               <td class="py-2 px-3">
                 <span :style="u.email_verified_at ? { color: 'var(--signal-green)' } : { color: 'var(--fg-subtle)' }">
                   {{ u.email_verified_at ? "✓" : "—" }}
@@ -235,7 +235,7 @@ function statusColor(s: string | null): string {
                   {{ u.totp_enabled ? "✓" : "—" }}
                 </span>
               </td>
-              <td class="py-2 px-3 text-fg-subtle text-[11px]">{{ u.created_at ? fmtRel(u.created_at) : "—" }}</td>
+              <td class="py-2 px-3 text-fg-subtle text-micro">{{ u.created_at ? fmtRel(u.created_at) : "—" }}</td>
             </tr>
           </tbody>
         </table>
@@ -264,9 +264,9 @@ function statusColor(s: string | null): string {
           <div class="p-6 space-y-5">
             <header class="flex items-start justify-between gap-4">
               <div class="min-w-0">
-                <p class="font-mono text-[10px] uppercase tracking-[0.12em] text-fg-subtle mb-1">// user</p>
+                <p class="font-mono text-nano uppercase tracking-caps text-fg-subtle mb-1">// user</p>
                 <h2 class="text-section text-fg-primary truncate" :title="detail?.user.email">{{ detail?.user.email ?? "—" }}</h2>
-                <p class="font-mono text-[10px] text-fg-subtle mt-1 truncate">{{ detail?.user.id }}</p>
+                <p class="font-mono text-nano text-fg-subtle mt-1 truncate">{{ detail?.user.id }}</p>
               </div>
               <button type="button" class="text-fg-subtle hover:text-fg-body shrink-0" @click="closeDetail">✕</button>
             </header>
@@ -277,27 +277,27 @@ function statusColor(s: string | null): string {
               <!-- Identity grid -->
               <div class="grid grid-cols-2 gap-3 text-small">
                 <div>
-                  <p class="font-mono text-[9px] opacity-50 uppercase tracking-[0.12em]">status</p>
+                  <p class="font-mono text-pico opacity-50 uppercase tracking-caps">status</p>
                   <p class="font-mono mt-0.5" :style="{ color: statusColor(detail.user.effective_status) }">{{ detail.user.effective_status ?? "—" }}</p>
                 </div>
                 <div>
-                  <p class="font-mono text-[9px] opacity-50 uppercase tracking-[0.12em]">trial ends</p>
+                  <p class="font-mono text-pico opacity-50 uppercase tracking-caps">trial ends</p>
                   <p class="font-mono mt-0.5">{{ fmtDate(detail.user.sub_trial_ends_at) }}</p>
                 </div>
                 <div>
-                  <p class="font-mono text-[9px] opacity-50 uppercase tracking-[0.12em]">verified</p>
+                  <p class="font-mono text-pico opacity-50 uppercase tracking-caps">verified</p>
                   <p class="font-mono mt-0.5">{{ detail.user.email_verified_at ? fmtDate(detail.user.email_verified_at) : "—" }}</p>
                 </div>
                 <div>
-                  <p class="font-mono text-[9px] opacity-50 uppercase tracking-[0.12em]">2FA</p>
+                  <p class="font-mono text-pico opacity-50 uppercase tracking-caps">2FA</p>
                   <p class="font-mono mt-0.5" :style="detail.user.totp_enabled ? { color: 'var(--signal-green)' } : { color: 'var(--fg-subtle)' }">{{ detail.user.totp_enabled ? "enabled" : "—" }}</p>
                 </div>
                 <div>
-                  <p class="font-mono text-[9px] opacity-50 uppercase tracking-[0.12em]">stripe</p>
+                  <p class="font-mono text-pico opacity-50 uppercase tracking-caps">stripe</p>
                   <p class="font-mono mt-0.5">{{ detail.user.has_stripe_subscription ? "linked" : "—" }}</p>
                 </div>
                 <div>
-                  <p class="font-mono text-[9px] opacity-50 uppercase tracking-[0.12em]">admin</p>
+                  <p class="font-mono text-pico opacity-50 uppercase tracking-caps">admin</p>
                   <p class="font-mono mt-0.5" :style="detail.user.is_admin ? { color: 'var(--signal-green)' } : { color: 'var(--fg-subtle)' }">{{ detail.user.is_admin ? "yes" : "no" }}</p>
                 </div>
               </div>
@@ -307,23 +307,23 @@ function statusColor(s: string | null): string {
                 <p class="mono-label mb-2">// activity</p>
                 <div class="grid grid-cols-4 gap-3">
                   <div>
-                    <p class="font-mono text-[9px] opacity-50 uppercase">workspaces</p>
+                    <p class="font-mono text-pico opacity-50 uppercase">workspaces</p>
                     <p class="font-mono text-section tabular-nums">{{ detail.user.workspace_count }}</p>
                   </div>
                   <div>
-                    <p class="font-mono text-[9px] opacity-50 uppercase">projects</p>
+                    <p class="font-mono text-pico opacity-50 uppercase">projects</p>
                     <p class="font-mono text-section tabular-nums">{{ detail.project_count }}</p>
                   </div>
                   <div>
-                    <p class="font-mono text-[9px] opacity-50 uppercase">sessions</p>
+                    <p class="font-mono text-pico opacity-50 uppercase">sessions</p>
                     <p class="font-mono text-section tabular-nums">{{ detail.session_count }}</p>
                   </div>
                   <div>
-                    <p class="font-mono text-[9px] opacity-50 uppercase">ships</p>
+                    <p class="font-mono text-pico opacity-50 uppercase">ships</p>
                     <p class="font-mono text-section tabular-nums">{{ detail.ship_count }}</p>
                   </div>
                 </div>
-                <p class="font-mono text-[10px] text-fg-subtle mt-3">last session · {{ fmtRel(detail.last_session_at) }}</p>
+                <p class="font-mono text-nano text-fg-subtle mt-3">last session · {{ fmtRel(detail.last_session_at) }}</p>
               </div>
 
               <!-- Workspaces -->

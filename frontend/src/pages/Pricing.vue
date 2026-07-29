@@ -158,7 +158,7 @@ const faqs = [
 
     <!-- ─── Hero — pt-[88px] floor compensates for the fixed header. ────── -->
     <section class="max-w-3xl mx-auto px-4 sm:px-6 pt-[88px] sm:pt-[112px] pb-8 sm:pb-12 text-center">
-      <p class="font-mono text-[11px] uppercase tracking-[0.15em] mb-4" style="color: var(--signal-green)">
+      <p class="font-mono text-micro uppercase tracking-caps mb-4" style="color: var(--signal-green)">
         Pricing
       </p>
       <h1 class="font-semibold mb-4" style="font-size: clamp(2rem, 4vw, 3rem); letter-spacing: -0.04em; color: var(--fg-primary); line-height: 1.1">
@@ -195,7 +195,7 @@ const faqs = [
         style="background: rgb(var(--bg-surface-rgb) / 0.6); border: 1px solid rgb(var(--border-rgb) / 0.1)"
       >
         <button
-          class="px-4 py-1.5 rounded-full text-[11px] uppercase tracking-wider transition-all"
+          class="px-4 py-1.5 rounded-full text-micro uppercase tracking-wider transition-all"
           :style="{
             background: billingCycle === 'monthly' ? 'var(--signal-green)' : 'transparent',
             color: billingCycle === 'monthly' ? 'var(--bg-body-to)' : 'var(--fg-muted)',
@@ -204,7 +204,7 @@ const faqs = [
           @click="billingCycle = 'monthly'"
         >Monthly</button>
         <button
-          class="px-4 py-1.5 rounded-full text-[11px] uppercase tracking-wider transition-all flex items-center gap-2"
+          class="px-4 py-1.5 rounded-full text-micro uppercase tracking-wider transition-all flex items-center gap-2"
           :style="{
             background: billingCycle === 'annual' ? 'var(--signal-green)' : 'transparent',
             color: billingCycle === 'annual' ? 'var(--bg-body-to)' : 'var(--fg-muted)',
@@ -215,7 +215,7 @@ const faqs = [
           Annual
           <span
             v-if="annualSavingsVsMonthlyCents > 0"
-            class="px-1.5 rounded text-[9px] font-bold"
+            class="px-1.5 rounded text-pico font-bold"
             :style="{
               background: billingCycle === 'annual' ? 'rgb(var(--scrim-rgb) / 0.18)' : 'rgb(var(--signal-amber-rgb) / 0.2)',
               color: billingCycle === 'annual' ? 'var(--bg-body-to)' : 'var(--signal-amber)',
@@ -230,7 +230,7 @@ const faqs = [
       <div class="rounded-xl p-8 flex flex-col relative overflow-hidden"
         style="background: rgb(var(--signal-green-rgb) / 0.04); border: 1px solid rgb(var(--signal-green-rgb) / 0.28); box-shadow: 0 0 64px rgb(var(--signal-green-rgb) / 0.08), inset 0 1px 0 rgb(var(--signal-green-rgb) / 0.12)">
 
-        <p class="font-mono text-[11px] uppercase tracking-[0.12em] mb-3" style="color: var(--signal-green)">Pro</p>
+        <p class="font-mono text-micro uppercase tracking-caps mb-3" style="color: var(--signal-green)">Pro</p>
 
         <!-- Monthly price block -->
         <template v-if="billingCycle === 'monthly'">
@@ -283,7 +283,7 @@ const faqs = [
         </ul>
 
         <button
-          class="w-full py-3 rounded-lg font-mono font-semibold text-[13px] transition-all hover:opacity-90"
+          class="w-full py-3 rounded-lg font-mono font-semibold text-body transition-all hover:opacity-90"
           style="background: var(--signal-green); color: var(--on-signal); box-shadow: 0 0 24px rgb(var(--signal-green-rgb) / 0.25)"
           @click="startCheckout(billingCycle === 'annual' ? 'pro_annual' : 'pro')">
           {{ auth.isAuthed
@@ -308,7 +308,7 @@ const faqs = [
     <!-- ─── FAQ ──────────────────────────────────────────────────────────── -->
     <section class="max-w-2xl mx-auto px-4 sm:px-6 pb-16 sm:pb-28">
       <div class="text-center mb-12">
-        <p class="font-mono text-[11px] uppercase tracking-[0.15em] mb-3" style="color: var(--signal-green)">FAQ</p>
+        <p class="font-mono text-micro uppercase tracking-caps mb-3" style="color: var(--signal-green)">FAQ</p>
         <h2 class="font-semibold" style="font-size: clamp(1.4rem, 2.5vw, 2rem); letter-spacing: -0.03em; color: var(--fg-primary)">
           Common questions
         </h2>
@@ -352,7 +352,7 @@ const faqs = [
         Magic-link signup, 30-second setup, 7 days to decide.
       </p>
       <button
-        class="px-8 py-3 rounded-xl font-mono font-semibold text-[13px] transition-all hover:opacity-90"
+        class="px-8 py-3 rounded-xl font-mono font-semibold text-body transition-all hover:opacity-90"
         style="background: var(--signal-green); color: var(--on-signal); box-shadow: 0 0 24px rgb(var(--signal-green-rgb) / 0.2)"
         @click="goSignIn">
         {{ auth.isAuthed ? 'Open dashboard →' : 'Start 7-day trial →' }}

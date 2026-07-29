@@ -269,7 +269,7 @@ const lastProbed = computed<string>(() => {
             <span class="font-mono">{{ formatDate(project.archived_at) }}</span>
           </DataRow>
           <DataRow label="status">
-            <span class="font-mono uppercase tracking-[0.06em] text-[10px]">
+            <span class="font-mono uppercase tracking-label text-nano">
               {{ project.status }}
             </span>
           </DataRow>
@@ -283,14 +283,14 @@ const lastProbed = computed<string>(() => {
           <li
             v-for="ev in events"
             :key="ev.id"
-            class="flex items-start gap-2 text-[11px]"
+            class="flex items-start gap-2 text-micro"
           >
             <span aria-hidden="true" class="shrink-0">{{ kindIcon(ev.kind) }}</span>
             <div class="min-w-0 flex-1">
               <div class="flex items-center gap-1.5">
-                <span class="font-mono text-[10px] text-fg-subtle">{{ formatDate(ev.at) }}</span>
+                <span class="font-mono text-nano text-fg-subtle">{{ formatDate(ev.at) }}</span>
                 <span
-                  class="font-mono text-[9px] uppercase tracking-wider px-1 py-0.5 rounded-sm"
+                  class="font-mono text-pico uppercase tracking-wider px-1 py-0.5 rounded-sm"
                   :style="{ background: 'var(--signal-blue-bg)', color: 'var(--fg-body)' }"
                 >{{ ev.kind }}</span>
               </div>
@@ -312,10 +312,10 @@ const lastProbed = computed<string>(() => {
             aria-hidden="true"
           >{{ healthBadge.glyph }}</span>
           <span
-            class="font-mono text-[10px] uppercase tracking-[0.06em]"
+            class="font-mono text-nano uppercase tracking-label"
             :style="{ color: healthBadge.color }"
           >{{ healthState }}</span>
-          <span class="font-mono text-[10px] text-fg-subtle ml-auto">
+          <span class="font-mono text-nano text-fg-subtle ml-auto">
             {{ lastProbed }}
           </span>
         </div>
@@ -349,13 +349,13 @@ const lastProbed = computed<string>(() => {
         <!-- Hint shown when nothing is wired up yet — actionable, not chrome -->
         <p
           v-if="healthState === 'unconfigured'"
-          class="mono-label opacity-60 mt-2 text-[9px] leading-relaxed"
+          class="mono-label opacity-60 mt-2 text-pico leading-relaxed"
         >
           // add a healthcheck link<br>// to enable monitoring
         </p>
         <p
           v-else-if="healthState === 'pending'"
-          class="mono-label opacity-60 mt-2 text-[9px] leading-relaxed"
+          class="mono-label opacity-60 mt-2 text-pico leading-relaxed"
         >
           // first probe within<br>// 5 minutes
         </p>

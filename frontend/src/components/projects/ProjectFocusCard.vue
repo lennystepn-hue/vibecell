@@ -14,7 +14,7 @@ defineProps<{ project: Project }>();
       class="mb-4 px-3 py-2 rounded-sm text-small"
       :style="{ background: 'var(--signal-red-bg)', color: 'var(--signal-red)' }"
     >
-      <span class="font-mono uppercase text-[10px] tracking-widest mr-2">blocked</span>
+      <span class="font-mono uppercase text-nano tracking-widest mr-2">blocked</span>
       <span>{{ project.context.blocked_by }}</span>
     </div>
 

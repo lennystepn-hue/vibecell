@@ -100,10 +100,10 @@ function onKey(e: KeyboardEvent) {
       aria-haspopup="menu"
     >
       <span
-        class="flex items-center justify-center w-7 h-7 rounded-full font-mono text-[11px] font-semibold ring-1"
+        class="flex items-center justify-center w-7 h-7 rounded-full font-mono text-micro font-semibold ring-1"
         :style="{ background: avatarColors.bg, color: avatarColors.text, boxShadow: `inset 0 0 0 1px ${avatarColors.ring}` }"
       >{{ initials }}</span>
-      <span v-if="variant === 'light'" class="font-mono text-[11px] tracking-[0.08em]">
+      <span v-if="variant === 'light'" class="font-mono text-micro tracking-label">
         {{ auth.activeWorkspace?.slug ?? 'workspace' }}
       </span>
       <svg class="w-3 h-3 opacity-60" viewBox="0 0 12 12" fill="none">
@@ -126,9 +126,9 @@ function onKey(e: KeyboardEvent) {
         style="background: rgb(var(--bg-surface-rgb) / 0.96); border-color: var(--border-default); backdrop-filter: blur(12px)"
       >
         <div class="px-3 py-3 border-b" style="border-color: var(--border-subtle)">
-          <p class="font-mono text-[10px] uppercase tracking-[0.12em]" style="color:var(--fg-subtle)">Signed in as</p>
+          <p class="font-mono text-nano uppercase tracking-caps" style="color:var(--fg-subtle)">Signed in as</p>
           <p class="text-small truncate mt-0.5" style="color:var(--fg-body)">{{ auth.user.email }}</p>
-          <p v-if="auth.activeWorkspace" class="font-mono text-[10px] mt-1.5" style="color:var(--signal-green)">
+          <p v-if="auth.activeWorkspace" class="font-mono text-nano mt-1.5" style="color:var(--signal-green)">
             ◈ {{ auth.activeWorkspace.slug }}
           </p>
         </div>
@@ -154,13 +154,13 @@ function onKey(e: KeyboardEvent) {
         </div>
         <!-- Theme switcher. Clicks keep the menu open so you can try presets. -->
         <div class="py-2 border-t" style="border-color: var(--border-subtle)">
-          <p class="font-mono text-[10px] uppercase tracking-[0.12em] px-3 mb-1.5" style="color:var(--fg-subtle)">Theme</p>
+          <p class="font-mono text-nano uppercase tracking-caps px-3 mb-1.5" style="color:var(--fg-subtle)">Theme</p>
           <div class="grid grid-cols-3 gap-1 px-2" @click.stop>
             <button
               v-for="[name, meta] in theme.options"
               :key="name"
               :title="meta.hint"
-              class="rounded px-2 py-1.5 text-[11px] font-mono transition-all"
+              class="rounded px-2 py-1.5 text-micro font-mono transition-all"
               :class="theme.active === name
                 ? 'bg-signal-green/15 text-signal-green ring-1 ring-signal-green/40'
                 : 'text-fg-muted hover:text-fg-body hover:bg-white/[0.04]'"

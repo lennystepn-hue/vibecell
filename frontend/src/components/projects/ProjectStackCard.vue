@@ -14,7 +14,7 @@ defineProps<{ project: Project }>();
       <span
         v-for="s in project.stack"
         :key="s.stack_item_slug"
-        class="inline-flex items-center gap-1.5 px-2.5 h-6 rounded-sm font-mono text-[11px]"
+        class="inline-flex items-center gap-1.5 px-2.5 h-6 rounded-sm font-mono text-micro"
         :style="{
           background: 'var(--signal-blue-bg)',
           color: 'var(--fg-body)',

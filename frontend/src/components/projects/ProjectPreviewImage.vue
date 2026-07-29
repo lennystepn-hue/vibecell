@@ -108,13 +108,13 @@ const miniClass = computed(() =>
       v-else-if="loading"
       :class="[miniClass, 'flex items-center justify-center cursor-default']"
     >
-      <span class="font-mono text-[10px] text-fg-subtle">capturing…</span>
+      <span class="font-mono text-nano text-fg-subtle">capturing…</span>
     </div>
     <div
       v-else
       :class="[miniClass, 'flex items-center justify-center cursor-default']"
     >
-      <span class="font-mono text-[10px] text-fg-subtle">{{ emptyLabel }}</span>
+      <span class="font-mono text-nano text-fg-subtle">{{ emptyLabel }}</span>
     </div>
   </template>
 

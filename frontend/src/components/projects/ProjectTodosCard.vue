@@ -252,7 +252,7 @@ onProjectLiveEvent(
       </div>
       <p
         v-if="planError"
-        class="text-[11px] text-signal-red mb-3"
+        class="text-micro text-signal-red mb-3"
       >{{ planError }}</p>
 
       <div v-if="loading && todos.length === 0" class="text-fg-subtle mono-label">loading…</div>
@@ -262,7 +262,7 @@ onProjectLiveEvent(
         style="background: rgb(var(--signal-green-rgb) / 0.04); border: 1px dashed rgb(var(--signal-green-rgb) / 0.25)"
       >
         <p class="text-small text-fg-body">Nothing on the list yet.</p>
-        <p class="text-[11px] text-fg-subtle mt-1">
+        <p class="text-micro text-fg-subtle mt-1">
           Type a goal above and hit <span class="font-mono uppercase tracking-wider" style="letter-spacing: 0.08em">AI plan</span> — Claude breaks it into todos.
         </p>
       </div>
@@ -279,7 +279,7 @@ onProjectLiveEvent(
                   :style="{ width: progressFor(g.items).pct + '%' }"
                 />
               </div>
-              <span class="font-mono text-[10px] text-fg-subtle tabular-nums">
+              <span class="font-mono text-nano text-fg-subtle tabular-nums">
                 {{ progressFor(g.items).done }} / {{ progressFor(g.items).total }}
               </span>
             </div>
@@ -325,19 +325,19 @@ onProjectLiveEvent(
                   <span class="text-small text-fg-body" :class="{ 'line-through': t.status === 'done' }">
                     {{ t.title }}
                   </span>
-                  <span v-if="t.status === 'in_progress'" class="mono-label text-[10px] text-signal-green">
+                  <span v-if="t.status === 'in_progress'" class="mono-label text-nano text-signal-green">
                     ◉ claude is on this
                   </span>
-                  <span v-if="t.completed_by === 'claude'" class="mono-label text-[10px] text-signal-green">
+                  <span v-if="t.completed_by === 'claude'" class="mono-label text-nano text-signal-green">
                     ✓ by claude
                   </span>
-                  <span v-if="t.completed_at" class="text-[10px] text-fg-subtle ml-auto">
+                  <span v-if="t.completed_at" class="text-nano text-fg-subtle ml-auto">
                     {{ relative(t.completed_at) }}
                   </span>
                 </div>
                 <p
                   v-if="t.completion_note && t.status === 'done'"
-                  class="text-[11px] text-fg-subtle mt-0.5 italic"
+                  class="text-micro text-fg-subtle mt-0.5 italic"
                 >— {{ t.completion_note }}</p>
               </div>
 

@@ -100,7 +100,7 @@ function reset() {
     <div class="w-full max-w-[380px]">
       <div class="flex items-center gap-2 mb-10 text-fg-subtle">
         <span class="text-signal-green font-mono text-section">◈</span>
-        <span class="font-mono text-small tracking-[0.08em] uppercase">Vibecell</span>
+        <span class="font-mono text-small tracking-label uppercase">Vibecell</span>
       </div>
 
       <transition
@@ -168,7 +168,7 @@ function reset() {
             class="flex items-center gap-3 text-fg-subtle"
           >
             <span class="flex-1 h-px bg-border" />
-            <span class="font-mono text-[10px] uppercase tracking-[0.12em]">or</span>
+            <span class="font-mono text-nano uppercase tracking-caps">or</span>
             <span class="flex-1 h-px bg-border" />
           </div>
 

@@ -130,7 +130,7 @@ const total = computed(() => events.value.length);
     </div>
 
     <!-- Legend -->
-    <div class="flex items-center gap-1.5 mt-3 text-[10px] font-mono text-fg-subtle">
+    <div class="flex items-center gap-1.5 mt-3 text-nano font-mono text-fg-subtle">
       <span>less</span>
       <span class="w-[11px] h-[11px] rounded-sm bg-white/[0.035]" />
       <span class="w-[11px] h-[11px] rounded-sm bg-signal-green/20" />

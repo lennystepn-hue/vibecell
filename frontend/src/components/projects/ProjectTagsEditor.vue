@@ -63,7 +63,7 @@ async function removeTag(tagId: string) {
       <span
         v-for="t in project.tags"
         :key="t.id"
-        class="group inline-flex items-center gap-1.5 px-2.5 h-6 rounded-sm font-mono text-[11px]"
+        class="group inline-flex items-center gap-1.5 px-2.5 h-6 rounded-sm font-mono text-micro"
         :style="{
           background: t.color ? t.color + '20' : 'var(--signal-blue-bg)',
           color: t.color ?? 'var(--fg-body)',

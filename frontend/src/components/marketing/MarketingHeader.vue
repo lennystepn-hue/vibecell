@@ -49,7 +49,7 @@ function go() {
   >
     <router-link to="/" class="flex items-center gap-2.5">
       <span class="text-signal-green font-mono text-[18px] leading-none select-none">◈</span>
-      <span class="font-mono text-[11px] tracking-[0.15em] uppercase text-fg-subtle">Vibecell</span>
+      <span class="font-mono text-micro tracking-caps uppercase text-fg-subtle">Vibecell</span>
     </router-link>
     <nav class="hidden sm:flex items-center gap-6">
       <router-link

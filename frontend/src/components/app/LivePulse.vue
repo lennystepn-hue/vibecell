@@ -40,7 +40,7 @@ function ageLabel(s: number | null): string {
       <span class="absolute inset-0 rounded-full bg-signal-green opacity-75 animate-ping" />
       <span class="relative inline-flex w-full h-full rounded-full bg-signal-green" style="box-shadow: 0 0 8px rgb(var(--signal-green-rgb) / 0.6)" />
     </span>
-    <span v-if="variant === 'pill'" class="font-mono text-[10px] uppercase tracking-[0.1em] text-signal-green whitespace-nowrap">
+    <span v-if="variant === 'pill'" class="font-mono text-nano uppercase tracking-caps text-signal-green whitespace-nowrap">
       claude · {{ friendlyTool(tool) }}
     </span>
   </span>

@@ -143,7 +143,7 @@ async function remove(label: string) {
       <ul v-else class="space-y-1.5 mb-3">
         <li v-for="s in secrets" :key="s.label" class="flex items-center gap-3 py-1.5 border-b border-border last:border-0">
           <code class="font-mono text-small text-fg-body shrink-0">@{{ s.label }}</code>
-          <span class="mono-label text-[10px]" :class="kindBadge(s.kind).color" :title="kindBadge(s.kind).title">
+          <span class="mono-label text-nano" :class="kindBadge(s.kind).color" :title="kindBadge(s.kind).title">
             {{ kindBadge(s.kind).label }}
           </span>
           <span class="flex-1 min-w-0">
@@ -152,7 +152,7 @@ async function remove(label: string) {
           </span>
           <span
             v-if="s.last_used_at"
-            class="text-[10px] font-mono text-signal-green shrink-0"
+            class="text-nano font-mono text-signal-green shrink-0"
             :title="`Last retrieved by Claude on ${new Date(s.last_used_at).toLocaleString()}`"
           >used {{ relative(s.last_used_at) }}</span>
           <button
@@ -184,10 +184,10 @@ async function remove(label: string) {
         </div>
         <p
           v-if="error"
-          class="text-[11px] text-signal-red mt-2 font-mono break-words"
+          class="text-micro text-signal-red mt-2 font-mono break-words"
           role="alert"
         >{{ error }}</p>
-        <p class="text-[10px] text-fg-subtle mt-2 font-mono">
+        <p class="text-nano text-fg-subtle mt-2 font-mono">
           Auto-detects kind: op:// → 1Password · bw:// → Bitwarden · ssh-agent:// → SSH · otherwise → AES-256-GCM encrypted at rest
         </p>
       </div>

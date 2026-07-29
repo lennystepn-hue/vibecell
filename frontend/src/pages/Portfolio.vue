@@ -274,7 +274,7 @@ function projectSlug(pid: string): string {
                 <div
                   v-for="w in weeks"
                   :key="w"
-                  class="text-center font-mono text-[10px] text-fg-subtle"
+                  class="text-center font-mono text-nano text-fg-subtle"
                 >
                   {{ shortWeek(w) }}
                 </div>
@@ -290,7 +290,7 @@ function projectSlug(pid: string): string {
                 <!-- Project name -->
                 <router-link
                   :to="`/p/${projectSlug(pid)}`"
-                  class="text-small text-fg-muted hover:text-fg-body transition-colors truncate pr-2 font-mono text-[11px]"
+                  class="text-small text-fg-muted hover:text-fg-body transition-colors truncate pr-2 font-mono text-micro"
                   :title="projectLabel(pid)"
                 >
                   {{ projectLabel(pid) }}

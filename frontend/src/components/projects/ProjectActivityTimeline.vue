@@ -145,7 +145,7 @@ onProjectLiveEvent("*", () => void load());
         :class="linkFor(e) ? 'cursor-pointer hover:bg-white/[0.03]' : ''"
       >
         <span
-          class="absolute -left-1 top-3 w-2.5 h-2.5 rounded-full bg-bg-surface border border-border flex items-center justify-center font-mono text-[9px]"
+          class="absolute -left-1 top-3 w-2.5 h-2.5 rounded-full bg-bg-surface border border-border flex items-center justify-center font-mono text-pico"
           :class="colorFor(e.type)"
         >{{ iconFor(e.type) }}</span>
         <div class="flex-1 min-w-0">

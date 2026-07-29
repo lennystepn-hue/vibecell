@@ -72,8 +72,8 @@ async function removeEnv(envId: string) {
         <span class="mono-label shrink-0 w-24 truncate pt-0.5">{{ env.kind }}</span>
         <div class="flex-1 min-w-0 space-y-0.5">
           <CopyableValue v-if="env.url" :value="env.url" mono small class="text-fg-body" />
-          <span v-if="env.db_alias" class="block font-mono text-[11px] text-fg-subtle">db: {{ env.db_alias }}</span>
-          <span v-if="env.env_template_path" class="block font-mono text-[11px] text-fg-subtle">{{ env.env_template_path }}</span>
+          <span v-if="env.db_alias" class="block font-mono text-micro text-fg-subtle">db: {{ env.db_alias }}</span>
+          <span v-if="env.env_template_path" class="block font-mono text-micro text-fg-subtle">{{ env.env_template_path }}</span>
         </div>
         <button
           type="button"

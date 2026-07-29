@@ -199,12 +199,12 @@ const shortSha = computed(() => {
               </div>
               <div class="text-right shrink-0">
                 <p
-                  class="font-mono text-small uppercase tracking-[0.06em]"
+                  class="font-mono text-small uppercase tracking-label"
                   :style="{ color: statusColor(c.status) }"
                 >{{ c.status }}</p>
                 <p
                   v-if="c.latency_ms !== null"
-                  class="font-mono text-[10px] text-fg-subtle mt-0.5"
+                  class="font-mono text-nano text-fg-subtle mt-0.5"
                 >{{ c.latency_ms }}ms</p>
               </div>
             </li>
@@ -229,7 +229,7 @@ const shortSha = computed(() => {
         </Card>
 
         <!-- Build footer -->
-        <footer class="text-center font-mono text-[10px] text-fg-subtle">
+        <footer class="text-center font-mono text-nano text-fg-subtle">
           // build {{ shortSha }} · v{{ data.version }} · vibecell.dev
         </footer>
       </template>

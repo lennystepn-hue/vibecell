@@ -52,7 +52,7 @@ function fmtRel(iso: string): string {
   <div class="max-w-[1100px] mx-auto px-4 sm:px-8 py-6 sm:py-8">
     <header class="flex items-baseline justify-between mb-6 gap-4 flex-wrap">
       <div>
-        <p class="font-mono text-[11px] uppercase tracking-[0.15em] text-signal-green mb-1">// admin · audit</p>
+        <p class="font-mono text-micro uppercase tracking-caps text-signal-green mb-1">// admin · audit</p>
         <h1 class="text-display text-fg-primary tracking-tight">Audit log</h1>
         <p class="text-body text-fg-muted mt-1">Append-only record of every admin write. Searchable by action / actor / target.</p>
       </div>
@@ -75,16 +75,16 @@ function fmtRel(iso: string): string {
         >
           <div class="flex items-center gap-3 flex-wrap">
             <span :style="{ color: 'var(--signal-amber, var(--signal-amber))' }">{{ row.action }}</span>
-            <span v-if="row.target_type" class="text-fg-subtle text-[11px]">{{ row.target_type }}</span>
-            <span v-if="row.target_id" class="text-fg-body text-[11px] truncate max-w-[300px]">{{ row.target_id }}</span>
-            <span class="ml-auto text-fg-subtle text-[10px]">{{ fmtRel(row.at) }}</span>
+            <span v-if="row.target_type" class="text-fg-subtle text-micro">{{ row.target_type }}</span>
+            <span v-if="row.target_id" class="text-fg-body text-micro truncate max-w-[300px]">{{ row.target_id }}</span>
+            <span class="ml-auto text-fg-subtle text-nano">{{ fmtRel(row.at) }}</span>
           </div>
-          <p class="text-[10px] text-fg-subtle mt-1">
+          <p class="text-nano text-fg-subtle mt-1">
             {{ row.actor_email ?? row.actor_user_id }} · {{ row.ip ?? "?" }}
           </p>
           <pre
             v-if="row.payload && Object.keys(row.payload).length > 0"
-            class="text-[10px] text-fg-muted mt-1 overflow-x-auto"
+            class="text-nano text-fg-muted mt-1 overflow-x-auto"
           >{{ JSON.stringify(row.payload) }}</pre>
         </li>
       </ul>

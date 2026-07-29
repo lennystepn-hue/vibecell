@@ -109,7 +109,7 @@ onUnmounted(() => {
     >
       <StatusPill :status="project.status as never" />
       <span
-        class="text-[10px] leading-none text-fg-subtle transition-transform duration-fast"
+        class="text-nano leading-none text-fg-subtle transition-transform duration-fast"
         :class="open ? 'rotate-180' : 'rotate-0 group-hover:text-fg-body'"
         aria-hidden="true"
       >▾</span>
@@ -144,7 +144,7 @@ onUnmounted(() => {
             @click="pick(s)"
           >
             <StatusPill :status="s" />
-            <span v-if="s === project.status" class="ml-auto text-[10px] text-fg-subtle">current</span>
+            <span v-if="s === project.status" class="ml-auto text-nano text-fg-subtle">current</span>
           </button>
         </div>
       </transition>

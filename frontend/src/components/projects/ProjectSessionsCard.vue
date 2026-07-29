@@ -178,7 +178,7 @@ function commitsArr(s: SessionOut): unknown[] {
               <span
                 v-for="f in filesArr(s)"
                 :key="f"
-                class="font-mono text-[11px] px-2 py-0.5 rounded-sm"
+                class="font-mono text-micro px-2 py-0.5 rounded-sm"
                 :style="{ background: 'var(--signal-blue-bg)', color: 'var(--fg-body)' }"
               >{{ f }}</span>
             </div>

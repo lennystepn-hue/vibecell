@@ -59,7 +59,7 @@ function accentStyle(s?: string | null): Record<string, string> {
 <template>
   <div class="max-w-[900px] mx-auto px-4 sm:px-8 py-6 sm:py-8">
     <header class="mb-6">
-      <p class="font-mono text-[11px] uppercase tracking-[0.15em] text-signal-green mb-1">// admin · system</p>
+      <p class="font-mono text-micro uppercase tracking-caps text-signal-green mb-1">// admin · system</p>
       <h1 class="text-display text-fg-primary tracking-tight">System health</h1>
       <p class="text-body text-fg-muted mt-1">DB, Redis, cron heartbeats, public-status mirror.</p>
     </header>
@@ -67,7 +67,7 @@ function accentStyle(s?: string | null): Record<string, string> {
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
       <Card title="admin probes">
         <template #actions>
-          <span v-if="health" class="font-mono text-[10px] text-fg-subtle">{{ fmtRel(health.generated_at) }}</span>
+          <span v-if="health" class="font-mono text-nano text-fg-subtle">{{ fmtRel(health.generated_at) }}</span>
         </template>
         <div v-if="health" class="space-y-2">
           <div
@@ -86,7 +86,7 @@ function accentStyle(s?: string | null): Record<string, string> {
         <template #actions>
           <span
             v-if="publicStatus"
-            class="font-mono text-small uppercase tracking-[0.1em]"
+            class="font-mono text-small uppercase tracking-caps"
             :style="accentStyle(publicStatus.overall)"
           >{{ publicStatus.overall }}</span>
         </template>
@@ -97,11 +97,11 @@ function accentStyle(s?: string | null): Record<string, string> {
             class="flex items-center justify-between text-small"
           >
             <span class="font-mono text-fg-subtle">{{ c.name }}</span>
-            <span class="font-mono text-[11px]" :style="accentStyle(c.status)">
+            <span class="font-mono text-micro" :style="accentStyle(c.status)">
               {{ c.status }}{{ c.latency_ms !== null ? ` · ${c.latency_ms}ms` : "" }}
             </span>
           </div>
-          <p class="font-mono text-[10px] text-fg-subtle mt-3 pt-3 border-t border-border-subtle">
+          <p class="font-mono text-nano text-fg-subtle mt-3 pt-3 border-t border-border-subtle">
             build {{ publicStatus.git_sha.slice(0, 7) }} · v{{ publicStatus.version }}
           </p>
         </div>

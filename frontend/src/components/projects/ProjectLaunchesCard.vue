@@ -128,7 +128,7 @@ const shipsCount = computed(() => ships.list.length);
           class="flex items-center gap-3 text-small py-1.5 border-b border-border-subtle last:border-b-0"
         >
           <span class="font-mono text-fg-primary w-20 shrink-0">{{ s.version || '—' }}</span>
-          <span class="text-fg-subtle font-mono text-[10px] w-20 shrink-0">{{ fmtDate(s.shipped_at) }}</span>
+          <span class="text-fg-subtle font-mono text-nano w-20 shrink-0">{{ fmtDate(s.shipped_at) }}</span>
           <span class="flex-1 text-fg-body truncate">{{ s.summary || '(no summary)' }}</span>
         </li>
       </ul>
@@ -146,10 +146,10 @@ const shipsCount = computed(() => ships.list.length);
           class="flex items-center gap-3 text-small py-1.5 border-b border-border-subtle last:border-b-0"
         >
           <span
-            class="font-mono text-[10px] uppercase px-2 py-0.5 rounded-sm w-28 shrink-0 text-center"
+            class="font-mono text-nano uppercase px-2 py-0.5 rounded-sm w-28 shrink-0 text-center"
             :style="{ background: 'var(--signal-blue-bg)', color: 'var(--fg-body)' }"
           >{{ platformLabels[(l.platform as Platform)] || l.platform }}</span>
-          <span class="text-fg-subtle font-mono text-[10px] w-20 shrink-0">{{ fmtDate(l.launched_at) }}</span>
+          <span class="text-fg-subtle font-mono text-nano w-20 shrink-0">{{ fmtDate(l.launched_at) }}</span>
           <a
             v-if="l.url"
             :href="l.url"
@@ -158,7 +158,7 @@ const shipsCount = computed(() => ships.list.length);
             class="link flex-1 truncate"
           >{{ l.url }}</a>
           <span v-else class="flex-1 text-fg-subtle italic">no url</span>
-          <div class="flex gap-2 shrink-0 text-[10px] text-fg-subtle font-mono">
+          <div class="flex gap-2 shrink-0 text-nano text-fg-subtle font-mono">
             <span
               v-for="[k, v] in metricsKeys(l)"
               :key="k"

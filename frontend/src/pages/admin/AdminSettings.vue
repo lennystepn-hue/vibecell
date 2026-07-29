@@ -11,7 +11,7 @@
 <template>
   <div class="max-w-[900px] mx-auto px-4 sm:px-8 py-6 sm:py-8">
     <header class="mb-6">
-      <p class="font-mono text-[11px] uppercase tracking-[0.15em] text-signal-green mb-1">// admin · settings</p>
+      <p class="font-mono text-micro uppercase tracking-caps text-signal-green mb-1">// admin · settings</p>
       <h1 class="text-display text-fg-primary tracking-tight">Settings</h1>
       <p class="text-body text-fg-muted mt-1">
         Platform-wide configuration. Read-only here on purpose — edit
@@ -76,7 +76,7 @@
           <span class="text-fg-body">LAUNCH69 · €69.99/yr · first 100 only</span>
         </li>
       </ul>
-      <p class="text-[11px] text-fg-subtle font-mono mt-4 pt-4 border-t border-border-subtle">
+      <p class="text-micro text-fg-subtle font-mono mt-4 pt-4 border-t border-border-subtle">
         Stripe price IDs live in HANGAR_STRIPE_PRO_PRICE_ID + HANGAR_STRIPE_PRO_ANNUAL_PRICE_ID.
         Coupons live in Stripe directly — manage them on /admin/coupons.
       </p>

@@ -89,7 +89,7 @@ async function detach(slug: string) {
       <span
         v-for="s in project.stack"
         :key="s.stack_item_slug"
-        class="group inline-flex items-center gap-1.5 px-2.5 h-6 rounded-sm font-mono text-[11px]"
+        class="group inline-flex items-center gap-1.5 px-2.5 h-6 rounded-sm font-mono text-micro"
         :style="{ background: 'var(--signal-blue-bg)', color: 'var(--fg-body)', border: '1px solid var(--border-subtle)' }"
       >
         {{ s.name }}
@@ -129,7 +129,7 @@ async function detach(slug: string) {
           @mouseenter="highlightedIndex = i"
         >
           <span>{{ item.name }}</span>
-          <span class="mono text-[10px] text-fg-muted">{{ item.kind ?? "—" }}</span>
+          <span class="mono text-nano text-fg-muted">{{ item.kind ?? "—" }}</span>
         </button>
       </div>
     </div>

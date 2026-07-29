@@ -212,7 +212,7 @@ function close() {
         <div v-if="tab === 'ai-prompt'" class="space-y-4">
           <p class="text-small text-fg-muted">{{ INSTALL_PROMPT_PITCH }}</p>
           <div
-            class="rounded-md p-4 font-mono text-[12px] leading-relaxed whitespace-pre-wrap select-all"
+            class="rounded-md p-4 font-mono text-small leading-relaxed whitespace-pre-wrap select-all"
             style="background:rgb(var(--bg-surface-rgb) / 0.5); border:1px solid var(--border-default); color:var(--fg-body); max-height:280px; overflow-y:auto"
           >{{ VIBECELL_INSTALL_PROMPT }}</div>
           <PrimaryButton class="w-full" @click="copy(VIBECELL_INSTALL_PROMPT, 'ai-prompt')">

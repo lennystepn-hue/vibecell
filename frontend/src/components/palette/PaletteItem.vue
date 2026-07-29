@@ -43,7 +43,7 @@ defineEmits<{ (e: "click"): void; (e: "hover"): void }>();
     <span v-if="hint" class="mono text-small text-fg-muted">{{ hint }}</span>
     <kbd
       v-if="shortcut"
-      class="font-mono text-[10px] px-1.5 py-0.5 rounded-sm"
+      class="font-mono text-nano px-1.5 py-0.5 rounded-sm"
       style="background: var(--signal-blue-bg); color: var(--fg-muted); border: 1px solid var(--border-subtle)"
     >{{ shortcut }}</kbd>
   </button>

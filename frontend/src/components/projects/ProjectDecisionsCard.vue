@@ -118,7 +118,7 @@ const count = computed(() => decisions.list.length);
         <header class="flex items-start justify-between gap-3 mb-2">
           <h3 class="text-section text-fg-primary font-semibold tracking-tight">{{ d.title }}</h3>
           <div class="flex items-center gap-3 shrink-0">
-            <span class="font-mono text-[10px] text-fg-subtle">{{ formatDate(d.created_at) }}</span>
+            <span class="font-mono text-nano text-fg-subtle">{{ formatDate(d.created_at) }}</span>
             <button
               type="button"
               class="mono-label hover:text-signal-red transition-colors"

@@ -296,7 +296,7 @@ function autoSizeAgain(id: string): void {
         : 'background: var(--bg-chrome); border: 1px solid var(--border-subtle); backdrop-filter: blur(8px)'"
     >
       <span class="mono-label text-fg-muted">// dashboard</span>
-      <span v-if="store.editMode" class="text-[11px] text-signal-green font-mono">— edit mode</span>
+      <span v-if="store.editMode" class="text-micro text-signal-green font-mono">— edit mode</span>
 
       <!-- Edit-only: add widget + reset + hint (all pushed right of label) -->
       <template v-if="store.editMode">
@@ -333,7 +333,7 @@ function autoSizeAgain(id: string): void {
                 <span class="font-mono text-signal-green shrink-0">{{ w.icon }}</span>
                 <span class="min-w-0 flex-1">
                   <span class="block text-small text-fg-body">{{ w.title }}</span>
-                  <span class="block text-[11px] text-fg-subtle mt-0.5 truncate">{{ w.hint }}</span>
+                  <span class="block text-micro text-fg-subtle mt-0.5 truncate">{{ w.hint }}</span>
                 </span>
               </button>
             </div>
@@ -345,7 +345,7 @@ function autoSizeAgain(id: string): void {
           title="Reset to default layout"
           @click="restoreDefaults"
         >reset</button>
-        <span class="hidden lg:inline text-[11px] text-fg-subtle font-mono">
+        <span class="hidden lg:inline text-micro text-fg-subtle font-mono">
           drag header · resize corner · right-click for sizes
         </span>
       </template>
@@ -426,7 +426,7 @@ function autoSizeAgain(id: string): void {
                  .no-drag so clicks don't start a drag). -->
             <template v-if="store.editMode">
               <span
-                class="absolute top-1.5 left-2 z-20 font-mono text-[10px] text-signal-green/70 pointer-events-none select-none tracking-widest"
+                class="absolute top-1.5 left-2 z-20 font-mono text-nano text-signal-green/70 pointer-events-none select-none tracking-widest"
                 aria-hidden="true"
               >⠿</span>
               <button

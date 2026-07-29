@@ -48,7 +48,7 @@ async function copyPrompt() {
       <div class="flex items-center justify-between mb-10">
         <div class="flex items-center gap-2 text-fg-subtle">
           <span class="text-signal-green font-mono text-section">◈</span>
-          <span class="font-mono text-small tracking-[0.08em] uppercase">Vibecell · install</span>
+          <span class="font-mono text-small tracking-label uppercase">Vibecell · install</span>
         </div>
         <a
           href="/"
@@ -74,11 +74,11 @@ async function copyPrompt() {
       >
         <header class="flex items-center justify-between mb-3 select-none">
           <MonoLabel>prompt</MonoLabel>
-          <span class="font-mono text-[10px] text-fg-subtle">
+          <span class="font-mono text-nano text-fg-subtle">
             ~{{ Math.ceil(VIBECELL_INSTALL_PROMPT.length / 4) }} tokens
           </span>
         </header>
-        <pre class="font-mono text-[12px] leading-relaxed whitespace-pre-wrap select-all text-fg-body">{{ VIBECELL_INSTALL_PROMPT }}</pre>
+        <pre class="font-mono text-small leading-relaxed whitespace-pre-wrap select-all text-fg-body">{{ VIBECELL_INSTALL_PROMPT }}</pre>
       </section>
 
       <PrimaryButton size="lg" class="w-full mb-6" @click="copyPrompt">
@@ -93,7 +93,7 @@ async function copyPrompt() {
         >
           <span class="font-mono text-section text-signal-green leading-none" aria-hidden="true">01</span>
           <p class="text-small text-fg-primary font-medium mt-2">Copy</p>
-          <p class="text-[11px] text-fg-muted mt-1">One click. No fields, no signup yet.</p>
+          <p class="text-micro text-fg-muted mt-1">One click. No fields, no signup yet.</p>
         </div>
         <div
           class="rounded-md p-4"
@@ -101,7 +101,7 @@ async function copyPrompt() {
         >
           <span class="font-mono text-section text-signal-green leading-none" aria-hidden="true">02</span>
           <p class="text-small text-fg-primary font-medium mt-2">Paste</p>
-          <p class="text-[11px] text-fg-muted mt-1">Into Claude Code, Claude Desktop, Cursor, Zed — anything that speaks MCP.</p>
+          <p class="text-micro text-fg-muted mt-1">Into Claude Code, Claude Desktop, Cursor, Zed — anything that speaks MCP.</p>
         </div>
         <div
           class="rounded-md p-4"
@@ -109,7 +109,7 @@ async function copyPrompt() {
         >
           <span class="font-mono text-section text-signal-green leading-none" aria-hidden="true">03</span>
           <p class="text-small text-fg-primary font-medium mt-2">Confirm</p>
-          <p class="text-[11px] text-fg-muted mt-1">OAuth pops in your browser. Approve. The AI takes over from there.</p>
+          <p class="text-micro text-fg-muted mt-1">OAuth pops in your browser. Approve. The AI takes over from there.</p>
         </div>
       </section>
 
@@ -123,7 +123,7 @@ async function copyPrompt() {
           <li>
             <span class="text-fg-subtle font-mono mr-2">→</span>
             Claude Code:
-            <code class="font-mono text-[11px] text-fg-body">claude mcp add vibecell https://vibecell.dev/mcp --transport http --scope user</code>
+            <code class="font-mono text-micro text-fg-body">claude mcp add vibecell https://vibecell.dev/mcp --transport http --scope user</code>
           </li>
           <li>
             <span class="text-fg-subtle font-mono mr-2">→</span>
@@ -136,13 +136,13 @@ async function copyPrompt() {
           <li>
             <span class="text-fg-subtle font-mono mr-2">→</span>
             Cursor / Zed / Windsurf: paste
-            <code class="font-mono text-[11px] text-fg-body">https://vibecell.dev/mcp</code>
+            <code class="font-mono text-micro text-fg-body">https://vibecell.dev/mcp</code>
             into the editor's MCP settings
           </li>
         </ul>
       </section>
 
-      <p class="text-center font-mono text-[10px] text-fg-subtle mt-8">
+      <p class="text-center font-mono text-nano text-fg-subtle mt-8">
         // 7-day trial · €8.99/mo · LAUNCH69 €69.99/yr (first 100)
       </p>
     </div>
