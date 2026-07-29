@@ -56,6 +56,7 @@ from app.api.v1.launches import router as launches_router
 from app.api.v1.lifecycle import router as lifecycle_router
 from app.api.v1.me import router as me_router
 from app.api.v1.notes import router as notes_router
+from app.api.v1.onboarding import install_router as onboarding_install_router
 from app.api.v1.onboarding import router as onboarding_router
 from app.api.v1.passkey import router as passkey_router
 
@@ -197,8 +198,10 @@ app.include_router(screenshots_router)
 app.include_router(screenshots_preview_router)
 # Live project-event stream (SSE)
 app.include_router(events_router)
-# Onboarding rebuild — user-scoped stream the setup screen narrates from.
+# Onboarding rebuild — user-scoped stream the setup screen narrates from,
+# plus the root-level /i/{code} one-liner carrier.
 app.include_router(onboarding_router)
+app.include_router(onboarding_install_router)
 # Per-project TODOs
 app.include_router(todos_router)
 # BYOK AI features

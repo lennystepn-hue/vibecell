@@ -57,4 +57,25 @@ case ":$PATH:" in
         ;;
 esac
 echo
+
+# One-line setup path: /i/{code} exports HANGAR_SETUP_CODE before piping us
+# here. `hangar setup` pairs this device and wires up every MCP client it
+# finds, so the user never sees a settings page.
+#
+# The `||` fallback matters during rollout: `setup` arrives in a later CLI
+# release than this script, so anyone on an older binary would otherwise get
+# a bare "unknown subcommand" and no idea what to do next.
+if [ -n "${HANGAR_SETUP_CODE:-}" ]; then
+    echo "==> pairing this device and configuring your MCP clients"
+    if "$INSTALL_DIR/hangar" setup --code "$HANGAR_SETUP_CODE"; then
+        exit 0
+    fi
+    echo
+    echo "   automatic setup unavailable in this build — falling back" >&2
+fi
+
+case ":$PATH:" in
+    *":$INSTALL_DIR:"*) ;;
+    *) echo "   (run it via $INSTALL_DIR/hangar until PATH is updated)" ;;
+esac
 echo "next: run \`hangar pair\` to connect this device."

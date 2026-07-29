@@ -47,15 +47,33 @@ export interface OnboardingEvent {
   project_count?: number;
 }
 
+export interface PairingCode {
+  code: string;
+  expires_in: number;
+  install_sh: string;
+  install_ps1: string;
+}
+
 const MAX_BACKOFF_MS = 30_000;
+
+/**
+ * Reissue at 80% of the code's life. Far enough ahead that a slow round trip
+ * can't leave a dead line on screen, late enough that an idle tab isn't
+ * minting codes every minute.
+ */
+const REISSUE_AT = 0.8;
 
 export const useOnboardingStore = defineStore("onboarding", () => {
   /** Every frame, in arrival order. The screen renders this as a log. */
   const events = ref<OnboardingEvent[]>([]);
   const connected = ref(false);
 
+  /** The live one-liner shown on screen. Null until the first mint lands. */
+  const pairing = ref<PairingCode | null>(null);
+
   let es: EventSource | null = null;
   let reconnectHandle: ReturnType<typeof setTimeout> | null = null;
+  let reissueHandle: ReturnType<typeof setTimeout> | null = null;
   let attempt = 0;
 
   // ── Derived view the setup screen actually renders ──────────────────────
@@ -113,12 +131,53 @@ export const useOnboardingStore = defineStore("onboarding", () => {
     () => events.value.find((e) => e.type === "done")?.project_count ?? null,
   );
 
+  // ── Pairing code ───────────────────────────────────────────────────────
+
+  /**
+   * Mint a one-time pairing code and keep it alive.
+   *
+   * Codes expire after 10 minutes, and a user who reads the page, makes
+   * coffee and then opens a terminal would otherwise paste a dead line and
+   * get an error that looks like the product is broken. So we re-mint ahead
+   * of expiry, silently — the line on screen is never dead.
+   *
+   * Stops once the machine is paired: the line has done its job, and a tab
+   * left open overnight should not keep minting credentials.
+   */
+  async function mintCode(): Promise<void> {
+    if (reissueHandle) {
+      clearTimeout(reissueHandle);
+      reissueHandle = null;
+    }
+    try {
+      const res = await fetch("/api/v1/onboarding/code", {
+        method: "POST",
+        credentials: "include",
+      });
+      if (!res.ok) return;
+      const next = (await res.json()) as PairingCode;
+      pairing.value = next;
+      if (!paired.value) {
+        reissueHandle = setTimeout(
+          () => void mintCode(),
+          next.expires_in * 1000 * REISSUE_AT,
+        );
+      }
+    } catch {
+      /* offline or logged out — the screen keeps the last code it had */
+    }
+  }
+
   // ── Connection ─────────────────────────────────────────────────────────
 
   function close(): void {
     if (reconnectHandle) {
       clearTimeout(reconnectHandle);
       reconnectHandle = null;
+    }
+    if (reissueHandle) {
+      clearTimeout(reissueHandle);
+      reissueHandle = null;
     }
     if (es) {
       es.close();
@@ -169,12 +228,15 @@ export const useOnboardingStore = defineStore("onboarding", () => {
   function reset(): void {
     close();
     events.value = [];
+    pairing.value = null;
     attempt = 0;
   }
 
   return {
     events,
     connected,
+    pairing,
+    mintCode,
     paired,
     clients,
     repoCount,

@@ -1,5 +1,5 @@
 import { createPinia, setActivePinia } from "pinia";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { useOnboardingStore, type OnboardingEvent } from "../onboarding";
 
@@ -37,6 +37,14 @@ describe("onboarding store", () => {
   beforeEach(() => {
     setActivePinia(createPinia());
     vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    // A reissue timer scheduled by one test would otherwise fire inside the
+    // next one — against that test's fetch spy, on the previous test's store.
+    // Cost me a confusing "expected 1, got 2" before it was pinned down.
+    vi.clearAllTimers();
+    vi.unstubAllGlobals();
   });
 
   it("opens the user-scoped stream with credentials", () => {
@@ -122,6 +130,60 @@ describe("onboarding store", () => {
     es.onerror?.();
     vi.advanceTimersByTime(60_000);
     expect(FakeEventSource.instances).toHaveLength(1);
+  });
+
+  it("mints a pairing code and re-mints before it expires", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        code: "AB12CD34",
+        expires_in: 600,
+        install_sh: "curl -LsSf https://vibecell.dev/i/AB12CD34 | sh",
+        install_ps1: "irm https://vibecell.dev/i/AB12CD34 | iex",
+      }),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    const { store } = install();
+
+    await store.mintCode();
+    expect(store.pairing?.code).toBe("AB12CD34");
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+
+    // 80% of 600s. A dead line on screen looks like a broken product, so the
+    // refresh has to land comfortably before expiry.
+    await vi.advanceTimersByTimeAsync(480_000);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("stops re-minting once the machine is paired", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ code: "AB12CD34", expires_in: 600, install_sh: "", install_ps1: "" }),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    const { store, es } = install();
+
+    es.emit({ type: "paired", client: "claude-code" });
+    await store.mintCode();
+
+    await vi.advanceTimersByTimeAsync(600_000);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps the last code when a mint fails", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ code: "GOOD1111", expires_in: 600, install_sh: "", install_ps1: "" }),
+      })
+      .mockRejectedValueOnce(new Error("offline"));
+    vi.stubGlobal("fetch", fetchMock);
+    const { store } = install();
+
+    await store.mintCode();
+    await store.mintCode();
+    expect(store.pairing?.code).toBe("GOOD1111");
   });
 
   it("reset clears frames and closes the connection", () => {
