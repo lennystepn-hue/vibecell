@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from "vue";
 
+import Card from "@/components/ui/Card.vue";
 import MonoLabel from "@/components/ui/MonoLabel.vue";
 import PrimaryButton from "@/components/ui/PrimaryButton.vue";
 import TextField from "@/components/ui/TextField.vue";
@@ -77,16 +78,16 @@ const shipsCount = computed(() => ships.list.length);
 </script>
 
 <template>
-  <section class="glass rounded-lg p-5">
-    <header class="flex items-center justify-between mb-4 select-none">
-      <h3 class="mono-label text-fg-muted">//ships + launches <span class="opacity-60">({{ shipsCount }} ships · {{ count }} launches)</span></h3>
+  <Card title="ships + launches">
+    <template #meta>({{ shipsCount }} ships · {{ count }} launches)</template>
+    <template #actions>
       <button
         v-if="!editing"
         type="button"
         class="mono-label hover:text-fg-body transition-colors"
         @click="editing = true"
       >+ record launch</button>
-    </header>
+    </template>
 
     <div>
     <form v-if="editing" class="mb-5 p-4 rounded-md bg-bg-surface space-y-3" @submit.prevent="onSubmit">
@@ -167,5 +168,5 @@ const shipsCount = computed(() => ships.list.length);
       </ul>
     </div>
     </div>
-  </section>
+  </Card>
 </template>

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, watch } from "vue";
 
+import Card from "@/components/ui/Card.vue";
 import { onProjectLiveEvent } from "@/composables/useProjectLive";
 import CopyableValue from "@/components/ui/CopyableValue.vue";
 import PrimaryButton from "@/components/ui/PrimaryButton.vue";
@@ -129,11 +130,10 @@ async function remove(label: string) {
 </script>
 
 <template>
-  <section class="glass rounded-lg p-5">
-    <header class="flex items-center justify-between mb-3 select-none">
-      <h3 class="mono-label text-fg-muted">//secrets</h3>
+  <Card title="secrets">
+    <template #actions>
       <span class="text-small text-fg-subtle">{{ secrets.length }} labels</span>
-    </header>
+    </template>
 
     <div>
       <p v-if="secrets.length === 0" class="text-small text-fg-subtle py-2">
@@ -192,5 +192,5 @@ async function remove(label: string) {
         </p>
       </div>
     </div>
-  </section>
+  </Card>
 </template>

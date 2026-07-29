@@ -2,6 +2,7 @@
 import { ref, watch } from "vue";
 import { useRoute } from "vue-router";
 
+import Card from "@/components/ui/Card.vue";
 import SidebarProjects from "@/components/app/SidebarProjects.vue";
 
 interface Session {
@@ -87,18 +88,15 @@ function fmtRel(iso: string | null): string {
             </div>
           </header>
 
-          <section class="glass rounded-lg p-5 mb-4">
-            <h3 class="mono-label text-fg-muted mb-2">//summary</h3>
+          <Card title="summary" class="mb-4">
             <p class="text-body text-fg-body whitespace-pre-wrap leading-relaxed">{{ session.summary }}</p>
-          </section>
+          </Card>
 
-          <section v-if="session.next_step" class="glass rounded-lg p-5 mb-4">
-            <h3 class="mono-label text-fg-muted mb-2">//next-step</h3>
+          <Card title="next-step" v-if="session.next_step" class="mb-4">
             <p class="text-body text-fg-body whitespace-pre-wrap">{{ session.next_step }}</p>
-          </section>
+          </Card>
 
-          <section v-if="session.files_touched && session.files_touched.length" class="glass rounded-lg p-5 mb-4">
-            <h3 class="mono-label text-fg-muted mb-2">//files-touched · {{ session.files_touched.length }}</h3>
+          <Card title="files-touched · {{ session.files_touched.length }}" v-if="session.files_touched && session.files_touched.length" class="mb-4">
             <ul class="space-y-1">
               <li
                 v-for="f in session.files_touched"
@@ -106,17 +104,16 @@ function fmtRel(iso: string | null): string {
                 class="font-mono text-small text-fg-body truncate"
               >{{ f }}</li>
             </ul>
-          </section>
+          </Card>
 
-          <section v-if="session.commits && session.commits.length" class="glass rounded-lg p-5 mb-4">
-            <h3 class="mono-label text-fg-muted mb-2">//commits · {{ session.commits.length }}</h3>
+          <Card title="commits · {{ session.commits.length }}" v-if="session.commits && session.commits.length" class="mb-4">
             <ul class="space-y-2">
               <li v-for="(c, i) in session.commits" :key="i" class="flex gap-3 items-baseline">
                 <code v-if="c.sha" class="font-mono text-small text-signal-green shrink-0">{{ String(c.sha).slice(0, 7) }}</code>
                 <span class="text-small text-fg-body">{{ c.msg || c.message }}</span>
               </li>
             </ul>
-          </section>
+          </Card>
         </div>
       </div>
     </div>

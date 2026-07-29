@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, nextTick } from "vue";
 
+import Card from "@/components/ui/Card.vue";
 import MonoLabel from "@/components/ui/MonoLabel.vue";
 import { api } from "@/api/client";
 import { useProjectsStore } from "@/stores/projects";
@@ -55,7 +56,7 @@ async function removeTag(tagId: string) {
 </script>
 
 <template>
-  <section class="glass rounded-lg p-5">
+  <Card>
     <MonoLabel>tags</MonoLabel>
 
     <div class="flex flex-wrap gap-2 mt-3">
@@ -104,5 +105,5 @@ async function removeTag(tagId: string) {
       class="mt-3 mono-label text-fg-subtle hover:text-fg-body transition-colors"
       @click="openAdding"
     >+ add tag</button>
-  </section>
+  </Card>
 </template>

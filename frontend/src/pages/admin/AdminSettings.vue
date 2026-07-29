@@ -20,8 +20,7 @@
       </p>
     </header>
 
-    <section class="glass rounded-lg p-5 mb-6">
-      <h3 class="mono-label text-fg-muted mb-3">// admin gate</h3>
+    <Card title="admin gate" class="mb-6">
       <p class="text-small text-fg-muted leading-relaxed mb-3">
         Two layers must agree before <code class="font-mono">/api/v1/admin/*</code> is reachable.
       </p>
@@ -39,10 +38,9 @@
           <span>Write actions additionally require a fresh <strong>TOTP</strong> code (X-Vibecell-2FA header). Set up on /settings.</span>
         </li>
       </ul>
-    </section>
+    </Card>
 
-    <section class="glass rounded-lg p-5 mb-6">
-      <h3 class="mono-label text-fg-muted mb-3">// trial defaults</h3>
+    <Card title="trial defaults" class="mb-6">
       <ul class="space-y-1.5 text-small font-mono">
         <li class="flex justify-between">
           <span class="text-fg-subtle">trial period</span>
@@ -61,10 +59,9 @@
           <span class="text-fg-body">trialing → past_due (status auto-flip on T-0)</span>
         </li>
       </ul>
-    </section>
+    </Card>
 
-    <section class="glass rounded-lg p-5">
-      <h3 class="mono-label text-fg-muted mb-3">// pricing</h3>
+    <Card title="pricing">
       <ul class="space-y-1.5 text-small font-mono">
         <li class="flex justify-between">
           <span class="text-fg-subtle">monthly</span>
@@ -83,6 +80,6 @@
         Stripe price IDs live in HANGAR_STRIPE_PRO_PRICE_ID + HANGAR_STRIPE_PRO_ANNUAL_PRICE_ID.
         Coupons live in Stripe directly — manage them on /admin/coupons.
       </p>
-    </section>
+    </Card>
   </div>
 </template>

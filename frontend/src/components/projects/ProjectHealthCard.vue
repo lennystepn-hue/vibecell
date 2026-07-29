@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
 
+import Card from "@/components/ui/Card.vue";
 import { onProjectLiveEvent } from "@/composables/useProjectLive";
 
 const props = defineProps<{ slug: string }>();
@@ -141,13 +142,12 @@ const sparkline = computed(() => {
 </script>
 
 <template>
-  <section class="glass rounded-lg p-5">
-    <header class="flex items-center justify-between mb-3">
-      <h3 class="mono-label text-fg-muted">//health</h3>
+  <Card title="health">
+    <template #actions>
       <span v-if="lastProbedAt" class="text-small text-fg-subtle tabular-nums">
         {{ formatTime(lastProbedAt) }}
       </span>
-    </header>
+    </template>
 
     <!-- Loading -->
     <div v-if="loading" class="text-small text-fg-subtle font-mono">probing…</div>
@@ -227,5 +227,5 @@ const sparkline = computed(() => {
         </div>
       </div>
     </div>
-  </section>
+  </Card>
 </template>

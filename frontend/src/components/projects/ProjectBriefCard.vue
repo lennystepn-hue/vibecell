@@ -6,6 +6,7 @@
  */
 import { ref, watch } from "vue";
 
+import Card from "@/components/ui/Card.vue";
 import { onProjectLiveEvent } from "@/composables/useProjectLive";
 
 const props = defineProps<{ slug: string }>();
@@ -70,7 +71,7 @@ function parseBriefBody(raw: string): { main: string; action: string | null } {
 </script>
 
 <template>
-  <section class="glass rounded-lg p-5">
+  <Card>
     <header class="flex items-start justify-between gap-3 mb-3">
       <div>
         <h3 class="mono-label text-signal-green">// where the fuck was i</h3>
@@ -119,5 +120,5 @@ function parseBriefBody(raw: string): { main: string; action: string | null } {
       <span v-else class="text-fg-muted">platform key</span>
       <span v-if="meta.input_tokens != null">{{ meta.input_tokens }}→{{ meta.output_tokens }} tokens</span>
     </footer>
-  </section>
+  </Card>
 </template>

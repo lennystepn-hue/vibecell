@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import Card from "@/components/ui/Card.vue";
 import MonoLabel from "@/components/ui/MonoLabel.vue";
 import type { components } from "@/api/types.gen";
 
@@ -7,7 +8,7 @@ defineProps<{ project: Project }>();
 </script>
 
 <template>
-  <section class="glass rounded-lg p-5">
+  <Card>
     <MonoLabel>stack</MonoLabel>
     <div v-if="project.stack.length > 0" class="flex flex-wrap gap-2 mt-3">
       <span
@@ -24,5 +25,5 @@ defineProps<{ project: Project }>();
       </span>
     </div>
     <p v-else class="text-small text-fg-muted italic mt-2">— nothing attached yet —</p>
-  </section>
+  </Card>
 </template>

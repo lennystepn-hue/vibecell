@@ -12,6 +12,7 @@
  */
 import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 
+import Card from "@/components/ui/Card.vue";
 import MarketingHeader from "@/components/marketing/MarketingHeader.vue";
 import MonoLabel from "@/components/ui/MonoLabel.vue";
 import { useRouteMeta } from "@/composables/useMeta";
@@ -211,11 +212,11 @@ const shortSha = computed(() => {
         </section>
 
         <!-- Incident log (hidden when empty) -->
-        <section
+        <Card
           v-if="data.incidents.length > 0"
-          class="glass rounded-lg p-5 mb-6"
+          title="incidents · last 30 days"
+          class="mb-6"
         >
-          <MonoLabel class="mb-3">incidents · last 30 days</MonoLabel>
           <ul class="space-y-2">
             <li
               v-for="(inc, idx) in data.incidents"
@@ -225,7 +226,7 @@ const shortSha = computed(() => {
               {{ JSON.stringify(inc) }}
             </li>
           </ul>
-        </section>
+        </Card>
 
         <!-- Build footer -->
         <footer class="text-center font-mono text-[10px] text-fg-subtle">

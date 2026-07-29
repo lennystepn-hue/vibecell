@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import Card from "@/components/ui/Card.vue";
 import CopyableValue from "@/components/ui/CopyableValue.vue";
 import DataRow from "@/components/ui/DataRow.vue";
 import MonoLabel from "@/components/ui/MonoLabel.vue";
@@ -9,7 +10,7 @@ defineProps<{ project: Project }>();
 </script>
 
 <template>
-  <section class="glass rounded-lg p-5">
+  <Card>
     <MonoLabel>infra</MonoLabel>
     <div v-if="project.infra" class="mt-3 space-y-0.5">
       <DataRow v-if="project.infra.domain_primary" label="domain">
@@ -29,5 +30,5 @@ defineProps<{ project: Project }>();
       </DataRow>
     </div>
     <p v-else class="text-small text-fg-muted italic mt-2">— no infra configured —</p>
-  </section>
+  </Card>
 </template>

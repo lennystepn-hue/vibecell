@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import Card from "@/components/ui/Card.vue";
 import MonoLabel from "@/components/ui/MonoLabel.vue";
 import type { components } from "@/api/types.gen";
 
@@ -7,7 +8,7 @@ defineProps<{ project: Project }>();
 </script>
 
 <template>
-  <section class="glass rounded-lg p-5">
+  <Card>
     <div
       v-if="project.context?.blocked_by"
       class="mb-4 px-3 py-2 rounded-sm text-small"
@@ -58,5 +59,5 @@ defineProps<{ project: Project }>();
         </div>
       </details>
     </div>
-  </section>
+  </Card>
 </template>

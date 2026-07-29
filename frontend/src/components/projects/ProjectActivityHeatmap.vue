@@ -6,6 +6,7 @@
  */
 import { computed, ref, watch } from "vue";
 
+import Card from "@/components/ui/Card.vue";
 import { onProjectLiveEvent } from "@/composables/useProjectLive";
 
 const props = defineProps<{ slug: string }>();
@@ -105,13 +106,12 @@ const total = computed(() => events.value.length);
 </script>
 
 <template>
-  <section class="glass rounded-lg p-5">
-    <header class="flex items-center justify-between mb-3">
-      <h3 class="mono-label text-fg-muted">//activity-heatmap</h3>
+  <Card title="activity-heatmap">
+    <template #actions>
       <span class="text-small text-fg-subtle font-mono tabular-nums">
         {{ total }} events · last 12 weeks
       </span>
-    </header>
+    </template>
 
     <div class="flex gap-[3px]">
       <div
@@ -139,5 +139,5 @@ const total = computed(() => events.value.length);
       <span class="w-[11px] h-[11px] rounded-sm bg-signal-green/90" />
       <span>more</span>
     </div>
-  </section>
+  </Card>
 </template>

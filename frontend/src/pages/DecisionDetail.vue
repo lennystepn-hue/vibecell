@@ -2,6 +2,7 @@
 import { ref, watch } from "vue";
 import { useRoute } from "vue-router";
 
+import Card from "@/components/ui/Card.vue";
 import SidebarProjects from "@/components/app/SidebarProjects.vue";
 
 interface Decision {
@@ -71,25 +72,21 @@ function fmtTime(iso: string | null): string {
             <p class="mono-label text-fg-subtle mt-2">Recorded {{ fmtTime(decision.created_at) }}</p>
           </header>
 
-          <section v-if="decision.context" class="glass rounded-lg p-5 mb-4">
-            <h3 class="mono-label text-fg-muted mb-2">//context</h3>
+          <Card title="context" v-if="decision.context" class="mb-4">
             <p class="text-body text-fg-body whitespace-pre-wrap leading-relaxed">{{ decision.context }}</p>
-          </section>
+          </Card>
 
-          <section class="glass rounded-lg p-5 mb-4" style="border-color: rgb(var(--signal-amber-rgb) / 0.25)">
-            <h3 class="mono-label text-signal-amber mb-2">//decision</h3>
+          <Card title="decision" tone="accent" class="mb-4">
             <p class="text-body text-fg-primary whitespace-pre-wrap leading-relaxed">{{ decision.decision }}</p>
-          </section>
+          </Card>
 
-          <section v-if="decision.consequences" class="glass rounded-lg p-5 mb-4">
-            <h3 class="mono-label text-fg-muted mb-2">//consequences</h3>
+          <Card title="consequences" v-if="decision.consequences" class="mb-4">
             <p class="text-body text-fg-body whitespace-pre-wrap leading-relaxed">{{ decision.consequences }}</p>
-          </section>
+          </Card>
 
-          <section v-if="decision.reconsider_if" class="glass rounded-lg p-5 mb-4">
-            <h3 class="mono-label text-fg-muted mb-2">//reconsider-if</h3>
+          <Card title="reconsider-if" v-if="decision.reconsider_if" class="mb-4">
             <p class="text-body text-fg-body whitespace-pre-wrap leading-relaxed">{{ decision.reconsider_if }}</p>
-          </section>
+          </Card>
         </div>
       </div>
     </div>

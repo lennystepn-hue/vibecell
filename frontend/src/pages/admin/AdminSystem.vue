@@ -65,11 +65,10 @@ function accentStyle(s?: string | null): Record<string, string> {
     </header>
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
-      <section class="glass rounded-lg p-5">
-        <header class="flex items-center justify-between mb-3">
-          <h3 class="mono-label text-fg-muted">// admin probes</h3>
+      <Card title="admin probes">
+        <template #actions>
           <span v-if="health" class="font-mono text-[10px] text-fg-subtle">{{ fmtRel(health.generated_at) }}</span>
-        </header>
+        </template>
         <div v-if="health" class="space-y-2">
           <div
             v-for="row in health.rows"
@@ -81,17 +80,16 @@ function accentStyle(s?: string | null): Record<string, string> {
           </div>
         </div>
         <div v-else class="text-small text-fg-subtle font-mono">loading…</div>
-      </section>
+      </Card>
 
-      <section class="glass rounded-lg p-5">
-        <header class="flex items-center justify-between mb-3">
-          <h3 class="mono-label text-fg-muted">// public /api/v1/status</h3>
+      <Card title="public /api/v1/status">
+        <template #actions>
           <span
             v-if="publicStatus"
             class="font-mono text-small uppercase tracking-[0.1em]"
             :style="accentStyle(publicStatus.overall)"
           >{{ publicStatus.overall }}</span>
-        </header>
+        </template>
         <div v-if="publicStatus" class="space-y-2">
           <div
             v-for="c in publicStatus.components"
@@ -108,7 +106,7 @@ function accentStyle(s?: string | null): Record<string, string> {
           </p>
         </div>
         <div v-else class="text-small text-fg-subtle font-mono">loading…</div>
-      </section>
+      </Card>
     </div>
   </div>
 </template>

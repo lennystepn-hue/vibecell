@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from "vue";
 
+import Card from "@/components/ui/Card.vue";
 import MonoLabel from "@/components/ui/MonoLabel.vue";
 import PrimaryButton from "@/components/ui/PrimaryButton.vue";
 import TextArea from "@/components/ui/TextArea.vue";
@@ -75,16 +76,16 @@ const count = computed(() => decisions.list.length);
 </script>
 
 <template>
-  <section class="glass rounded-lg p-5">
-    <header class="flex items-center justify-between mb-4 select-none">
-      <h3 class="mono-label text-fg-muted">//decisions <span class="opacity-60">({{ count }})</span></h3>
+  <Card title="decisions">
+    <template #meta>({{ count }})</template>
+    <template #actions>
       <button
         v-if="!editing"
         type="button"
         class="mono-label hover:text-fg-body transition-colors"
         @click="editing = true; resetForm()"
       >+ new decision</button>
-    </header>
+    </template>
 
     <div>
     <form v-if="editing" class="space-y-3 mb-5 p-4 rounded-md bg-bg-surface" @submit.prevent="onSubmit">
@@ -147,5 +148,5 @@ const count = computed(() => decisions.list.length);
       </li>
     </ul>
     </div>
-  </section>
+  </Card>
 </template>

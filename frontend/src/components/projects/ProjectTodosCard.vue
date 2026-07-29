@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
 
+import Card from "@/components/ui/Card.vue";
 import { onProjectLiveEvent } from "@/composables/useProjectLive";
 
 interface Todo {
@@ -198,9 +199,8 @@ onProjectLiveEvent(
 </script>
 
 <template>
-  <section class="glass rounded-lg p-5">
-    <header class="flex items-center justify-between mb-4 select-none">
-      <h3 class="mono-label text-fg-muted">//todos</h3>
+  <Card title="todos">
+    <template #actions>
       <div class="flex items-center gap-3 text-small" @click.stop>
         <span class="text-fg-subtle tabular-nums">
           <span class="text-fg-body font-mono">{{ todos.filter(t => t.status !== 'done').length }}</span>
@@ -218,7 +218,7 @@ onProjectLiveEvent(
           :title="includeDone ? 'Hide completed todos' : 'Show completed todos'"
         >{{ includeDone ? '☑ show done' : '☐ show done' }}</button>
       </div>
-    </header>
+    </template>
 
     <div>
       <!-- Add form -->
@@ -352,7 +352,7 @@ onProjectLiveEvent(
         </div>
       </div>
     </div>
-  </section>
+  </Card>
 </template>
 
 <style scoped>
