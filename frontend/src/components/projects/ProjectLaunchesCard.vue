@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from "vue";
 
+import EmptyHint from "@/components/ui/EmptyHint.vue";
 import Card from "@/components/ui/Card.vue";
 import MonoLabel from "@/components/ui/MonoLabel.vue";
 import PrimaryButton from "@/components/ui/PrimaryButton.vue";
@@ -136,9 +137,10 @@ const shipsCount = computed(() => ships.list.length);
 
     <div>
       <MonoLabel>launches</MonoLabel>
-      <p v-if="count === 0" class="text-small text-fg-muted italic mt-2">
-        No launches recorded yet. Track Product Hunt / HN / X / Reddit launches here.
-      </p>
+      <EmptyHint v-if="count === 0" tool="vibecell_ship" density="inline" class="mt-2">
+        No launches recorded yet. Say "ship it" when you go live — Product Hunt, HN,
+        X, Reddit all land here with their traction.
+      </EmptyHint>
       <ul v-else class="mt-2 space-y-1">
         <li
           v-for="l in launches.list"

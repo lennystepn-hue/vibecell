@@ -15,9 +15,7 @@ function stubHealth(status: string | null) {
 
 async function mountBar(context: Record<string, unknown>, health: string | null = "up") {
   stubHealth(health);
-  const w = mount(ProjectAlertBar, {
-    props: { project: { slug: "butlr", context } },
-  });
+  const w = mount(ProjectAlertBar, { props: { project: { slug: "butlr", context } } });
   await flushPromises();
   return w;
 }
@@ -25,11 +23,22 @@ async function mountBar(context: Record<string, unknown>, health: string | null 
 describe("ProjectAlertBar", () => {
   afterEach(() => vi.unstubAllGlobals());
 
-  it("renders nothing when the project is fine", async () => {
-    // A permanent "all good" banner is chrome, and chrome is what this cuts.
-    const w = await mountBar({ known_issues: [], open_questions: [] });
+  it("renders nothing when nothing is stopping work", async () => {
+    const w = await mountBar({});
     expect(w.find("section").exists()).toBe(false);
     expect(w.text()).toBe("");
+  });
+
+  it("stays silent for known issues and open questions", async () => {
+    // The regression this exists to prevent. A project can carry five known
+    // issues for months and be perfectly healthy; showing them as an alarm
+    // teaches the user to ignore the bar, and then a real outage looks
+    // identical to background noise.
+    const w = await mountBar({
+      known_issues: ["a", "b", "c", "d", "e"],
+      open_questions: ["x", "y"],
+    });
+    expect(w.find("section").exists()).toBe(false);
   });
 
   it("surfaces a blocker", async () => {
@@ -57,32 +66,11 @@ describe("ProjectAlertBar", () => {
     expect(w.find("section").exists()).toBe(false);
   });
 
-  it("counts issues and questions, with singular grammar", async () => {
-    const w = await mountBar({ known_issues: ["a"], open_questions: ["x", "y"] });
-    expect(w.text()).toContain("1 known issue");
-    expect(w.text()).not.toContain("1 known issues");
-    expect(w.text()).toContain("2 open questions");
-  });
-
-  it("puts what stops work soonest first", async () => {
-    // A blocker means nothing on this project can move, so it outranks a
-    // dead URL, which outranks a backlog of questions.
-    const w = await mountBar(
-      { blocked_by: "legal review", known_issues: ["a"], open_questions: ["x"] },
-      "down",
-    );
+  it("puts the blocker first — nothing can move at all", async () => {
+    const w = await mountBar({ blocked_by: "legal review" }, "down");
     const rows = w.findAll("li").map((li) => li.text());
     expect(rows[0]).toContain("Blocked");
     expect(rows[1]).toContain("down");
-    expect(rows[2]).toContain("known issue");
-    expect(rows[3]).toContain("open question");
-  });
-
-  it("turns critical when anything critical is present", async () => {
-    const warn = await mountBar({ open_questions: ["x"] });
-    const crit = await mountBar({ blocked_by: "x" });
-    expect(warn.find("section").attributes("style")).toContain("--signal-amber");
-    expect(crit.find("section").attributes("style")).toContain("--signal-red");
   });
 
   it("survives a project with no context at all", async () => {
@@ -93,7 +81,7 @@ describe("ProjectAlertBar", () => {
   });
 
   it("stays quiet when the health request fails", async () => {
-    // Offline should not invent an outage.
+    // Offline must not invent an outage.
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("offline")));
     const w = mount(ProjectAlertBar, { props: { project: { slug: "x", context: {} } } });
     await flushPromises();
