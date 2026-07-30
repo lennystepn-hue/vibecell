@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from "vue";
 
+import EmptyHint from "@/components/ui/EmptyHint.vue";
 import Card from "@/components/ui/Card.vue";
 import MonoLabel from "@/components/ui/MonoLabel.vue";
 import PrimaryButton from "@/components/ui/PrimaryButton.vue";
@@ -105,9 +106,10 @@ const count = computed(() => decisions.list.length);
     </form>
 
     <div v-if="decisions.loading && count === 0" class="text-small text-fg-muted">loading…</div>
-    <div v-else-if="count === 0 && !editing" class="text-small text-fg-muted italic">
-      No decisions recorded yet. ADR-style entries help future-you remember <em>why</em>.
-    </div>
+    <EmptyHint v-else-if="count === 0 && !editing" tool="vibecell_decision">
+      No decisions recorded yet. ADR-style entries are what future-you reads when
+      wondering <em>why</em> something is the way it is.
+    </EmptyHint>
 
     <ul class="space-y-3">
       <li

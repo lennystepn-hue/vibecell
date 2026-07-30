@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import EmptyHint from "@/components/ui/EmptyHint.vue";
 import Card from "@/components/ui/Card.vue";
 import CopyableValue from "@/components/ui/CopyableValue.vue";
 import DataRow from "@/components/ui/DataRow.vue";
@@ -29,6 +30,9 @@ defineProps<{ project: Project }>();
         <CopyableValue :value="project.infra.cdn" small />
       </DataRow>
     </div>
-    <p v-else class="text-small text-fg-muted italic mt-2">— no infra configured —</p>
+    <EmptyHint v-else tool="vibecell_sync_repo" density="inline" class="mt-2">
+      Nothing recorded. Claude reads your Dockerfile, compose and deploy configs and
+      fills this in.
+    </EmptyHint>
   </Card>
 </template>

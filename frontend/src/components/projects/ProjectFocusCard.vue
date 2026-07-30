@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import EmptyHint from "@/components/ui/EmptyHint.vue";
 import Card from "@/components/ui/Card.vue";
 import MonoLabel from "@/components/ui/MonoLabel.vue";
 import type { components } from "@/api/types.gen";
@@ -24,7 +25,9 @@ defineProps<{ project: Project }>();
         <p v-if="project.context?.current_focus" class="text-section text-fg-primary mt-1">
           {{ project.context.current_focus }}
         </p>
-        <p v-else class="text-body text-fg-muted mt-1 italic">— not set —</p>
+        <EmptyHint v-else tool="vibecell_set_focus" density="inline" class="mt-1">
+          Nothing set. Tell Claude what you're working on and it keeps this current.
+        </EmptyHint>
       </div>
 
       <div>
@@ -32,7 +35,10 @@ defineProps<{ project: Project }>();
         <p v-if="project.context?.next_step" class="text-body text-fg-body mt-1">
           {{ project.context.next_step }}
         </p>
-        <p v-else class="text-body text-fg-muted mt-1 italic">— not set —</p>
+        <EmptyHint v-else tool="vibecell_set_focus" density="inline" class="mt-1">
+          Nothing set. Claude writes this at the end of a session so the next one
+          starts where you stopped.
+        </EmptyHint>
       </div>
 
       <details
