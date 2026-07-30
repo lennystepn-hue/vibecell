@@ -67,10 +67,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       # No `version:` — the action reads `packageManager` from
-      # frontend/package.json, which is the same field corepack uses in the
-      # Docker build. Pinning it here by hand is how CI and the production
-      # image drifted onto different pnpm majors in the first place.
+      # frontend/package.json, the same field corepack uses in the Docker
+      # build. Pinning it here by hand is how CI and the production image
+      # drifted onto different pnpm majors in the first place.
+      #
+      # `package_json_file` is required because the action defaults to the
+      # repo root and ours lives under frontend/.
       - uses: pnpm/action-setup@v4
+        with: { package_json_file: frontend/package.json }
       - uses: actions/setup-node@v4
         with: { node-version: 20, cache: pnpm, cache-dependency-path: frontend/pnpm-lock.yaml }
       - name: Install
