@@ -414,7 +414,11 @@ function autoSizeAgain(id: string): void {
                with the scroll inside. The component's own section.glass
                is nulled out in CSS below so we don't render two stacked
                glass panels. -->
+          <!-- data-widget is the anchor ProjectAlertBar scrolls to when a
+               user clicks an alert. Cheap, and it keeps the bar from needing
+               a ref into the grid's internals. -->
           <article
+            :data-widget="String(item.i)"
             class="widget relative h-full w-full overflow-hidden rounded-lg transition-shadow glass"
             :class="store.editMode
               ? 'ring-1 ring-signal-green/30 cursor-move'
