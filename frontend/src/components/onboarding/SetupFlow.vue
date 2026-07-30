@@ -18,6 +18,7 @@
  */
 import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 
+import SetupSummary from "@/components/onboarding/SetupSummary.vue";
 import Card from "@/components/ui/Card.vue";
 import PrimaryButton from "@/components/ui/PrimaryButton.vue";
 import { useOnboardingStore } from "@/stores/onboarding";
@@ -270,16 +271,7 @@ onBeforeUnmount(() => {
         </li>
       </ul>
 
-      <footer
-        v-if="onboarding.done"
-        class="mt-6 pt-5 border-t border-border-subtle flex items-center justify-between gap-4"
-      >
-        <p class="text-body text-fg-primary min-w-0">
-          {{ onboarding.finalProjectCount ?? onboarding.projects.length }} projects are in.
-          You typed nothing.
-        </p>
-        <PrimaryButton size="lg" @click="$emit('finish')">Open →</PrimaryButton>
-      </footer>
+      <SetupSummary v-if="onboarding.done" @finish="$emit('finish')" />
     </Card>
   </div>
 </template>
