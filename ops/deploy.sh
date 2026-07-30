@@ -48,7 +48,17 @@ $COMPOSE run --rm backend alembic upgrade head
 
 # 4. Roll out backend + frontend + nginx
 echo "==> Rolling out app containers"
-$COMPOSE up -d backend frontend nginx
+$COMPOSE up -d backend frontend
+
+# nginx.conf is bind-mounted as a single FILE. `tar -xf` replaces the inode on
+# upload, which leaves the running container pointing at the old one — and
+# compose sees no reason to recreate, because from its side nothing changed.
+# The result is a deploy that reports success while nginx quietly serves the
+# previous routing table. Cost an hour once: a new location block was present
+# on the host, present in git, and invisible inside the container.
+# Recreating is ~1s, so pay it every time rather than reasoning about when.
+echo "==> Recreating nginx (picks up conf changes behind the bind mount)"
+$COMPOSE up -d --force-recreate nginx
 
 # 5. Health check
 sleep 5
