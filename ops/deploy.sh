@@ -64,6 +64,18 @@ $COMPOSE up -d --force-recreate nginx
 sleep 5
 echo "==> Health check"
 if curl -fsS http://localhost:8080/api/v1/healthz > /dev/null; then
+  # healthz only proves the backend process is alive. It says nothing about
+  # whether nginx routes to it, which is where three bugs shipped in one
+  # afternoon while every check was green. Smoke tests answer that.
+  #
+  # Non-fatal on purpose: a failed check means "something is served wrong",
+  # not "the app is down", and rolling back a healthy deploy over a redirect
+  # would be the more expensive mistake. It is loud instead.
+  echo "==> Smoke tests"
+  if ! ./ops/smoke.sh "https://${HANGAR_PUBLIC_HOST:-vibecell.dev}"; then
+    echo "==> WARNING: smoke tests failed — deployed, but something is served wrong"
+  fi
+
   echo "$SHA" > /srv/hangar/.last-good-sha
   echo "==> OK — deployed $SHA"
 else
