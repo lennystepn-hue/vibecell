@@ -35,6 +35,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # The keyring crate's secret-service backend links against dbus on
+      # Linux. cli.yml has had this step since the start; release.yml never
+      # did, so every tagged release since April failed on the Linux leg —
+      # and because one red matrix cell skips the release job, no binary has
+      # ever been published. The installers pointed at /releases/… the whole
+      # time, so `curl … | sh` has never worked for anyone.
+      - name: install linux deps (dbus for keyring/secret-service)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y libdbus-1-dev pkg-config
+
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: ${{ matrix.target }}
