@@ -1,0 +1,17 @@
+# Line endings.
+#
+# Shell scripts MUST be LF. A CRLF shebang makes the kernel look for an
+# interpreter literally named "/bin/bash\r", which fails as
+# "cannot execute: required file not found" — a message that points at
+# everything except the real cause. It cost a failed production deploy, and
+# it also shipped a CRLF install.sh to every macOS and Linux user, where
+# `curl … | sh` chokes on the carriage returns.
+#
+# Without this file, git on Windows converts on checkout and the corrupted
+# copy is what gets tarred to the server and baked into the image.
+*.sh text eol=lf
+*.bash text eol=lf
+
+# PowerShell is a Windows citizen; CRLF is its native habit and `irm | iex`
+# is happy either way.
+*.ps1 text eol=crlf
