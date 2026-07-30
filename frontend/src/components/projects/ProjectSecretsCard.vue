@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, watch } from "vue";
 
-import Card from "@/components/ui/Card.vue";
+import WidgetCard from "@/components/projects/WidgetCard.vue";
 import { onProjectLiveEvent } from "@/composables/useProjectLive";
 import CopyableValue from "@/components/ui/CopyableValue.vue";
 import PrimaryButton from "@/components/ui/PrimaryButton.vue";
@@ -130,7 +130,7 @@ async function remove(label: string) {
 </script>
 
 <template>
-  <Card title="secrets">
+  <WidgetCard id="secrets" title="secrets">
     <template #actions>
       <span class="text-small text-fg-subtle">{{ secrets.length }} labels</span>
     </template>
@@ -192,5 +192,5 @@ async function remove(label: string) {
         </p>
       </div>
     </div>
-  </Card>
+  </WidgetCard>
 </template>

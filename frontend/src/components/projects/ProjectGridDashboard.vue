@@ -16,6 +16,7 @@ import { GridLayout } from "grid-layout-plus";
 
 import { useDashboardLayoutStore } from "@/stores/dashboard-layout";
 import { DEFAULT_LAYOUT, widgetById } from "./widget-registry";
+import { FAMILY_ACCENT, FAMILY_ACCENT_RGB, identityFor } from "./widget-identity";
 
 // Grid spacing constants — match the <GridLayout> props below so the
 // auto-sizer's math reproduces grid-layout-plus's own geometry.
@@ -330,7 +331,16 @@ function autoSizeAgain(id: string): void {
                 class="w-full text-left px-3 py-2 flex items-start gap-2.5 hover:bg-white/[0.04] transition-colors"
                 @click="addWidget(w.id)"
               >
-                <span class="font-mono text-signal-green shrink-0">{{ w.icon }}</span>
+                <!-- Same glyph and family colour the card itself wears, so
+                     the menu entry and the thing it adds look like each
+                     other. Sourced from widget-identity rather than the
+                     registry: one map, not two. -->
+                <span
+                  class="font-mono shrink-0 inline-flex items-center justify-center w-5 h-5 rounded text-micro leading-none"
+                  :style="identityFor(w.id)
+                    ? `color: var(${FAMILY_ACCENT[identityFor(w.id)!.family]}); background: rgb(var(${FAMILY_ACCENT_RGB[identityFor(w.id)!.family]}) / 0.12)`
+                    : ''"
+                >{{ identityFor(w.id)?.glyph }}</span>
                 <span class="min-w-0 flex-1">
                   <span class="block text-small text-fg-body">{{ w.title }}</span>
                   <span class="block text-micro text-fg-subtle mt-0.5 truncate">{{ w.hint }}</span>

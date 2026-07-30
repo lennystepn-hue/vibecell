@@ -29,19 +29,35 @@ describe("Card", () => {
 
   it("dims the // prefix", () => {
     const w = mount(Card, { props: { title: "todos" } });
-    // Two dimmed spans exist once meta is present, so pin the prefix by
-    // position rather than by class alone.
-    expect(w.find("h3 span:first-child").text()).toBe("//");
-    expect(w.find("h3 span:first-child").classes()).toContain("opacity-60");
+    const dimmed = w.findAll("h3 span.opacity-60");
+    expect(dimmed[0]?.text()).toBe("//");
   });
 
   it("puts meta inside the title line, dimmed, after the title", () => {
     const w = mount(Card, { props: { title: "todos" }, slots: { meta: "(3)" } });
     const h3 = w.find("h3");
     expect(h3.text()).toContain("//todos");
-    const meta = h3.find("span:last-child");
-    expect(meta.text()).toBe("(3)");
-    expect(meta.classes()).toContain("opacity-60");
+    const dimmed = h3.findAll("span.opacity-60");
+    expect(dimmed.at(-1)?.text()).toBe("(3)");
+  });
+
+  it("renders an identity chip when given a glyph and a family", () => {
+    const w = mount(Card, {
+      props: {
+        title: "health",
+        glyph: "◎",
+        accentVar: "--signal-teal",
+        accentRgbVar: "--signal-teal-rgb",
+      },
+    });
+    const chip = w.find("h3 span");
+    expect(chip.text()).toBe("◎");
+    expect(chip.attributes("style")).toContain("--signal-teal");
+  });
+
+  it("renders no chip without a glyph", () => {
+    const w = mount(Card, { props: { title: "health" } });
+    expect(w.find("h3").text()).toBe("//health");
   });
 
   it("applies the standard inset by default", () => {

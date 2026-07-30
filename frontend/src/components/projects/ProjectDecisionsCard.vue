@@ -2,7 +2,7 @@
 import { computed, onMounted, ref, watch } from "vue";
 
 import EmptyHint from "@/components/ui/EmptyHint.vue";
-import Card from "@/components/ui/Card.vue";
+import WidgetCard from "@/components/projects/WidgetCard.vue";
 import MonoLabel from "@/components/ui/MonoLabel.vue";
 import PrimaryButton from "@/components/ui/PrimaryButton.vue";
 import TextArea from "@/components/ui/TextArea.vue";
@@ -77,7 +77,7 @@ const count = computed(() => decisions.list.length);
 </script>
 
 <template>
-  <Card title="decisions">
+  <WidgetCard id="decisions" title="decisions">
     <template #meta>({{ count }})</template>
     <template #actions>
       <button
@@ -150,5 +150,5 @@ const count = computed(() => decisions.list.length);
       </li>
     </ul>
     </div>
-  </Card>
+  </WidgetCard>
 </template>

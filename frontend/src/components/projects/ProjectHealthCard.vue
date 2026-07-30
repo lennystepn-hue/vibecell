@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
 
-import Card from "@/components/ui/Card.vue";
+import WidgetCard from "@/components/projects/WidgetCard.vue";
 import { onProjectLiveEvent } from "@/composables/useProjectLive";
 
 const props = defineProps<{ slug: string }>();
@@ -142,7 +142,7 @@ const sparkline = computed(() => {
 </script>
 
 <template>
-  <Card title="health">
+  <WidgetCard id="health" title="health">
     <template #actions>
       <span v-if="lastProbedAt" class="text-small text-fg-subtle tabular-nums">
         {{ formatTime(lastProbedAt) }}
@@ -227,5 +227,5 @@ const sparkline = computed(() => {
         </div>
       </div>
     </div>
-  </Card>
+  </WidgetCard>
 </template>

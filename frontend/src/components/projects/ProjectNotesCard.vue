@@ -2,7 +2,7 @@
 import { useDebounceFn } from "@vueuse/core";
 import { computed, onMounted, ref, watch } from "vue";
 
-import Card from "@/components/ui/Card.vue";
+import WidgetCard from "@/components/projects/WidgetCard.vue";
 import { useNotesStore } from "@/stores/notes";
 import type { components } from "@/api/types.gen";
 
@@ -62,7 +62,7 @@ const statusLabel = computed(() => {
 </script>
 
 <template>
-  <Card title="notes (markdown)">
+  <WidgetCard id="notes" title="notes (markdown)">
     <template #actions>
       <span class="mono-label opacity-60">{{ statusLabel }}</span>
     </template>
@@ -76,5 +76,5 @@ const statusLabel = computed(() => {
         @blur="onBlur"
       />
     </div>
-  </Card>
+  </WidgetCard>
 </template>

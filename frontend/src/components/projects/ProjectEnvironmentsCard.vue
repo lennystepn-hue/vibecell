@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from "vue";
 
-import Card from "@/components/ui/Card.vue";
+import WidgetCard from "@/components/projects/WidgetCard.vue";
 import CopyableValue from "@/components/ui/CopyableValue.vue";
 import MonoLabel from "@/components/ui/MonoLabel.vue";
 import { api } from "@/api/client";
@@ -60,7 +60,7 @@ async function removeEnv(envId: string) {
 </script>
 
 <template>
-  <Card>
+  <WidgetCard id="environments">
     <MonoLabel>environments</MonoLabel>
 
     <div v-if="project.environments && project.environments.length > 0" class="mt-3 space-y-2">
@@ -121,5 +121,5 @@ async function removeEnv(envId: string) {
       class="mt-3 mono-label text-fg-subtle hover:text-fg-body transition-colors"
       @click="showForm = true"
     >+ add environment</button>
-  </Card>
+  </WidgetCard>
 </template>

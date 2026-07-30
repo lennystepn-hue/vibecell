@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from "vue";
 
-import Card from "@/components/ui/Card.vue";
+import WidgetCard from "@/components/projects/WidgetCard.vue";
 import Modal from "@/components/ui/Modal.vue";
 import MonoLabel from "@/components/ui/MonoLabel.vue";
 import PrimaryButton from "@/components/ui/PrimaryButton.vue";
@@ -135,7 +135,7 @@ function commitsArr(s: SessionOut): unknown[] {
 </script>
 
 <template>
-  <Card title="sessions">
+  <WidgetCard id="sessions" title="sessions">
     <template #meta>({{ count }}<span v-if="sessions.nextCursor">+</span>)</template>
     <template #actions>
       <button
@@ -252,5 +252,5 @@ function commitsArr(s: SessionOut): unknown[] {
       </form>
     </Modal>
     </div>
-  </Card>
+  </WidgetCard>
 </template>

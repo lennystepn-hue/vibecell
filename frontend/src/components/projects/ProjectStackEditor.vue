@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch, nextTick } from "vue";
 
-import Card from "@/components/ui/Card.vue";
+import WidgetCard from "@/components/projects/WidgetCard.vue";
 import MonoLabel from "@/components/ui/MonoLabel.vue";
 import { api } from "@/api/client";
 import { useProjectsStore } from "@/stores/projects";
@@ -82,7 +82,7 @@ async function detach(slug: string) {
 </script>
 
 <template>
-  <Card>
+  <WidgetCard id="stack">
     <MonoLabel>stack</MonoLabel>
 
     <div class="flex flex-wrap gap-2 mt-3">
@@ -141,5 +141,5 @@ async function detach(slug: string) {
       class="mt-3 mono-label text-fg-subtle hover:text-fg-body transition-colors"
       @click="openAdding"
     >+ add stack item</button>
-  </Card>
+  </WidgetCard>
 </template>
