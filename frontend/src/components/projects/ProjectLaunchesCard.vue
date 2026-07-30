@@ -2,7 +2,7 @@
 import { computed, onMounted, ref, watch } from "vue";
 
 import EmptyHint from "@/components/ui/EmptyHint.vue";
-import Card from "@/components/ui/Card.vue";
+import WidgetCard from "@/components/projects/WidgetCard.vue";
 import MonoLabel from "@/components/ui/MonoLabel.vue";
 import PrimaryButton from "@/components/ui/PrimaryButton.vue";
 import TextField from "@/components/ui/TextField.vue";
@@ -79,7 +79,7 @@ const shipsCount = computed(() => ships.list.length);
 </script>
 
 <template>
-  <Card title="ships + launches">
+  <WidgetCard id="launches" title="ships + launches">
     <template #meta>({{ shipsCount }} ships · {{ count }} launches)</template>
     <template #actions>
       <button
@@ -170,5 +170,5 @@ const shipsCount = computed(() => ships.list.length);
       </ul>
     </div>
     </div>
-  </Card>
+  </WidgetCard>
 </template>

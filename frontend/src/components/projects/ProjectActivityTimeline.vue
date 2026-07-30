@@ -3,7 +3,7 @@ import { computed, onUnmounted, ref, watch } from "vue";
 import { RouterLink } from "vue-router";
 void RouterLink;  // tell the template compiler RouterLink is in scope for dynamic :is usage
 
-import Card from "@/components/ui/Card.vue";
+import WidgetCard from "@/components/projects/WidgetCard.vue";
 import { onProjectLiveEvent } from "@/composables/useProjectLive";
 
 interface ActivityEvent {
@@ -119,7 +119,7 @@ onProjectLiveEvent("*", () => void load());
 </script>
 
 <template>
-  <Card title="activity">
+  <WidgetCard id="activity" title="activity">
     <template #actions>
       <span class="text-small text-fg-subtle">{{ events.length }} events · live</span>
     </template>
@@ -165,5 +165,5 @@ onProjectLiveEvent("*", () => void load());
       </component>
     </ol>
     </div>
-  </Card>
+  </WidgetCard>
 </template>

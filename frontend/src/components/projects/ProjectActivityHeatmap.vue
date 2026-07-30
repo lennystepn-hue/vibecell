@@ -6,7 +6,7 @@
  */
 import { computed, ref, watch } from "vue";
 
-import Card from "@/components/ui/Card.vue";
+import WidgetCard from "@/components/projects/WidgetCard.vue";
 import { onProjectLiveEvent } from "@/composables/useProjectLive";
 
 const props = defineProps<{ slug: string }>();
@@ -106,7 +106,7 @@ const total = computed(() => events.value.length);
 </script>
 
 <template>
-  <Card title="activity-heatmap">
+  <WidgetCard id="activity" title="activity-heatmap">
     <template #actions>
       <span class="text-small text-fg-subtle font-mono tabular-nums">
         {{ total }} events · last 12 weeks
@@ -139,5 +139,5 @@ const total = computed(() => events.value.length);
       <span class="w-[11px] h-[11px] rounded-sm bg-signal-green/90" />
       <span>more</span>
     </div>
-  </Card>
+  </WidgetCard>
 </template>

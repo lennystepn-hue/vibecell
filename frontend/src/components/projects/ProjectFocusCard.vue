@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import EmptyHint from "@/components/ui/EmptyHint.vue";
-import Card from "@/components/ui/Card.vue";
+import WidgetCard from "@/components/projects/WidgetCard.vue";
 import MonoLabel from "@/components/ui/MonoLabel.vue";
 import type { components } from "@/api/types.gen";
 
@@ -9,7 +9,7 @@ defineProps<{ project: Project }>();
 </script>
 
 <template>
-  <Card>
+  <WidgetCard id="focus">
     <div
       v-if="project.context?.blocked_by"
       class="mb-4 px-3 py-2 rounded-sm text-small"
@@ -65,5 +65,5 @@ defineProps<{ project: Project }>();
         </div>
       </details>
     </div>
-  </Card>
+  </WidgetCard>
 </template>

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import EmptyHint from "@/components/ui/EmptyHint.vue";
-import Card from "@/components/ui/Card.vue";
+import WidgetCard from "@/components/projects/WidgetCard.vue";
 import CopyableValue from "@/components/ui/CopyableValue.vue";
 import DataRow from "@/components/ui/DataRow.vue";
 import MonoLabel from "@/components/ui/MonoLabel.vue";
@@ -11,7 +11,7 @@ defineProps<{ project: Project }>();
 </script>
 
 <template>
-  <Card>
+  <WidgetCard id="infra">
     <MonoLabel>infra</MonoLabel>
     <div v-if="project.infra" class="mt-3 space-y-0.5">
       <DataRow v-if="project.infra.domain_primary" label="domain">
@@ -34,5 +34,5 @@ defineProps<{ project: Project }>();
       Nothing recorded. Claude reads your Dockerfile, compose and deploy configs and
       fills this in.
     </EmptyHint>
-  </Card>
+  </WidgetCard>
 </template>

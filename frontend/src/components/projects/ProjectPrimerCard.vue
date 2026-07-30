@@ -16,7 +16,7 @@
  */
 import { computed, ref } from "vue";
 
-import Card from "@/components/ui/Card.vue";
+import WidgetCard from "@/components/projects/WidgetCard.vue";
 import MonoLabel from "@/components/ui/MonoLabel.vue";
 import type { components } from "@/api/types.gen";
 
@@ -70,7 +70,7 @@ async function copyBootstrapPrompt() {
 </script>
 
 <template>
-  <Card title="primer" class="flex flex-col h-full min-h-0">
+  <WidgetCard id="primer" title="primer" class="flex flex-col h-full min-h-0">
     <template v-if="hasPrimer" #meta>({{ primer.length.toLocaleString() }} chars)</template>
     <template #actions>
       <div class="flex items-center gap-3">
@@ -130,5 +130,5 @@ async function copyBootstrapPrompt() {
         <span>{{ justCopied ? "✓ copied — paste at your AI" : "Copy bootstrap prompt" }}</span>
       </button>
     </div>
-  </Card>
+  </WidgetCard>
 </template>

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
 
-import Card from "@/components/ui/Card.vue";
+import WidgetCard from "@/components/projects/WidgetCard.vue";
 import { onProjectLiveEvent } from "@/composables/useProjectLive";
 
 interface Todo {
@@ -199,7 +199,7 @@ onProjectLiveEvent(
 </script>
 
 <template>
-  <Card title="todos">
+  <WidgetCard id="todos" title="todos">
     <template #actions>
       <div class="flex items-center gap-3 text-small" @click.stop>
         <span class="text-fg-subtle tabular-nums">
@@ -352,7 +352,7 @@ onProjectLiveEvent(
         </div>
       </div>
     </div>
-  </Card>
+  </WidgetCard>
 </template>
 
 <style scoped>

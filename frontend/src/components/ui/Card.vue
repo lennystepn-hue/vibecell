@@ -44,6 +44,21 @@ withDefaults(
      * title and border. Use it once per view or it stops meaning anything.
      */
     tone?: "default" | "accent";
+    /**
+     * A geometric mark identifying this card, shown in a small tinted chip
+     * before the title.
+     *
+     * Sixteen cards with identical chrome make you *read* every header to
+     * find one instead of *recognising* it. A glyph plus a family colour is
+     * two learnable dimensions and costs 18px.
+     *
+     * Pass both or neither — a glyph with no family renders untinted, which
+     * looks like a mistake rather than a choice.
+     */
+    glyph?: string;
+    /** CSS custom property names from `widget-identity`'s family maps. */
+    accentVar?: string;
+    accentRgbVar?: string;
   }>(),
   { padding: "md", tone: "default" },
 );
@@ -62,11 +77,27 @@ withDefaults(
       class="flex items-center justify-between mb-4 select-none"
       :class="padding === 'none' ? 'px-5 pt-5' : ''"
     >
-      <h3 class="mono-label" :class="tone === 'accent' ? 'text-signal-amber' : 'text-fg-muted'">
-        <!-- Dimmed `//` matches MonoLabel, which the page-level cards already
-             used. Two conventions for the same mark is one too many. -->
-        <template v-if="title"><span class="opacity-60">//</span>{{ title }}</template>
-        <span v-if="$slots.meta" class="opacity-60"> <slot name="meta" /></span>
+      <h3
+        class="mono-label flex items-center gap-2 min-w-0"
+        :class="tone === 'accent' ? 'text-signal-amber' : 'text-fg-muted'"
+      >
+        <!-- Identity chip. Small enough to read as punctuation rather than
+             decoration, tinted enough to be findable at a glance. -->
+        <span
+          v-if="glyph"
+          class="inline-flex items-center justify-center w-5 h-5 rounded shrink-0 text-micro leading-none"
+          :style="accentVar && accentRgbVar
+            ? `color: var(${accentVar}); background: rgb(var(${accentRgbVar}) / 0.12)`
+            : ''"
+          aria-hidden="true"
+        >{{ glyph }}</span>
+
+        <span class="truncate">
+          <!-- Dimmed `//` matches MonoLabel, which the page-level cards already
+               used. Two conventions for the same mark is one too many. -->
+          <template v-if="title"><span class="opacity-60">//</span>{{ title }}</template>
+          <span v-if="$slots.meta" class="opacity-60"> <slot name="meta" /></span>
+        </span>
       </h3>
       <slot name="actions" />
     </header>
