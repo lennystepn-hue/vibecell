@@ -3,6 +3,24 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "//packageManager": [
+    "Single source of truth for the pnpm version — corepack honours it in the",
+    "Docker build, and pnpm/action-setup honours it in CI. Without it the two",
+    "drifted: CI pinned 9 by hand while the image's `corepack enable` resolved",
+    "to whatever was current, which became 10. pnpm 10 turned ignored build",
+    "scripts from a warning into an error, so the production image stopped",
+    "building while CI stayed green. A green CI has to mean the image builds."
+  ],
+  "packageManager": "pnpm@9.15.9",
+  "pnpm": {
+    "//onlyBuiltDependencies": [
+      "esbuild links its platform binary and vue-demi picks a Vue shim in a",
+      "postinstall — without these the build produces a broken bundle rather",
+      "than failing loudly. Declared explicitly so a future bump to pnpm 10,",
+      "which requires approval, does not re-break the image."
+    ],
+    "onlyBuiltDependencies": ["esbuild", "msw", "sharp", "vue-demi"]
+  },
   "scripts": {
     "dev": "vite",
     "dev:prod": "HANGAR_E2E_BACKEND_URL=https://vibecell.dev vite",
