@@ -22,17 +22,25 @@ const ONBOARDING_FLAG = "vibecell_onboarding_done";
 onMounted(async () => {
   await Promise.all([projects.fetchList(), connections.refresh()]);
 
-  // Spec-6 C3 — first-empty-dashboard redirect to the wizard. We only fire
-  // once per browser (localStorage flag) so dropping back to /p after the
-  // user explicitly archives every project doesn't trap them in onboarding.
-  const seen = (() => {
+  // Send an account that has never set anything up to /welcome.
+  //
+  // "Never paired a device or connected an editor" is a server-side fact, so
+  // it survives a browser change — the previous gate was localStorage plus
+  // zero projects, which meant a fully set-up user who happened to have no
+  // projects got dumped into onboarding every time they opened a new browser.
+  //
+  // The localStorage flag survives only as "I clicked Skip in this browser",
+  // so someone who deliberately declined isn't shown the door again on every
+  // visit. It is a suppressor now, not the decision.
+  const skippedHere = (() => {
     try {
       return localStorage.getItem(ONBOARDING_FLAG) === "1";
     } catch {
       return false;
     }
   })();
-  if (!seen && projects.list.length === 0) {
+  const neverSetUp = connections.list.length === 0 && projects.list.length === 0;
+  if (neverSetUp && !skippedHere) {
     router.replace("/welcome");
   }
 });
