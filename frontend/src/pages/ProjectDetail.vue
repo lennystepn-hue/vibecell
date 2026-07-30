@@ -9,6 +9,7 @@ import SidebarProjects from "@/components/app/SidebarProjects.vue";
 import ProjectContextEditor from "@/components/projects/ProjectContextEditor.vue";
 import ShipButton from "@/components/projects/ShipButton.vue";
 import ProjectOverviewChips from "@/components/projects/ProjectOverviewChips.vue";
+import ProjectAlertBar from "@/components/projects/ProjectAlertBar.vue";
 import ProjectGridDashboard from "@/components/projects/ProjectGridDashboard.vue";
 import ProjectStatusDropdown from "@/components/projects/ProjectStatusDropdown.vue";
 import Confetti from "@/components/projects/Confetti.vue";
@@ -238,6 +239,10 @@ useProjectLive(
           class="mb-4"
           @close="editingContext = false"
         />
+
+        <!-- Exceptions first, outside the grid so a saved layout can never
+             bury or remove them. Renders nothing when the project is fine. -->
+        <ProjectAlertBar :project="projects.active" />
 
         <!-- Draggable / resizable / customisable dashboard grid. -->
         <ProjectGridDashboard :project="projects.active" />
